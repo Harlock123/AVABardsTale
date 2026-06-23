@@ -1,0 +1,236 @@
+using System.Text.Json;
+using BardsTale.Core.Characters;
+using BardsTale.Core.Dungeon;
+using BardsTale.Core.Game;
+using BardsTale.Core.Geometry;
+using BardsTale.Core.Items;
+using ItemDb = BardsTale.Core.Items.Items;
+
+namespace BardsTale.Core.Persistence;
+
+/// <summary>Converts a <see cref="GameSession"/> to and from a JSON save file.</summary>
+public static class GameSerializer
+{
+    private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
+
+    public static string ToJson(GameSession session) => JsonSerializer.Serialize(ToData(session), Options);
+
+    public static GameSession FromJson(string json)
+    {
+        var data = JsonSerializer.Deserialize<SaveData>(json)
+                   ?? throw new InvalidDataException("Save file is empty or corrupt.");
+        return FromData(data);
+    }
+
+    // --- session -> data ---
+
+    public static SaveData ToData(GameSession session)
+    {
+        var p = session.Party;
+        var data = new SaveData
+        {
+            Party = new PartySave
+            {
+                Gold = p.Gold,
+                TownX = session.TownPosition.X,
+                TownY = session.TownPosition.Y,
+                TownFacing = (int)session.TownFacing,
+                DungeonX = p.Position.X,
+                DungeonY = p.Position.Y,
+                DungeonFacing = (int)p.Facing,
+                Inventory = p.Inventory
+                    .Select(i => new ItemRefSave { Name = i.Name, Identified = i.Identified }).ToList(),
+                Members = p.Members.Select(ToCharacterSave).ToList()
+            }
+        };
+
+        if (session.ActiveDungeon is { } dungeon)
+            data.Dungeon = ToDungeonSave(dungeon);
+
+        data.Stats = new RunStatsSave
+        {
+            BattlesWon = session.Stats.BattlesWon,
+            MonstersSlain = session.Stats.MonstersSlain,
+            GoldEarned = session.Stats.GoldEarned,
+            DeepestDepth = session.Stats.DeepestDepth
+        };
+
+        return data;
+    }
+
+    private static CharacterSave ToCharacterSave(Character c) => new()
+    {
+        Name = c.Name,
+        Race = (int)c.Race,
+        Class = (int)c.Class,
+        Level = c.Level,
+        Experience = c.Experience,
+        Gold = c.Gold,
+        MaxHitPoints = c.MaxHitPoints,
+        HitPoints = c.HitPoints,
+        MaxSpellPoints = c.MaxSpellPoints,
+        SpellPoints = c.SpellPoints,
+        Strength = c.Attributes.Strength,
+        Intelligence = c.Attributes.Intelligence,
+        Dexterity = c.Attributes.Dexterity,
+        Constitution = c.Attributes.Constitution,
+        Luck = c.Attributes.Luck,
+        Status = (int)c.Status,
+        DrainedLevels = c.DrainedLevels,
+        DrainedHitPoints = c.DrainedHitPoints,
+        DrainedSpellPoints = c.DrainedSpellPoints,
+        DrainedStrength = c.DrainedAttributes.Strength,
+        DrainedIntelligence = c.DrainedAttributes.Intelligence,
+        DrainedDexterity = c.DrainedAttributes.Dexterity,
+        DrainedConstitution = c.DrainedAttributes.Constitution,
+        DrainedLuck = c.DrainedAttributes.Luck,
+        Weapon = c.Weapon?.Name,
+        Armor = c.Armor?.Name,
+        Shield = c.Shield?.Name,
+        KnownSpells = c.KnownSpells.ToList(),
+        KnownSongs = c.KnownSongs.ToList()
+    };
+
+    private static DungeonSave ToDungeonSave(GameState dungeon)
+    {
+        var save = new DungeonSave
+        {
+            Depth = dungeon.Depth,
+            LightRemaining = dungeon.LightRemaining
+        };
+        foreach (var (depth, maze) in dungeon.Levels.OrderBy(kv => kv.Key))
+            save.Levels.Add(ToLevelSave(depth, maze));
+        return save;
+    }
+
+    private static LevelSave ToLevelSave(int depth, Maze maze)
+    {
+        var level = new LevelSave
+        {
+            Depth = depth,
+            Name = maze.Name,
+            Width = maze.Width,
+            Height = maze.Height,
+            StartX = maze.StartPosition.X,
+            StartY = maze.StartPosition.Y,
+            StartFacing = (int)maze.StartFacing
+        };
+        for (var y = 0; y < maze.Height; y++)
+            for (var x = 0; x < maze.Width; x++)
+            {
+                var cell = maze[x, y];
+                level.Cells.Add(new CellSave
+                {
+                    Walls = (int)cell.Walls,
+                    Feature = (int)cell.Feature,
+                    Text = cell.Text,
+                    Visited = cell.Visited,
+                    DestX = cell.Destination?.X,
+                    DestY = cell.Destination?.Y
+                });
+            }
+        return level;
+    }
+
+    // --- data -> session ---
+
+    public static GameSession FromData(SaveData data)
+    {
+        var session = new GameSession();
+        var p = session.Party;
+
+        p.Gold = data.Party.Gold;
+        session.TownPosition = new Position(data.Party.TownX, data.Party.TownY);
+        session.TownFacing = (Direction)data.Party.TownFacing;
+        p.Position = new Position(data.Party.DungeonX, data.Party.DungeonY);
+        p.Facing = (Direction)data.Party.DungeonFacing;
+
+        foreach (var entry in data.Party.Inventory)
+            if (ItemDb.Find(entry.Name) is { } item)
+                p.Inventory.Add(entry.Identified ? item : item.AsUnidentified());
+
+        foreach (var member in data.Party.Members)
+            p.Add(FromCharacterSave(member));
+
+        session.Stats.BattlesWon = data.Stats.BattlesWon;
+        session.Stats.MonstersSlain = data.Stats.MonstersSlain;
+        session.Stats.GoldEarned = data.Stats.GoldEarned;
+        session.Stats.DeepestDepth = data.Stats.DeepestDepth;
+
+        if (data.Dungeon is { } dungeonSave && dungeonSave.Levels.Count > 0)
+        {
+            var current = dungeonSave.Levels.FirstOrDefault(l => l.Depth == dungeonSave.Depth)
+                          ?? dungeonSave.Levels[0];
+            var game = new GameState(p, FromLevelSave(current), session.Rng,
+                dungeonSave.Depth, p.Position, p.Facing, dungeonSave.LightRemaining);
+            foreach (var level in dungeonSave.Levels)
+                if (level.Depth != current.Depth)
+                    game.AddLevel(level.Depth, FromLevelSave(level));
+            session.RestoreDungeon(game);
+        }
+
+        return session;
+    }
+
+    private static Character FromCharacterSave(CharacterSave s)
+    {
+        var c = new Character
+        {
+            Name = s.Name,
+            Race = (Race)s.Race,
+            Class = (CharacterClass)s.Class,
+            Attributes = new AttributeSet
+            {
+                Strength = s.Strength,
+                Intelligence = s.Intelligence,
+                Dexterity = s.Dexterity,
+                Constitution = s.Constitution,
+                Luck = s.Luck
+            },
+            Level = s.Level,
+            Experience = s.Experience,
+            Gold = s.Gold,
+            MaxHitPoints = s.MaxHitPoints,
+            HitPoints = s.HitPoints,
+            MaxSpellPoints = s.MaxSpellPoints,
+            SpellPoints = s.SpellPoints,
+            Status = (StatusEffect)s.Status,
+            DrainedLevels = s.DrainedLevels,
+            DrainedHitPoints = s.DrainedHitPoints,
+            DrainedSpellPoints = s.DrainedSpellPoints,
+            Weapon = ItemDb.Find(s.Weapon),
+            Armor = ItemDb.Find(s.Armor),
+            Shield = ItemDb.Find(s.Shield)
+        };
+        c.KnownSpells.AddRange(s.KnownSpells);
+        c.KnownSongs.AddRange(s.KnownSongs);
+        c.DrainedAttributes.Strength = s.DrainedStrength;
+        c.DrainedAttributes.Intelligence = s.DrainedIntelligence;
+        c.DrainedAttributes.Dexterity = s.DrainedDexterity;
+        c.DrainedAttributes.Constitution = s.DrainedConstitution;
+        c.DrainedAttributes.Luck = s.DrainedLuck;
+        return c;
+    }
+
+    private static Maze FromLevelSave(LevelSave d)
+    {
+        var maze = new Maze(d.Name, d.Width, d.Height)
+        {
+            StartPosition = new Position(d.StartX, d.StartY),
+            StartFacing = (Direction)d.StartFacing
+        };
+        for (var y = 0; y < d.Height; y++)
+            for (var x = 0; x < d.Width; x++)
+            {
+                var cs = d.Cells[y * d.Width + x];
+                var cell = maze[x, y];
+                cell.Walls = (Walls)cs.Walls;
+                cell.Feature = (CellFeature)cs.Feature;
+                cell.Text = cs.Text;
+                cell.Visited = cs.Visited;
+                if (cs.DestX is { } dx && cs.DestY is { } dy)
+                    cell.Destination = new Position(dx, dy);
+            }
+        return maze;
+    }
+}

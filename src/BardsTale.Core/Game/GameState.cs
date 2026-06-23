@@ -1,0 +1,280 @@
+using BardsTale.Core.Characters;
+using BardsTale.Core.Combat;
+using BardsTale.Core.Dungeon;
+using BardsTale.Core.Geometry;
+using BardsTale.Core.Items;
+using BardsTale.Core.Util;
+
+namespace BardsTale.Core.Game;
+
+public enum MoveResultKind
+{
+    Moved,
+    BlockedByWall,
+    Turned,
+    Encounter,
+    Message,
+    StairsDown,
+    StairsUp,
+    Exit,
+    Spun,
+    Teleported,
+    Trapped,
+    Darkness,
+    AntiMagic
+}
+
+public sealed record MoveResult(MoveResultKind Kind, string Description, Encounter? Encounter = null);
+
+/// <summary>
+/// The live game world: the party exploring the current maze level. Owns movement,
+/// wandering-monster checks and post-combat rewards.
+/// </summary>
+public sealed class GameState
+{
+    private readonly IRandomSource _rng;
+    private readonly EncounterFactory _encounters;
+    private int _stepsSinceEncounter;
+
+    // Each depth keeps its own maze, so a level's layout and explored map persist
+    // when you climb away and return. Keyed by depth.
+    private readonly Dictionary<int, Maze> _levels = new();
+
+    public GameState(Party party, Maze maze, IRandomSource rng)
+    {
+        Party = party;
+        Maze = maze;
+        _rng = rng;
+        _encounters = new EncounterFactory(rng);
+        _levels[Depth] = maze;
+        Party.Position = maze.StartPosition;
+        Party.Facing = maze.StartFacing;
+        MarkVisited();
+    }
+
+    /// <summary>Restores a dungeon from a saved game, preserving depth, position and the explored map.</summary>
+    public GameState(Party party, Maze maze, IRandomSource rng, int depth, Position position, Direction facing,
+        int lightRemaining = 0)
+    {
+        Party = party;
+        Maze = maze;
+        _rng = rng;
+        _encounters = new EncounterFactory(rng);
+        Depth = depth;
+        _levels[Depth] = maze;
+        Party.Position = position;
+        Party.Facing = facing;
+        LightRemaining = lightRemaining;
+    }
+
+    public Party Party { get; }
+    public Maze Maze { get; private set; }
+    public int Depth { get; private set; } = 1;
+
+    /// <summary>Every explored level keyed by depth — used by save/load to persist each map.</summary>
+    public IReadOnlyDictionary<int, Maze> Levels => _levels;
+
+    /// <summary>Restores a previously-explored level into the depth map (used when loading a save).</summary>
+    public void AddLevel(int depth, Maze maze) => _levels[depth] = maze;
+
+    /// <summary>True when there is a level above the current one to climb back to.</summary>
+    public bool CanAscend => Depth > 1;
+
+    /// <summary>How many more steps a conjured light lasts. While lit, darkness is seen and mapped.</summary>
+    public const int LightDurationSteps = 60;
+    public int LightRemaining { get; private set; }
+    public bool HasLight => LightRemaining > 0;
+
+    /// <summary>Activates (or refreshes) magical light for the given number of steps.</summary>
+    public void GrantLight(int steps) => LightRemaining = Math.Max(LightRemaining, steps);
+
+    /// <summary>Shared randomness source, reused by combat so a seeded game is fully deterministic.</summary>
+    public IRandomSource Rng => _rng;
+
+    public Cell CurrentCell => Maze[Party.Position];
+
+    /// <summary>True when the party stands in an anti-magic zone, where spells and songs fail.</summary>
+    public bool MagicSuppressed => CurrentCell.Feature == CellFeature.AntiMagic;
+
+    public MoveResult TurnLeft()
+    {
+        Party.Facing = Party.Facing.TurnLeft();
+        return new MoveResult(MoveResultKind.Turned, $"You turn to face {Party.Facing}.");
+    }
+
+    public MoveResult TurnRight()
+    {
+        Party.Facing = Party.Facing.TurnRight();
+        return new MoveResult(MoveResultKind.Turned, $"You turn to face {Party.Facing}.");
+    }
+
+    public MoveResult StepForward() => Step(Party.Facing);
+
+    public MoveResult StepBackward() => Step(Party.Facing.Opposite());
+
+    private MoveResult Step(Direction dir)
+    {
+        if (!Maze.CanMove(Party.Position, dir))
+            return new MoveResult(MoveResultKind.BlockedByWall, "A wall blocks your way.");
+
+        Party.Position = Party.Position.Step(dir);
+        MarkVisited();
+        if (LightRemaining > 0) LightRemaining--;
+
+        var cell = CurrentCell;
+        switch (cell.Feature)
+        {
+            case CellFeature.Message when cell.Text is not null:
+                return new MoveResult(MoveResultKind.Message, cell.Text);
+            case CellFeature.StairsDown:
+                return new MoveResult(MoveResultKind.StairsDown, "A stairway descends into darkness.");
+            case CellFeature.StairsUp:
+                return new MoveResult(MoveResultKind.StairsUp, "Stairs lead back up.");
+            case CellFeature.Exit:
+                return new MoveResult(MoveResultKind.Exit, "Sunlight ahead — the way out!");
+            case CellFeature.SpinnerTrap:
+                Party.Facing = (Direction)_rng.Next(0, 4);
+                return new MoveResult(MoveResultKind.Spun,
+                    $"The floor spins beneath you! You are now facing {Party.Facing}.");
+            case CellFeature.Teleporter when cell.Destination is { } dest:
+                Party.Position = dest;
+                MarkVisited();
+                return new MoveResult(MoveResultKind.Teleported, "Reality folds — you are wrenched elsewhere!");
+            case CellFeature.Trap:
+                return SpringTrap();
+            case CellFeature.Darkness when !HasLight:
+                return new MoveResult(MoveResultKind.Darkness, "It is pitch black here — you can see nothing.");
+            case CellFeature.AntiMagic:
+                return new MoveResult(MoveResultKind.AntiMagic,
+                    "A dead, magicless silence presses in — spells and songs will not work here.");
+            case CellFeature.BossLair:
+                return new MoveResult(MoveResultKind.Encounter,
+                    $"A monstrous presence rises to bar your way — the {Bosses.BossForDepth(Depth).Name}!",
+                    Bosses.Create(Depth));
+        }
+
+        if (CheckForEncounter(out var encounter))
+            return new MoveResult(MoveResultKind.Encounter, "Monsters block your path!", encounter);
+
+        return new MoveResult(MoveResultKind.Moved, DescribeView());
+    }
+
+    /// <summary>Marks the current boss lair as cleared so its fight does not recur.</summary>
+    public void ClearBoss()
+    {
+        if (CurrentCell.Feature == CellFeature.BossLair)
+            CurrentCell.Feature = CellFeature.None;
+    }
+
+    private MoveResult SpringTrap()
+    {
+        var living = Party.Members.Where(m => !m.IsDead).ToList();
+        if (living.Count == 0)
+            return new MoveResult(MoveResultKind.Trapped, "A trap springs in the empty hall.");
+
+        var victim = living[_rng.Next(0, living.Count)];
+        var dmg = _rng.Roll(1, 6, 2);
+        victim.ApplyDamage(dmg);
+        var msg = $"A trap springs! {victim.Name} takes {dmg} damage.";
+        if (victim.IsDead) msg += $" {victim.Name} has fallen!";
+        return new MoveResult(MoveResultKind.Trapped, msg);
+    }
+
+    private bool CheckForEncounter(out Encounter? encounter)
+    {
+        encounter = null;
+        _stepsSinceEncounter++;
+        // Grace period after a fight, then a rising chance to be ambushed.
+        if (_stepsSinceEncounter < 2) return false;
+        var chance = 0.10 + 0.03 * (_stepsSinceEncounter - 2);
+        if (!_rng.Chance(Math.Min(chance, 0.45))) return false;
+
+        _stepsSinceEncounter = 0;
+        encounter = _encounters.CreateRandom(dangerous: Depth >= 2);
+        return true;
+    }
+
+    /// <summary>
+    /// Award experience and gold to the survivors after a won fight. Level-ups are
+    /// not applied here — the party must visit the Review Board back in town.
+    /// </summary>
+    public IReadOnlyList<string> ApplyVictory(Encounter encounter)
+    {
+        var log = new List<string>();
+        var living = Party.Members.Where(m => !m.IsDead).ToList();
+        if (living.Count == 0) return log;
+
+        var xpEach = encounter.TotalExperience / living.Count;
+        Party.Gold += encounter.TotalGold;
+
+        foreach (var member in living)
+        {
+            member.Experience += xpEach;
+            if (Progression.CanLevelUp(member))
+                log.Add($"{member.Name} has learned enough to advance — visit the Review Board.");
+        }
+
+        foreach (var item in Loot.Roll(encounter, _rng))
+        {
+            Party.Inventory.Add(item);
+            log.Add($"Found: {item.Name}.");
+        }
+        return log;
+    }
+
+    /// <summary>Places the party back at this level's entrance, e.g. on re-entry from town.</summary>
+    public void ReturnToEntrance()
+    {
+        Party.Position = Maze.StartPosition;
+        Party.Facing = Maze.StartFacing;
+        _stepsSinceEncounter = 0;
+        MarkVisited();
+    }
+
+    public MoveResult Descend()
+    {
+        Depth++;
+        // Revisit a level you've already mapped, or carve a fresh one the first time down.
+        if (_levels.TryGetValue(Depth, out var existing))
+        {
+            Maze = existing;
+        }
+        else
+        {
+            Maze = new MazeBuilder(_rng).Build($"Catacombs — Level {Depth}", Maze.Width, Maze.Height);
+            _levels[Depth] = Maze;
+        }
+        Party.Position = Maze.StartPosition;
+        Party.Facing = Maze.StartFacing;
+        _stepsSinceEncounter = 0;
+        MarkVisited();
+        return new MoveResult(MoveResultKind.Moved, $"You descend to level {Depth}.");
+    }
+
+    /// <summary>Climbs to the level above, arriving at its downward stair with its map intact.</summary>
+    public MoveResult Ascend()
+    {
+        if (!CanAscend)
+            return new MoveResult(MoveResultKind.Moved, "There is nowhere further up to climb.");
+        Depth--;
+        Maze = _levels[Depth]; // always present — you descended through it to get here
+        Party.Position = Maze.PositionOf(CellFeature.StairsDown) ?? Maze.StartPosition;
+        Party.Facing = Maze.StartFacing;
+        _stepsSinceEncounter = 0;
+        MarkVisited();
+        return new MoveResult(MoveResultKind.Moved, $"You climb back up to level {Depth}.");
+    }
+
+    // Darkness blots out the map: you can't record where you can't see — unless you carry light.
+    private void MarkVisited()
+    {
+        if (CurrentCell.Feature != CellFeature.Darkness || HasLight)
+            CurrentCell.Visited = true;
+    }
+
+    private string DescribeView()
+    {
+        var ahead = Maze.CanMove(Party.Position, Party.Facing) ? "The passage continues ahead." : "A wall looms ahead.";
+        return ahead;
+    }
+}

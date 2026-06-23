@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BardsTale.Core/BardsTale.Core.csproj" />
+    <Project Path="src/BardsTale.Desktop/BardsTale.Desktop.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BardsTale.Tests/BardsTale.Tests.csproj" />
+  </Folder>
+</Solution>

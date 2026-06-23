@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using BardsTale.UI.ViewModels;
 
 namespace BardsTale.UI.Views;
@@ -20,14 +21,25 @@ public partial class MainView : UserControl
         // Tunnel so navigation keys reach us before a focused on-screen button can
         // swallow them (e.g. Enter activating a button instead of entering a building).
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+        // A tap on non-interactive space reclaims keyboard focus (matters on mobile).
+        AddHandler(PointerPressedEvent, OnPreviewPointerPressed, RoutingStrategies.Tunnel);
     }
 
     // Grab keyboard focus as soon as we're shown so WASD/Enter work without an
-    // initial click. Keys only route to a focused element, and nothing else holds
-    // focus on a cold start.
+    // initial click. The deferred pass is what makes focus reliably stick on mobile
+    // (Android), where focusing at attach-time alone is too early.
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        Focus();
+        Dispatcher.UIThread.Post(() => Focus(), DispatcherPriority.Loaded);
+    }
+
+    private void OnPreviewPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // If the tap landed on a focusable control (button, text box, combo), let it
+        // take focus; otherwise pull focus back to the root so keys keep working.
+        if (e.Source is InputElement { Focusable: true } src && !ReferenceEquals(src, this)) return;
         Focus();
     }
 

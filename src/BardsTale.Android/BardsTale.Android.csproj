@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Requires the one-time workload:  dotnet workload install android -->
+    <TargetFramework>net9.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
+    <!-- Silence the "net9.0-android is out of support" notice on .NET 10 SDKs. -->
+    <NoWarn>$(NoWarn);NETSDK1202</NoWarn>
+    <Nullable>enable</Nullable>
+    <ApplicationId>com.bardstale.app</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+  </PropertyGroup>
+
+  <!-- Thin Android head: just the launcher Activity. All UI lives in BardsTale.UI,
+       which already supports the single-view lifetime Android uses, and whose
+       file-backed SaveService works against the app's private storage. -->
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Android" Version="11.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BardsTale.UI\BardsTale.UI.csproj" />
+  </ItemGroup>
+</Project>

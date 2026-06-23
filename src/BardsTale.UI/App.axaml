@@ -2,13 +2,38 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="BardsTale.UI.App"
              xmlns:local="using:BardsTale.UI"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             RequestedThemeVariant="Dark">
+             <!-- The game UI is dark on every platform, so pin the Dark variant rather
+                  than following the OS (which varied the look on Android). -->
 
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-  
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <!-- Fluent's default button fill is translucent and disappears against the
+                         very dark game background (worse under Android's compositing). Use solid,
+                         high-contrast fills so buttons are clearly visible everywhere. -->
+                    <SolidColorBrush x:Key="ButtonBackground" Color="#2C3346"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#3B4660"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#232A3A"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="#191D27"/>
+                    <SolidColorBrush x:Key="ButtonForeground" Color="#ECEEF4"/>
+                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#D8DCE6"/>
+                    <SolidColorBrush x:Key="ButtonForegroundDisabled" Color="#565E72"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrush" Color="#586079"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#727C99"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#444C62"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="#2A3040"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>

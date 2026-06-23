@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#11131A"/>
+  <rect x="24" y="24" width="464" height="464" rx="72" fill="none" stroke="#E8C56B" stroke-width="10" opacity="0.55"/>
+  <!-- A simple gold lute -->
+  <g fill="none" stroke="#E8C56B" stroke-width="14" stroke-linecap="round">
+    <!-- neck -->
+    <line x1="300" y1="120" x2="232" y2="300"/>
+    <!-- tuning pegs -->
+    <line x1="296" y1="116" x2="322" y2="104"/>
+    <line x1="306" y1="142" x2="332" y2="130"/>
+  </g>
+  <!-- body -->
+  <ellipse cx="214" cy="338" rx="92" ry="104" fill="#E8C56B"/>
+  <circle cx="214" cy="332" r="34" fill="#11131A"/>
+  <!-- strings -->
+  <g stroke="#11131A" stroke-width="5" opacity="0.7">
+    <line x1="252" y1="206" x2="206" y2="420"/>
+    <line x1="272" y1="214" x2="232" y2="420"/>
+  </g>
+</svg>

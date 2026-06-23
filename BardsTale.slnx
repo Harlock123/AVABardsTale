@@ -3,8 +3,10 @@
     <Project Path="src/BardsTale.Core/BardsTale.Core.csproj" />
     <Project Path="src/BardsTale.UI/BardsTale.UI.csproj" />
     <Project Path="src/BardsTale.Desktop/BardsTale.Desktop.csproj" />
-    <!-- BardsTale.Browser (WebAssembly) is intentionally omitted here so the
-         solution builds without the wasm-tools workload. Build it directly with
+    <Project Path="src/BardsTale.Android/BardsTale.Android.csproj" />
+    <!-- Note: BardsTale.Android requires the 'android' workload (+ JDK/Android SDK),
+         so a full `dotnet build`/`dotnet test` of this solution now needs it installed.
+         BardsTale.Browser (WebAssembly) is still omitted; build it directly with
          dotnet run on src/BardsTale.Browser (after installing wasm-tools). -->
   </Folder>
   <Folder Name="/tests/">

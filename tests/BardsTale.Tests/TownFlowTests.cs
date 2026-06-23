@@ -2,7 +2,7 @@ using System.Linq;
 using BardsTale.Core.Characters;
 using BardsTale.Core.Game;
 using BardsTale.Core.Items;
-using BardsTale.Desktop.ViewModels;
+using BardsTale.UI.ViewModels;
 using Xunit;
 
 namespace BardsTale.Tests;

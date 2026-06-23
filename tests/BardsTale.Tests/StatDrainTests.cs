@@ -5,7 +5,7 @@ using BardsTale.Core.Game;
 using BardsTale.Core.Persistence;
 using BardsTale.Core.Town;
 using BardsTale.Core.Util;
-using BardsTale.Desktop.ViewModels;
+using BardsTale.UI.ViewModels;
 using Xunit;
 using Attr = BardsTale.Core.Characters.Attribute;
 

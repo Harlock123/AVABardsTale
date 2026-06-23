@@ -1,7 +1,7 @@
 using System.Linq;
 using BardsTale.Core.Game;
 using BardsTale.Core.Town;
-using BardsTale.Desktop.ViewModels;
+using BardsTale.UI.ViewModels;
 using Xunit;
 
 namespace BardsTale.Tests;

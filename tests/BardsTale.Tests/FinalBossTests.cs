@@ -6,8 +6,8 @@ using BardsTale.Core.Game;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Items;
 using BardsTale.Core.Util;
-using BardsTale.Desktop.Services;
-using BardsTale.Desktop.ViewModels;
+using BardsTale.UI.Services;
+using BardsTale.UI.ViewModels;
 using Xunit;
 
 namespace BardsTale.Tests;

@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\BardsTale.Core\BardsTale.Core.csproj" />
-    <ProjectReference Include="..\..\src\BardsTale.Desktop\BardsTale.Desktop.csproj" />
+    <ProjectReference Include="..\..\src\BardsTale.UI\BardsTale.UI.csproj" />
   </ItemGroup>
 
 </Project>

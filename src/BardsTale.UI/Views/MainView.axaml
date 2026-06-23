@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:BardsTale.UI.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
+             x:Class="BardsTale.UI.Views.MainView"
+             x:DataType="vm:MainWindowViewModel"
+             Background="#11131A">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid Margin="12" RowDefinitions="Auto,*">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="2,0,0,10">
+            <TextBlock Grid.Column="0" Text="THE BARD'S TALE" FontSize="22" FontWeight="Bold"
+                       Foreground="#E8C56B" VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Foreground="#A9D0B0"
+                       VerticalAlignment="Center" Margin="16,0" FontFamily="Consolas,monospace"/>
+            <Button Grid.Column="2" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="3" Content="Load" Command="{Binding ShowLoadSlotsCommand}"/>
+        </Grid>
+
+        <Panel Grid.Row="1">
+            <ContentControl Content="{Binding CurrentView}"/>
+
+            <!-- Victory / credits screen -->
+            <Border IsVisible="{Binding IsGameWon}" Background="#F00B0D14">
+                <Border Width="580" MaxHeight="640" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="#1A1626" BorderBrush="#E8C56B" BorderThickness="2" CornerRadius="8" Padding="28">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Bottom" Content="Begin a New Adventure" Command="{Binding NewGameCommand}"
+                                HorizontalAlignment="Center" Margin="0,16,0,0" Padding="16,8"
+                                Background="#3A5A3A" Foreground="#E9FFE0" FontWeight="Bold"/>
+                        <ScrollViewer>
+                            <StackPanel Spacing="14">
+                                <TextBlock Text="✦ VICTORY ✦" FontSize="30" FontWeight="Bold"
+                                           Foreground="#E8C56B" HorizontalAlignment="Center"/>
+                                <TextBlock TextWrapping="Wrap" TextAlignment="Center" Foreground="#D8C58A" FontSize="14"
+                                           Text="Mangar the Mad is destroyed. The eternal winter melts from the streets of Skara Brae, and the people hail your party as heroes. Your tale will be sung in every tavern for a hundred years."/>
+
+                                <TextBlock Text="— Your Heroes —" Foreground="#8FB7FF" FontWeight="Bold"
+                                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                <ItemsControl ItemsSource="{Binding VictoryParty}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="#E8E9F0" FontSize="13"
+                                                       HorizontalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Text="— The Tally —" Foreground="#8FB7FF" FontWeight="Bold"
+                                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                <ItemsControl ItemsSource="{Binding VictoryStats}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="#C7CBDA" FontSize="13"
+                                                       FontFamily="Consolas,monospace" HorizontalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Text="— Credits —" Foreground="#8FB7FF" FontWeight="Bold"
+                                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                <TextBlock TextWrapping="Wrap" TextAlignment="Center" Foreground="#9AA0B5" FontSize="12"
+                                           Text="THE BARD'S TALE — a fan re-implementation of the 1985 classic.&#10;Built with Avalonia and .NET 9.&#10;Engine, town, dungeon, and combat by your friendly AI adventuring companion.&#10;Original game by Interplay Productions."/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Border>
+
+            <!-- Save / load slot picker -->
+            <Border IsVisible="{Binding IsSlotPanelOpen}" Background="#E60B0D14">
+                <Border Width="520" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="#161A24" BorderBrush="#3A3F52" BorderThickness="2" CornerRadius="6" Padding="18">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+                            <TextBlock Grid.Column="0" Text="{Binding SlotPanelTitle}" FontSize="18"
+                                       FontWeight="Bold" Foreground="#E8C56B" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Close" Command="{Binding CloseSlotsCommand}"/>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Slots}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:SaveSlotViewModel">
+                                    <Border Margin="0,0,0,8" Padding="10,8" CornerRadius="4" Background="#222634">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" Foreground="#E8E9F0"/>
+                                                <TextBlock Text="{Binding Summary}" FontSize="11" Foreground="#9AA0B5"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="Save here"
+                                                    Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).SaveToSlotCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <Button.IsVisible>
+                                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                        <Binding Path="$parent[ItemsControl].((vm:MainWindowViewModel)DataContext).IsSaveMode"/>
+                                                        <Binding Path="!IsAutosave"/>
+                                                    </MultiBinding>
+                                                </Button.IsVisible>
+                                            </Button>
+                                            <Button Grid.Column="1" Content="Load"
+                                                    Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).LoadFromSlotCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <Button.IsVisible>
+                                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                        <Binding Path="$parent[ItemsControl].((vm:MainWindowViewModel)DataContext).IsLoadMode"/>
+                                                        <Binding Path="IsOccupied"/>
+                                                    </MultiBinding>
+                                                </Button.IsVisible>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DockPanel>
+                </Border>
+            </Border>
+        </Panel>
+    </Grid>
+</UserControl>

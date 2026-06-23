@@ -18,18 +18,43 @@ loop.
 | Project | Purpose |
 | --- | --- |
 | `src/BardsTale.Core` | Pure C# game engine — no UI dependency. Characters, classes, races, items, spells, maze generation, movement, and the combat resolver. Fully unit-testable. |
-| `src/BardsTale.Desktop` | Avalonia MVVM desktop app (Windows / macOS / Linux). Custom `DungeonView` and `MiniMap` render controls, plus the game shell and combat view models. |
+| `src/BardsTale.UI` | Shared Avalonia MVVM presentation layer — `App`, all views & view models, the custom `DungeonView` / `MiniMap` render controls, the save service, and a single `MainView` root. **Platform-agnostic** (no backend package), so every head below reuses it unchanged. |
+| `src/BardsTale.Desktop` | Thin desktop head (Windows / macOS / Linux) — just the entry point + `Avalonia.Desktop`, wrapping `MainView` in a `Window`. |
+| `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime. (Kept out of the default solution; see below.) |
 | `tests/BardsTale.Tests` | xUnit suite (**146 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses), town services, save/load round-trips, and per-depth map persistence. |
+
+The split follows Avalonia's standard cross-platform layout: a shared UI library plus
+one thin "head" project per platform. Adding **Android** or **iOS** heads is the same
+pattern — a small entry-point project referencing `BardsTale.UI`.
 
 ## Running
 
 ```bash
-# from the repository root
+# from the repository root — desktop (Windows / macOS / Linux)
 dotnet run --project src/BardsTale.Desktop
 
 # run the tests
 dotnet test
 ```
+
+### Running in the browser (WebAssembly)
+
+The `BardsTale.Browser` head runs the exact same UI in a browser via WebAssembly.
+It needs the one-time .NET WASM workload, and is deliberately **excluded from
+`BardsTale.slnx`** so the solution still builds/tests without that workload:
+
+```bash
+# one-time: install the WebAssembly build tools
+dotnet workload install wasm-tools-net9     # or: dotnet workload restore
+
+# build & serve the browser app (opens a local dev server)
+dotnet run --project src/BardsTale.Browser
+```
+
+> If your installed wasm workload targets .NET 10 instead, change the browser
+> project's `TargetFramework` to `net10.0-browser`. Note that browser saves live in
+> the runtime's in-memory virtual filesystem, so they're per-session unless wired to
+> persistent storage (IndexedDB) — a natural follow-up for the browser head.
 
 ### Controls
 

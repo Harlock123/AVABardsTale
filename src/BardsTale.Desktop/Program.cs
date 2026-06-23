@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using System;
+using BardsTale.UI;
 
 namespace BardsTale.Desktop;
 

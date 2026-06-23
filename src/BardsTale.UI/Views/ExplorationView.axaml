@@ -1,0 +1,138 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:BardsTale.UI.ViewModels"
+             xmlns:controls="using:BardsTale.UI.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1060" d:DesignHeight="660"
+             x:Class="BardsTale.UI.Views.ExplorationView"
+             x:DataType="vm:ExplorationViewModel">
+
+    <Grid ColumnDefinitions="*,320" RowDefinitions="*,Auto">
+
+        <!-- Main view: dungeon, with combat overlay -->
+        <Border Grid.Row="0" Grid.Column="0" Margin="0,0,12,0"
+                BorderBrush="#3A3F52" BorderThickness="2" CornerRadius="4"
+                Background="Black" ClipToBounds="True">
+            <Panel>
+                <controls:DungeonView
+                    Maze="{Binding Maze}"
+                    PartyX="{Binding PartyX}"
+                    PartyY="{Binding PartyY}"
+                    Facing="{Binding Facing}"
+                    Revision="{Binding Revision}"
+                    HasLight="{Binding HasLight}"/>
+
+                <Border VerticalAlignment="Top" HorizontalAlignment="Stretch"
+                        Background="#AA000000" Padding="8,4">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{Binding LocationText}" Foreground="#CFE8FF"
+                                   FontFamily="Consolas,monospace"/>
+                        <TextBlock Grid.Column="1" Text="{Binding LightText}" Foreground="#E8C56B"
+                                   FontFamily="Consolas,monospace"/>
+                    </Grid>
+                </Border>
+
+                <Border IsVisible="{Binding IsInCombat}" Background="#E60B0D14">
+                    <ContentControl Content="{Binding Combat}"/>
+                </Border>
+            </Panel>
+        </Border>
+
+        <!-- Right column: roster + minimap -->
+        <Grid Grid.Row="0" Grid.Column="1" RowDefinitions="*,Auto">
+            <Border Grid.Row="0" BorderBrush="#3A3F52" BorderThickness="1" CornerRadius="4"
+                    Background="#181B24" Padding="6">
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Party}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:CharacterViewModel">
+                                <Border Margin="0,0,0,6" Padding="8,6" CornerRadius="4"
+                                        Background="#222634" BorderBrush="#333A4D" BorderThickness="1">
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Name}"
+                                                   FontWeight="Bold" Foreground="#E8E9F0"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StatusText}"
+                                                   FontSize="11" FontWeight="Bold" Foreground="{Binding StatusBrush}"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                                   Text="{Binding ClassLine}" FontSize="11" Foreground="#9AA0B5"/>
+                                        <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                              ColumnDefinitions="Auto,*,Auto" Margin="0,4,0,0">
+                                            <TextBlock Grid.Column="0" Text="HP" FontSize="11"
+                                                       Foreground="#C0566B" Margin="0,0,6,0"/>
+                                            <ProgressBar Grid.Column="1" Minimum="0" Maximum="1"
+                                                         Value="{Binding HealthFraction}"
+                                                         Foreground="#C0566B" Height="10"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Health}" FontSize="11"
+                                                       Foreground="#C7CBDA" Margin="6,0,0,0"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <Border Grid.Row="1" Margin="0,8,0,0" Height="220"
+                    BorderBrush="#3A3F52" BorderThickness="1" CornerRadius="4"
+                    Background="#0E1018" Padding="6">
+                <controls:MiniMap
+                    Maze="{Binding Maze}"
+                    PartyX="{Binding PartyX}"
+                    PartyY="{Binding PartyY}"
+                    Facing="{Binding Facing}"
+                    Revision="{Binding Revision}"/>
+            </Border>
+        </Grid>
+
+        <!-- Bottom: log + controls -->
+        <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,12,0,0"
+              ColumnDefinitions="*,Auto">
+
+            <Border Grid.Column="0" Height="120" Margin="0,0,12,0"
+                    BorderBrush="#3A3F52" BorderThickness="1" CornerRadius="4"
+                    Background="#0E1018" Padding="8">
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Log}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Foreground="#A9D0B0"
+                                           FontFamily="Consolas,monospace" FontSize="12" TextWrapping="Wrap"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <StackPanel Grid.Column="1" Width="300">
+                <TextBlock Text="{Binding InventorySummary}" Foreground="#D8C58A" FontSize="11"
+                           TextWrapping="Wrap" Margin="2,0,2,6"/>
+                <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
+                    <Button Grid.Row="0" Grid.Column="1" Content="▲ Fwd"
+                            Command="{Binding MoveForwardCommand}" HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center" Margin="2"/>
+                    <Button Grid.Row="1" Grid.Column="0" Content="◄ Turn"
+                            Command="{Binding TurnLeftCommand}" HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center" Margin="2"/>
+                    <Button Grid.Row="1" Grid.Column="1" Content="▼ Back"
+                            Command="{Binding MoveBackwardCommand}" HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center" Margin="2"/>
+                    <Button Grid.Row="1" Grid.Column="2" Content="Turn ►"
+                            Command="{Binding TurnRightCommand}" HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center" Margin="2"/>
+                </Grid>
+                <Grid ColumnDefinitions="*,*,*,*" Margin="0,4,0,0">
+                    <Button Grid.Column="0" Content="Light" Command="{Binding CastLightCommand}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                    <Button Grid.Column="1" Content="Descend" Command="{Binding DescendCommand}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                    <Button Grid.Column="2" Content="Ascend" Command="{Binding AscendCommand}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                    <Button Grid.Column="3" Content="Exit to Town" Command="{Binding ReturnToTownCommand}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                </Grid>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

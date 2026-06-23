@@ -1,7 +1,11 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/BardsTale.Core/BardsTale.Core.csproj" />
+    <Project Path="src/BardsTale.UI/BardsTale.UI.csproj" />
     <Project Path="src/BardsTale.Desktop/BardsTale.Desktop.csproj" />
+    <!-- BardsTale.Browser (WebAssembly) is intentionally omitted here so the
+         solution builds without the wasm-tools workload. Build it directly with
+         dotnet run on src/BardsTale.Browser (after installing wasm-tools). -->
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/BardsTale.Tests/BardsTale.Tests.csproj" />

@@ -3,7 +3,7 @@ using BardsTale.Core.Dungeon;
 using BardsTale.Core.Game;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Util;
-using BardsTale.Desktop.ViewModels;
+using BardsTale.UI.ViewModels;
 using Xunit;
 
 namespace BardsTale.Tests;

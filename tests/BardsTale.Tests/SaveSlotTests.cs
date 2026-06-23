@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using System.Linq;
 using BardsTale.Core.Game;
-using BardsTale.Desktop.Services;
-using BardsTale.Desktop.ViewModels;
+using BardsTale.UI.Services;
+using BardsTale.UI.ViewModels;
 using Xunit;
 
 namespace BardsTale.Tests;

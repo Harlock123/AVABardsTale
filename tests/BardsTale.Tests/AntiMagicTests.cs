@@ -6,7 +6,7 @@ using BardsTale.Core.Game;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Magic;
 using BardsTale.Core.Util;
-using BardsTale.Desktop.ViewModels;
+using BardsTale.UI.ViewModels;
 using Xunit;
 
 namespace BardsTale.Tests;

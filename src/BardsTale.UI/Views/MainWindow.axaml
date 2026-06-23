@@ -1,0 +1,20 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BardsTale.UI.ViewModels"
+        xmlns:views="using:BardsTale.UI.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
+        x:Class="BardsTale.UI.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Width="1100" Height="720" MinWidth="900" MinHeight="640"
+        Background="#11131A"
+        Title="The Bard's Tale">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <!-- The desktop window is just a frame around the shared root view. -->
+    <views:MainView/>
+</Window>

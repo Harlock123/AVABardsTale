@@ -6,7 +6,7 @@ using BardsTale.Core.Items;
 using BardsTale.Core.Magic;
 using BardsTale.Core.Town;
 using BardsTale.Core.Util;
-using BardsTale.Desktop.ViewModels;
+using BardsTale.UI.ViewModels;
 using Xunit;
 
 namespace BardsTale.Tests;

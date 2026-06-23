@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using BardsTale.Core.Game;
 using BardsTale.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,19 +18,19 @@ public enum SlotPanelMode { Save, Load }
 /// </summary>
 public sealed partial class MainWindowViewModel : ViewModelBase
 {
-    private readonly SaveService _saves;
+    private readonly ISaveStore _saves;
     private GameSession _session;
 
-    public MainWindowViewModel() : this(new SaveService()) { }
+    public MainWindowViewModel() : this(App.SaveStoreFactory()) { }
 
-    public MainWindowViewModel(SaveService saves)
+    public MainWindowViewModel(ISaveStore saves)
     {
         _saves = saves;
         _session = new GameSession();
 
         Slots = new ObservableCollection<SaveSlotViewModel>(
             _saves.ManualSlots.Select((s, i) => new SaveSlotViewModel(s, $"Slot {i + 1}", isAutosave: false))
-                .Append(new SaveSlotViewModel(SaveService.AutosaveSlot, "Autosave", isAutosave: true)));
+                .Append(new SaveSlotViewModel(SaveSlots.Autosave, "Autosave", isAutosave: true)));
 
         ShowTown();
     }
@@ -61,18 +62,18 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public TownViewModel? Town => CurrentView as TownViewModel;
 
     [RelayCommand]
-    private void ShowSaveSlots()
+    private async Task ShowSaveSlots()
     {
         SlotMode = SlotPanelMode.Save;
-        RefreshSlots();
+        await RefreshSlotsAsync();
         IsSlotPanelOpen = true;
     }
 
     [RelayCommand]
-    private void ShowLoadSlots()
+    private async Task ShowLoadSlots()
     {
         SlotMode = SlotPanelMode.Load;
-        RefreshSlots();
+        await RefreshSlotsAsync();
         IsSlotPanelOpen = true;
     }
 
@@ -80,13 +81,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private void CloseSlots() => IsSlotPanelOpen = false;
 
     [RelayCommand]
-    private void SaveToSlot(SaveSlotViewModel? slot)
+    private async Task SaveToSlot(SaveSlotViewModel? slot)
     {
         if (slot is null || slot.IsAutosave) return;
         try
         {
-            _saves.Save(_session, slot.Slot);
-            RefreshSlots();
+            await _saves.SaveAsync(_session, slot.Slot);
+            await RefreshSlotsAsync();
             StatusMessage = $"Saved to {slot.DisplayName}.";
             IsSlotPanelOpen = false;
         }
@@ -97,12 +98,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void LoadFromSlot(SaveSlotViewModel? slot)
+    private async Task LoadFromSlot(SaveSlotViewModel? slot)
     {
         if (slot is null || !slot.IsOccupied) return;
         try
         {
-            _session = _saves.Load(slot.Slot);
+            _session = await _saves.LoadAsync(slot.Slot);
             ShowTown();
             StatusMessage = $"Loaded {slot.DisplayName}.";
             IsSlotPanelOpen = false;
@@ -113,12 +114,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private void RefreshSlots()
+    private async Task RefreshSlotsAsync()
     {
         foreach (var slot in Slots)
         {
-            slot.IsOccupied = _saves.Exists(slot.Slot);
-            slot.Summary = _saves.Describe(slot.Slot);
+            slot.IsOccupied = await _saves.ExistsAsync(slot.Slot);
+            slot.Summary = await _saves.DescribeAsync(slot.Slot);
         }
     }
 
@@ -170,11 +171,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     }
 
     /// <summary>Returning to town is a safe checkpoint, so the game autosaves there.</summary>
-    private void ReturnFromDungeon()
+    private async void ReturnFromDungeon()
     {
         try
         {
-            _saves.Save(_session, SaveService.AutosaveSlot);
+            await _saves.SaveAsync(_session, SaveSlots.Autosave);
             StatusMessage = "Returned to town — autosaved.";
         }
         catch (Exception ex)

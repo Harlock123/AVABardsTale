@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using BardsTale.Core.Characters;
@@ -29,6 +30,7 @@ public sealed partial class TownViewModel : ViewModelBase
     {
         _session = session;
         _town = session.Town;
+        Buildings = _town.Buildings.ToDictionary(b => b.Position, b => b.Building);
         Party = new ObservableCollection<CharacterViewModel>();
         Creation = new CharacterCreationViewModel(session.Factory);
         Stock = new ObservableCollection<ShopItemViewModel>(session.ShopStock.Select(i => new ShopItemViewModel(i)));
@@ -55,6 +57,12 @@ public sealed partial class TownViewModel : ViewModelBase
 
     // --- Overworld rendering / movement ---
     public Maze Maze => _town.Streets;
+
+    /// <summary>Building entrances by position, so the auto-map can mark each by type.</summary>
+    public IReadOnlyDictionary<Position, TownBuilding> Buildings { get; }
+
+    /// <summary>Colour/glyph/label for each building type, for the auto-map legend.</summary>
+    public IReadOnlyList<Controls.BuildingMarker> MapLegend => Controls.BuildingMarkers.All;
     [ObservableProperty] private int _partyX;
     [ObservableProperty] private int _partyY;
     [ObservableProperty] private Direction _facing;

@@ -6,6 +6,7 @@
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
              x:Class="BardsTale.UI.Views.MainView"
              x:DataType="vm:MainWindowViewModel"
+             Focusable="True"
              Background="#11131A">
 
     <Design.DataContext>

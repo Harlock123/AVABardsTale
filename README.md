@@ -44,17 +44,32 @@ It needs the one-time .NET WASM workload, and is deliberately **excluded from
 `BardsTale.slnx`** so the solution still builds/tests without that workload:
 
 ```bash
-# one-time: install the WebAssembly build tools
-dotnet workload install wasm-tools-net9     # or: dotnet workload restore
+# one-time: install the WebAssembly build tools (needs elevated privileges)
+sudo dotnet workload install wasm-tools-net9     # or: dotnet workload restore
 
 # build & serve the browser app (opens a local dev server)
 dotnet run --project src/BardsTale.Browser
 ```
 
 > If your installed wasm workload targets .NET 10 instead, change the browser
-> project's `TargetFramework` to `net10.0-browser`. Note that browser saves live in
-> the runtime's in-memory virtual filesystem, so they're per-session unless wired to
-> persistent storage (IndexedDB) — a natural follow-up for the browser head.
+> project's `TargetFramework` to `net10.0-browser`.
+
+#### Persistent saves & installable PWA
+
+The browser head is a **Progressive Web App**:
+
+- **IndexedDB-backed saves.** Save slots persist across reloads and sessions via
+  IndexedDB (`wwwroot/saveStore.js` ↔ `IndexedDbSaveStore`). Saves are **per-browser
+  and per-origin** — they don't roam between browsers or devices. On startup the app
+  requests *durable* storage (`navigator.storage.persist()`) to resist eviction
+  (notably Safari's 7-day purge of script-writable storage).
+- **Installable & offline.** A web manifest (`manifest.webmanifest`) makes the game
+  installable to the desktop/home screen, and a service worker (`service-worker.js`)
+  caches the app shell and WASM runtime so it runs offline after the first load.
+
+Persistence is selected per-platform through `App.SaveStoreFactory`: the desktop heads
+use the file-backed `SaveService`, the browser head swaps in `IndexedDbSaveStore`. Both
+implement the shared async `ISaveStore` interface, so the view models are storage-agnostic.
 
 ### Controls
 

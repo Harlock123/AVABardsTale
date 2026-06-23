@@ -126,10 +126,13 @@
                     <Button Grid.Column="0" Content="Light" Command="{Binding CastLightCommand}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
                     <Button Grid.Column="1" Content="Descend" Command="{Binding DescendCommand}"
+                            ToolTip.Tip="Press Enter"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
                     <Button Grid.Column="2" Content="Ascend" Command="{Binding AscendCommand}"
+                            ToolTip.Tip="Press Enter"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
                     <Button Grid.Column="3" Content="Exit to Town" Command="{Binding ReturnToTownCommand}"
+                            ToolTip.Tip="Press Enter"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
                 </Grid>
             </StackPanel>

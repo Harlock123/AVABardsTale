@@ -1,17 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.Json;
+using System.Threading.Tasks;
 using BardsTale.Core.Game;
 using BardsTale.Core.Persistence;
 
 namespace BardsTale.UI.Services;
 
-/// <summary>Reads and writes named save slots (plus a dedicated autosave) as JSON files.</summary>
-public sealed class SaveService
+/// <summary>
+/// File-backed <see cref="ISaveStore"/> for the desktop heads: named save slots
+/// (plus a dedicated autosave) written as JSON files under the user's app-data dir.
+/// Its synchronous methods remain for direct/test use; the async <see cref="ISaveStore"/>
+/// members wrap them and complete synchronously (no thread hops).
+/// </summary>
+public sealed class SaveService : ISaveStore
 {
-    public const string AutosaveSlot = "autosave";
+    public const string AutosaveSlot = SaveSlots.Autosave;
 
     private readonly string _dir;
 
@@ -22,8 +26,7 @@ public sealed class SaveService
         Directory.CreateDirectory(_dir);
     }
 
-    /// <summary>The three player-managed save slots.</summary>
-    public IReadOnlyList<string> ManualSlots { get; } = new[] { "slot1", "slot2", "slot3" };
+    public IReadOnlyList<string> ManualSlots { get; } = SaveSlots.Manual;
 
     private string PathFor(string slot) => Path.Combine(_dir, slot + ".json");
 
@@ -35,21 +38,13 @@ public sealed class SaveService
     public GameSession Load(string slot) => GameSerializer.FromJson(File.ReadAllText(PathFor(slot)));
 
     /// <summary>A short human-readable summary of a slot's contents for the slot picker.</summary>
-    public string Describe(string slot)
-    {
-        if (!Exists(slot)) return "— empty —";
-        try
-        {
-            var data = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(PathFor(slot)));
-            if (data is null) return "— corrupt —";
-            var where = data.Dungeon is { } d
-                ? $"{d.Levels.FirstOrDefault(l => l.Depth == d.Depth)?.Name ?? "Catacombs"} (depth {d.Depth})"
-                : "Skara Brae";
-            return $"{data.Party.Members.Count} heroes · {data.Party.Gold} gold · {where}";
-        }
-        catch
-        {
-            return "— corrupt —";
-        }
-    }
+    public string Describe(string slot) =>
+        Exists(slot) ? SaveSummary.Describe(File.ReadAllText(PathFor(slot))) : "— empty —";
+
+    // --- ISaveStore (async) — synchronous under the hood for the file backend ---
+
+    public Task<bool> ExistsAsync(string slot) => Task.FromResult(Exists(slot));
+    public Task SaveAsync(GameSession session, string slot) { Save(session, slot); return Task.CompletedTask; }
+    public Task<GameSession> LoadAsync(string slot) => Task.FromResult(Load(slot));
+    public Task<string> DescribeAsync(string slot) => Task.FromResult(Describe(slot));
 }

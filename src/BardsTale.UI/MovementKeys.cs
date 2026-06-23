@@ -12,6 +12,54 @@ public static class MovementKeys
 {
     public static void Handle(MainWindowViewModel vm, KeyEventArgs e)
     {
+        // Escape backs out: close the save/load panel, leave a building, or close the spell menu.
+        if (e.Key is Key.Escape)
+        {
+            if (vm.IsSlotPanelOpen)
+            {
+                vm.CloseSlotsCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (vm.Town is { IsInBuilding: true } inBuilding)
+            {
+                inBuilding.LeaveCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (vm.Town is { IsSpellMenuOpen: true } spellMenu)
+            {
+                spellMenu.CloseSpellMenuCommand.Execute(null);
+                e.Handled = true;
+            }
+            return;
+        }
+
+        // Enter / Return uses whatever you're standing on: a town building entrance,
+        // or a dungeon stairway (out to town, up a level, or down a level).
+        if (e.Key is Key.Enter or Key.Return)
+        {
+            if (vm.Town is { } town && town.EnterCommand.CanExecute(null))
+            {
+                town.EnterCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (vm.Exploration is { IsInCombat: false } ex)
+            {
+                if (ex.CanReturnToTown) { ex.ReturnToTownCommand.Execute(null); e.Handled = true; }
+                else if (ex.CanAscend) { ex.AscendCommand.Execute(null); e.Handled = true; }
+                else if (ex.CanDescend) { ex.DescendCommand.Execute(null); e.Handled = true; }
+            }
+            return;
+        }
+
+        // Q assembles a ready-made party while in the Adventurers Guild.
+        if (e.Key is Key.Q && vm.Town is { IsGuild: true } guild
+            && guild.QuickPartyCommand.CanExecute(null))
+        {
+            guild.QuickPartyCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
         IMover? mover = vm switch
         {
             { Exploration: { IsInCombat: false } exploration } => new ExplorationMover(exploration),

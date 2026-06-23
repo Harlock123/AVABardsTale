@@ -7,8 +7,27 @@
     <OutputType>Exe</OutputType>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WasmMainJSPath>wwwroot/main.js</WasmMainJSPath>
+    <!-- The reflection-based ViewLocator (Type.GetType) and System.Text.Json aren't
+         trim-safe, so disable trimming to keep the published bundle correct. Re-enabling
+         it later means adding trim hints / a JsonSerializerContext. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <!-- Tells `dotnet run`'s WasmAppHost which host to launch and which page to open. -->
+    <DefaultWasmHostConfig>browser</DefaultWasmHostConfig>
   </PropertyGroup>
+
+  <ItemGroup>
+    <HostConfig Include="browser" host="browser" html-path="index.html" />
+  </ItemGroup>
+
+  <!-- Deploy our static web files (index.html, PWA manifest/service worker, the
+       IndexedDB module, icon) to the AppBundle root. main.js is already deployed
+       via WasmMainJSPath, so exclude it to avoid a duplicate. -->
+  <ItemGroup>
+    <WasmExtraFilesToDeploy Include="wwwroot\**" Exclude="wwwroot\main.js"
+                            TargetPath="%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia.Browser" Version="11.2.1" />

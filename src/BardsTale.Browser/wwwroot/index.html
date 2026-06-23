@@ -4,6 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>The Bard's Tale</title>
+
+    <!-- PWA: installable, offline-capable -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./icon-192.png" />
+    <meta name="theme-color" content="#11131A" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
     <link rel="modulepreload" href="./main.js" />
     <style>
         html, body { margin: 0; padding: 0; height: 100%; background: #11131A; overflow: hidden; }
@@ -17,5 +28,12 @@
 <body>
     <div id="out"><div class="loading">Loading The Bard's Tale…</div></div>
     <script type="module" src="./main.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js').catch(() => { /* offline support is optional */ });
+            });
+        }
+    </script>
 </body>
 </html>

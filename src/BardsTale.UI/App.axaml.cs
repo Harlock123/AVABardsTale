@@ -4,6 +4,7 @@ using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using BardsTale.UI.Services;
 using BardsTale.UI.ViewModels;
 using BardsTale.UI.Views;
 
@@ -11,6 +12,12 @@ namespace BardsTale.UI;
 
 public partial class App : Application
 {
+    /// <summary>
+    /// How the app obtains its save store. Defaults to the file-backed desktop store;
+    /// the browser head overrides this with an IndexedDB-backed store before startup.
+    /// </summary>
+    public static System.Func<ISaveStore> SaveStoreFactory { get; set; } = () => new SaveService();
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);

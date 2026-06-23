@@ -4,10 +4,14 @@ A cross-platform .NET 9 re-implementation of the classic 1985 dungeon crawler
 *The Bard's Tale*, built with [Avalonia](https://avaloniaui.net/) and a clean
 MVVM architecture.
 
-This is a **playable vertical slice**: you assemble a party in the town of Skara
-Brae, outfit them, then descend into a procedurally generated catacomb in a
-first-person grid view, with an auto-map and turn-based combat against wandering
-monsters.
+It is a **complete playable loop, start to victory**: assemble and outfit a party
+in the town of Skara Brae, descend through a multi-level procedurally generated
+catacomb in a first-person grid view (with an auto-map and per-character turn-based
+combat), survive status ailments, enemy spellcasters and drain attacks, plunder
+magic loot, clear a named boss on each level, and finally destroy **Mangar the
+Mad** to free the town and roll the credits. Town services — healing, levelling,
+shopping, identification and resting — and a full save/load system round out the
+loop.
 
 ## Solution layout
 
@@ -15,7 +19,7 @@ monsters.
 | --- | --- |
 | `src/BardsTale.Core` | Pure C# game engine — no UI dependency. Characters, classes, races, items, spells, maze generation, movement, and the combat resolver. Fully unit-testable. |
 | `src/BardsTale.Desktop` | Avalonia MVVM desktop app (Windows / macOS / Linux). Custom `DungeonView` and `MiniMap` render controls, plus the game shell and combat view models. |
-| `tests/BardsTale.Tests` | xUnit tests covering geometry, maze connectivity, character creation, and combat. |
+| `tests/BardsTale.Tests` | xUnit suite (**146 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses), town services, save/load round-trips, and per-depth map persistence. |
 
 ## Running
 
@@ -179,9 +183,18 @@ fallen — and a target, and cast it for spell points instead of paying the Temp
 
 ## Roadmap toward a fuller remake
 
-- The original hand-designed multi-level dungeons, plus more special tiles
-  (anti-magic zones, one-way doors).
-- Multiple named save slots and autosave on entering town.
-- Complete spell lists per school and song effects for the Bard.
-- Inventory management, identification, and item shops.
-- Save/load (the engine is already serialization-friendly and deterministic when seeded).
+The core game loop is complete and winnable. Natural next steps toward a fuller
+recreation of the original:
+
+- **Hand-designed dungeons** — replace (or mix in) the original's authored multi-level
+  maps and riddles alongside the procedural generator, with stairs that link specific
+  levels rather than always entrance-to-entrance.
+- **More special tiles** — one-way doors, portcullises, and scripted message/event tiles.
+- **Persistent per-level state** — remember which wandering monsters and loot a floor
+  has yielded so a cleared level stays cleared on revisit.
+- **Deeper character system** — the full original spell lists per school, more Bard
+  song effects, class change, and a wider monster bestiary.
+- **Audio & polish** — music and sound effects, richer combat animation, and a
+  controller/keyboard-remap pass.
+- **Mobile/browser targets** — the engine is UI-agnostic, so Avalonia's mobile and
+  WASM heads are a natural extension of the desktop app.

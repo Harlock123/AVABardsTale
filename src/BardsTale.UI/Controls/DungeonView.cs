@@ -3,6 +3,7 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Threading;
 using BardsTale.Core.Dungeon;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Town;
@@ -60,6 +61,29 @@ public sealed class DungeonView : Control
     }
 
     private static readonly Color SignGold = Color.FromRgb(0xE8, 0xC5, 0x6B);
+    private static readonly Color WoodColor = Color.FromRgb(0x2E, 0x21, 0x14);
+
+    // Gentle idle sway for hanging signs. The timer only repaints while a sign is on
+    // screen, so the dungeon and an empty town stay completely static.
+    private const double SwayAmplitudeRad = 2.6 * System.Math.PI / 180.0;
+    private const double SwayPeriodSec = 3.4;
+    private readonly System.Diagnostics.Stopwatch _swayClock = System.Diagnostics.Stopwatch.StartNew();
+    private DispatcherTimer? _swayTimer;
+    private bool _signOnScreen;
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _swayTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Render,
+            (_, _) => { if (_signOnScreen) InvalidateVisual(); });
+        _swayTimer.Start();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _swayTimer?.Stop();
+    }
 
     private static readonly IBrush CeilingBrush = new SolidColorBrush(Color.FromRgb(28, 30, 40));
     private static readonly IBrush FloorBrush = new SolidColorBrush(Color.FromRgb(46, 40, 34));
@@ -97,6 +121,9 @@ public sealed class DungeonView : Control
             halfH[d] = cy * s;
         }
 
+        _signOnScreen = false;
+        var sway = SwayAmplitudeRad * Math.Sin(_swayClock.Elapsed.TotalSeconds * (2 * Math.PI / SwayPeriodSec));
+
         var pos = new Position(PartyX, PartyY);
         var forward = Facing;
         var left = Facing.TurnLeft();
@@ -120,17 +147,17 @@ public sealed class DungeonView : Control
             var blockedAhead = cell.HasWall(forward) || !maze.InBounds(pos.Step(forward));
             if (blockedAhead)
             {
-                // A building facade gets its name on a stylized sign, tinted by its type.
+                // A building facade gets its name on a stylized sign, tinted/iconed by its type.
                 string? signName = null;
-                var accent = SignGold;
+                TownBuilding? buildingType = null;
                 if (cell.Feature == CellFeature.Building && !string.IsNullOrEmpty(cell.Text))
                 {
                     signName = cell.Text;
-                    if (Buildings is { } b && b.TryGetValue(pos, out var type)
-                        && BuildingMarkers.For(type).Background is ISolidColorBrush accentBrush)
-                        accent = accentBrush.Color;
+                    if (Buildings is { } b && b.TryGetValue(pos, out var bt)) buildingType = bt;
+                    _signOnScreen = true;
                 }
-                DrawFrontWall(context, cx, cy, halfW[d + 1], halfH[d + 1], DepthShade(d + 1), cell.Feature, signName, accent);
+                DrawFrontWall(context, cx, cy, halfW[d + 1], halfH[d + 1], DepthShade(d + 1), cell.Feature,
+                    signName, buildingType, signName != null ? sway : 0);
                 break;
             }
 
@@ -170,7 +197,7 @@ public sealed class DungeonView : Control
 
     private static void DrawFrontWall(DrawingContext ctx, double cx, double cy,
         double halfW, double halfH, byte shade, CellFeature feature = CellFeature.None,
-        string? signName = null, Color accent = default)
+        string? signName = null, TownBuilding? buildingType = null, double swayRadians = 0)
     {
         var rect = new Rect(cx - halfW, cy - halfH, halfW * 2, halfH * 2);
         ctx.DrawRectangle(new SolidColorBrush(Color.FromRgb(shade, shade, (byte)(shade * 0.92))),
@@ -179,14 +206,17 @@ public sealed class DungeonView : Control
         DrawFeature(ctx, rect, feature);
 
         if (!string.IsNullOrEmpty(signName))
-            DrawStorefront(ctx, rect, signName, accent);
+            DrawStorefront(ctx, rect, signName, buildingType, swayRadians);
     }
 
     // A hanging storefront sign on the building facade: a weathered wood board that
     // hangs from an iron bracket, with a coloured frame (matching the map marker) and
     // the building's name in gold serif lettering.
-    private static void DrawStorefront(DrawingContext ctx, Rect wall, string name, Color accent)
+    private static void DrawStorefront(DrawingContext ctx, Rect wall, string name, TownBuilding? type, double swayRadians)
     {
+        var marker = type.HasValue ? BuildingMarkers.For(type.Value) : null;
+        var accent = (marker?.Background as ISolidColorBrush)?.Color ?? SignGold;
+
         var signW = wall.Width * 0.84;
         var signH = wall.Height * 0.17;
         if (signW < 16 || signH < 9) return; // too small/far to be legible
@@ -200,6 +230,13 @@ public sealed class DungeonView : Control
         var beamH = System.Math.Max(2, wall.Height * 0.022);
         var beam = new Rect(board.X - signW * 0.05, wall.Y + wall.Height * 0.035, signW * 1.10, beamH);
         ctx.DrawRectangle(iron, new Pen(ironDark, 1), beam, beamH * 0.4, beamH * 0.4);
+
+        // The chains and board swing gently from the bracket; the beam stays wall-fixed.
+        var pivot = new Point(board.Center.X, beam.Bottom);
+        using var _sway = ctx.PushTransform(
+            Matrix.CreateTranslation(-pivot.X, -pivot.Y) *
+            Matrix.CreateRotation(swayRadians) *
+            Matrix.CreateTranslation(pivot.X, pivot.Y));
 
         var chainW = System.Math.Max(1.5, signW * 0.012);
         var chainPen = new Pen(iron, chainW, lineCap: PenLineCap.Round);
@@ -241,19 +278,103 @@ public sealed class DungeonView : Control
         ctx.DrawRectangle(null, new Pen(new SolidColorBrush(accent), System.Math.Max(1, signH * 0.08)),
             board, radius, radius);
 
-        // --- name in gold serif ---
+        // --- type icon + name in gold serif, centred together ---
+        var gold = new SolidColorBrush(SignGold);
+        var iconSize = type.HasValue ? board.Height * 0.5 : 0;
+        var gap = type.HasValue ? iconSize * 0.32 : 0;
+
         var typeface = new Typeface(new FontFamily("Georgia, Times New Roman, serif"),
             FontStyle.Normal, FontWeight.Bold);
         var fontSize = signH * 0.58;
         var text = new FormattedText(name, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-            typeface, fontSize, new SolidColorBrush(SignGold));
-        var maxW = board.Width * 0.88;
-        if (text.Width > maxW)
+            typeface, fontSize, gold);
+        var maxTextW = board.Width * 0.9 - iconSize - gap;
+        if (text.Width > maxTextW)
         {
             text = new FormattedText(name, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-                typeface, fontSize * maxW / text.Width, new SolidColorBrush(SignGold));
+                typeface, fontSize * maxTextW / text.Width, gold);
         }
-        ctx.DrawText(text, new Point(board.Center.X - text.Width / 2, board.Center.Y - text.Height / 2));
+
+        var totalW = iconSize + gap + text.Width;
+        var startX = board.Center.X - totalW / 2;
+        if (type.HasValue)
+            DrawTypeIcon(ctx, new Rect(startX, board.Center.Y - iconSize / 2, iconSize, iconSize), type.Value, gold);
+        ctx.DrawText(text, new Point(startX + iconSize + gap, board.Center.Y - text.Height / 2));
+    }
+
+    // Simple gold pictograms drawn beside the building name, one per type.
+    private static void DrawTypeIcon(DrawingContext ctx, Rect r, TownBuilding type, IBrush gold)
+    {
+        double x = r.X, y = r.Y, w = r.Width, h = r.Height, cx = r.Center.X, cy = r.Center.Y;
+        var carve = new SolidColorBrush(WoodColor);
+        switch (type)
+        {
+            case TownBuilding.Temple: // healing cross
+                ctx.DrawRectangle(gold, null, new Rect(cx - w * 0.16, y + h * 0.04, w * 0.32, h * 0.92), w * 0.05, w * 0.05);
+                ctx.DrawRectangle(gold, null, new Rect(x + w * 0.04, cy - h * 0.16, w * 0.92, h * 0.32), w * 0.05, w * 0.05);
+                break;
+            case TownBuilding.ReviewBoard: // star (advancement)
+                ctx.DrawGeometry(gold, null, StarGeometry(new Point(cx, cy), w * 0.5, w * 0.22));
+                break;
+            case TownBuilding.Shop: // coin
+                ctx.DrawEllipse(gold, null, new Point(cx, cy), w * 0.46, w * 0.46);
+                ctx.DrawEllipse(null, new Pen(carve, w * 0.07), new Point(cx, cy), w * 0.3, w * 0.3);
+                break;
+            case TownBuilding.DungeonEntrance: // downward triangle (stairs down)
+                ctx.DrawGeometry(gold, null, TriangleDown(r));
+                break;
+            case TownBuilding.Inn: // crescent moon (rest)
+                ctx.DrawEllipse(gold, null, new Point(cx - w * 0.05, cy), w * 0.42, w * 0.42);
+                ctx.DrawEllipse(carve, null, new Point(cx + w * 0.2, cy - h * 0.06), w * 0.4, w * 0.4);
+                break;
+            case TownBuilding.Guild: // shield
+                ctx.DrawGeometry(gold, null, ShieldGeometry(r));
+                break;
+            case TownBuilding.Tavern: // foaming tankard
+                ctx.DrawEllipse(null, new Pen(gold, w * 0.09), new Point(x + w * 0.66, cy), w * 0.16, h * 0.2);
+                ctx.DrawRectangle(gold, null, new Rect(x + w * 0.12, y + h * 0.16, w * 0.5, h * 0.7), w * 0.05, w * 0.05);
+                ctx.DrawRectangle(carve, null, new Rect(x + w * 0.12, y + h * 0.16, w * 0.5, h * 0.13));
+                break;
+        }
+    }
+
+    private static StreamGeometry StarGeometry(Point c, double outer, double inner)
+    {
+        var g = new StreamGeometry();
+        using var gc = g.Open();
+        for (var i = 0; i < 10; i++)
+        {
+            var ang = -Math.PI / 2 + i * Math.PI / 5;
+            var rad = (i % 2 == 0) ? outer : inner;
+            var p = new Point(c.X + Math.Cos(ang) * rad, c.Y + Math.Sin(ang) * rad);
+            if (i == 0) gc.BeginFigure(p, true); else gc.LineTo(p);
+        }
+        gc.EndFigure(true);
+        return g;
+    }
+
+    private static StreamGeometry ShieldGeometry(Rect r)
+    {
+        var g = new StreamGeometry();
+        using var gc = g.Open();
+        gc.BeginFigure(new Point(r.X, r.Y + r.Height * 0.12), true);
+        gc.LineTo(new Point(r.Right, r.Y + r.Height * 0.12));
+        gc.LineTo(new Point(r.Right, r.Y + r.Height * 0.5));
+        gc.LineTo(new Point(r.Center.X, r.Bottom));
+        gc.LineTo(new Point(r.X, r.Y + r.Height * 0.5));
+        gc.EndFigure(true);
+        return g;
+    }
+
+    private static StreamGeometry TriangleDown(Rect r)
+    {
+        var g = new StreamGeometry();
+        using var gc = g.Open();
+        gc.BeginFigure(new Point(r.X, r.Y + r.Height * 0.18), true);
+        gc.LineTo(new Point(r.Right, r.Y + r.Height * 0.18));
+        gc.LineTo(new Point(r.Center.X, r.Y + r.Height * 0.86));
+        gc.EndFigure(true);
+        return g;
     }
 
     private static void DrawFeature(DrawingContext ctx, Rect wall, CellFeature feature)

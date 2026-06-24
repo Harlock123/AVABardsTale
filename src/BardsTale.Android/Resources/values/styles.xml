@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Avalonia's activity is an AppCompatActivity, so the theme MUST derive from
+         Theme.AppCompat. Borderless + dark so there's no action bar or white flash. -->
+    <style name="MyTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>

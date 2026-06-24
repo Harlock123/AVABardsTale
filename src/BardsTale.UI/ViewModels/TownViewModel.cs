@@ -10,6 +10,7 @@ using BardsTale.Core.Items;
 using BardsTale.Core.Magic;
 using BardsTale.Core.Town;
 using BardsTale.Core.Util;
+using BardsTale.UI.Audio;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ItemDb = BardsTale.Core.Items.Items;
 using CommunityToolkit.Mvvm.Input;
@@ -136,6 +137,7 @@ public sealed partial class TownViewModel : ViewModelBase
         if (!_town.Streets.CanMove(_session.TownPosition, dir)) return;
         _session.TownPosition = _session.TownPosition.Step(dir);
         SyncWorld();
+        Sfx.Play(GameSound.FootstepStone);
     }
 
     // --- Entering / leaving buildings ---
@@ -167,6 +169,7 @@ public sealed partial class TownViewModel : ViewModelBase
             RebuildStash();
         ActiveBuilding = entrance.Building;
         RefreshEconomy();
+        Sfx.Play(GameSound.Door);
     }
 
     [RelayCommand]
@@ -221,6 +224,7 @@ public sealed partial class TownViewModel : ViewModelBase
             _session.Party.Gold -= item.Price;
             _session.Party.Inventory.Add(item.Item);
             Notice = $"Bought a {item.Name} for the party stash.";
+            Sfx.Play(GameSound.Buy);
             RefreshEconomy();
             return;
         }
@@ -241,6 +245,7 @@ public sealed partial class TownViewModel : ViewModelBase
         {
             Notice = $"{hero.Name} equips {item.Name}.";
         }
+        Sfx.Play(GameSound.Buy);
         RefreshEconomy();
     }
 
@@ -329,6 +334,7 @@ public sealed partial class TownViewModel : ViewModelBase
             Notice = $"{hero.Name} equips {stashed.Name}.";
         }
         RebuildStash();
+        Sfx.Play(GameSound.Equip);
         RefreshEconomy();
     }
 
@@ -356,6 +362,7 @@ public sealed partial class TownViewModel : ViewModelBase
         _session.Party.Gold -= cost;
         _session.Party.Rest();
         Notice = $"The priests heal the party for {cost} gold.";
+        Sfx.Play(GameSound.Heal);
         RefreshEconomy();
     }
 
@@ -369,6 +376,7 @@ public sealed partial class TownViewModel : ViewModelBase
         hero.Model.Status &= ~StatusEffect.Dead;
         hero.Model.HitPoints = hero.Model.MaxHitPoints;
         Notice = $"{hero.Name} is restored to life for {cost} gold.";
+        Sfx.Play(GameSound.Heal);
         RefreshEconomy();
     }
 
@@ -381,6 +389,7 @@ public sealed partial class TownViewModel : ViewModelBase
         _session.Party.Gold -= cost;
         hero.Model.RestoreLevels();
         Notice = $"The priests restore {hero.Name}'s drained levels for {cost} gold.";
+        Sfx.Play(GameSound.Heal);
         RefreshEconomy();
     }
 
@@ -393,6 +402,7 @@ public sealed partial class TownViewModel : ViewModelBase
         _session.Party.Gold -= cost;
         hero.Model.RestoreStats();
         Notice = $"The priests restore {hero.Name}'s drained attributes for {cost} gold.";
+        Sfx.Play(GameSound.Heal);
         RefreshEconomy();
     }
 
@@ -412,6 +422,7 @@ public sealed partial class TownViewModel : ViewModelBase
         foreach (var m in _session.Party.Members)
             m.FullHeal(); // restores HP and SP for the living; skips the dead
         Notice = $"The party rests the night and wakes fully restored ({cost} gold).";
+        Sfx.Play(GameSound.Heal);
         RefreshEconomy();
     }
 
@@ -422,6 +433,7 @@ public sealed partial class TownViewModel : ViewModelBase
     {
         if (hero is null) return;
         var result = Progression.TryLevelUp(hero.Model, _session.Rng);
+        if (result is not null) Sfx.Play(GameSound.LevelUp);
         Notice = result ?? $"{hero.Name} needs more experience to advance.";
         RefreshEconomy();
     }
@@ -442,6 +454,7 @@ public sealed partial class TownViewModel : ViewModelBase
         var rumor = Taverns.RandomRumor(CurrentBuildingName, _session.Rng);
         TavernRumors.Insert(0, rumor);
         Notice = $"You buy a round at {CurrentBuildingName}.";
+        Sfx.Play(GameSound.Buy);
         RefreshEconomy();
     }
 
@@ -471,6 +484,7 @@ public sealed partial class TownViewModel : ViewModelBase
         if (!ApplyTownSpell(spell, caster, SelectedHero?.Model, out var message)) { Notice = message; return; }
 
         caster.SpellPoints -= spell.Cost;
+        Sfx.Play(SpellSounds.For(spell.Effect));
         Notice = message;
         RefreshEconomy();
         BuildSpellMenu();

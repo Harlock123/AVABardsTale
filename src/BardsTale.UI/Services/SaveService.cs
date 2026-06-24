@@ -47,4 +47,16 @@ public sealed class SaveService : ISaveStore
     public Task SaveAsync(GameSession session, string slot) { Save(session, slot); return Task.CompletedTask; }
     public Task<GameSession> LoadAsync(string slot) => Task.FromResult(Load(slot));
     public Task<string> DescribeAsync(string slot) => Task.FromResult(Describe(slot));
+
+    public Task<string?> LoadTextAsync(string key)
+    {
+        var path = Path.Combine(_dir, key + ".json");
+        return Task.FromResult(File.Exists(path) ? File.ReadAllText(path) : null);
+    }
+
+    public Task SaveTextAsync(string key, string value)
+    {
+        File.WriteAllText(Path.Combine(_dir, key + ".json"), value);
+        return Task.CompletedTask;
+    }
 }

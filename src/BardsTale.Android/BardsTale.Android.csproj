@@ -3,7 +3,7 @@
     <OutputType>Exe</OutputType>
     <!-- Requires the one-time workload:  dotnet workload install android -->
     <TargetFramework>net9.0-android</TargetFramework>
-    <SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
     <!-- Silence the "net9.0-android is out of support" notice on .NET 10 SDKs. -->
     <NoWarn>$(NoWarn);NETSDK1202</NoWarn>
     <Nullable>enable</Nullable>

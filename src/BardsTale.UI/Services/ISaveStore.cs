@@ -24,6 +24,12 @@ public interface ISaveStore
 
     /// <summary>A short human-readable summary of a slot for the slot picker.</summary>
     Task<string> DescribeAsync(string slot);
+
+    /// <summary>Reads a small free-form value (e.g. settings JSON); null if absent.</summary>
+    Task<string?> LoadTextAsync(string key);
+
+    /// <summary>Writes a small free-form value (e.g. settings JSON).</summary>
+    Task SaveTextAsync(string key, string value);
 }
 
 /// <summary>Slot identifiers shared by every <see cref="ISaveStore"/> implementation.</summary>

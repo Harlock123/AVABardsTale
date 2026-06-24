@@ -20,14 +20,18 @@ loop.
 | `src/BardsTale.Core` | Pure C# game engine — no UI dependency. Characters, classes, races, items, spells, maze generation, movement, and the combat resolver. Fully unit-testable. |
 | `src/BardsTale.UI` | Shared Avalonia MVVM presentation layer — `App`, all views & view models, the custom `DungeonView` / `MiniMap` render controls, the save service, and a single `MainView` root. **Platform-agnostic** (no backend package), so every head below reuses it unchanged. |
 | `src/BardsTale.Desktop` | Thin desktop head (Windows / macOS / Linux) — just the entry point + `Avalonia.Desktop`, wrapping `MainView` in a `Window`. |
-| `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime. (Kept out of the default solution; see below.) |
+| `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime, as an installable PWA with IndexedDB saves. (Kept out of the default solution; see below.) |
+| `src/BardsTale.Android` | Thin Android head (tablet, landscape) — a launcher `Activity` + an `AudioTrack` sound backend, wrapping `MainView` via the single-view lifetime. |
+| `src/BardsTale.iOS` | Thin iOS head (iPad, landscape) — an `AvaloniaAppDelegate` entry point + an `AVAudioPlayer` sound backend. |
 | `tests/BardsTale.Tests` | xUnit suite (**146 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses), town services, save/load round-trips, and per-depth map persistence. |
 
 The split follows Avalonia's standard cross-platform layout: a shared UI library plus
-one thin "head" project per platform. Adding **Android** or **iOS** heads is the same
-pattern — a small entry-point project referencing `BardsTale.UI`.
+one thin "head" project per platform. Every head reuses `BardsTale.UI` unchanged —
+the only per-platform code is the entry point and an audio backend — so the same
+game runs on desktop, the browser, Android and iOS. See **Platform setup & build**
+below for how to prepare a machine for each.
 
-## Running
+## Quick start
 
 ```bash
 # from the repository root — desktop (Windows / macOS / Linux)
@@ -37,22 +41,94 @@ dotnet run --project src/BardsTale.Desktop
 dotnet test
 ```
 
-### Running in the browser (WebAssembly)
+That's all the desktop head needs. The browser, Android and iOS heads each need a
+one-time SDK workload (and, for iOS, a Mac with Xcode); see below.
 
-The `BardsTale.Browser` head runs the exact same UI in a browser via WebAssembly.
-It needs the one-time .NET WASM workload, and is deliberately **excluded from
-`BardsTale.slnx`** so the solution still builds/tests without that workload:
+## Platform setup & build
+
+Every head targets **.NET 9** (`net9.0`, `net9.0-browser`, `net9.0-android`,
+`net9.0-ios`) and references the shared `BardsTale.UI`. The table is the short
+version; each subsection has the full machine setup.
+
+| Head | Build OS | One-time prerequisites | Build / run command |
+| --- | --- | --- | --- |
+| **Desktop** | Windows, macOS, or Linux | .NET SDK 9+ (no workload) | `dotnet run --project src/BardsTale.Desktop` |
+| **Browser** | Windows, macOS, or Linux | .NET SDK 9+ · `wasm-tools` workload | `dotnet run --project src/BardsTale.Browser` |
+| **Android** | Windows, macOS, or Linux | .NET SDK 9+ · `android` workload · JDK 17 · Android SDK | `dotnet build -t:Run -f net9.0-android src/BardsTale.Android/BardsTale.Android.csproj` |
+| **iOS** | **macOS only** | .NET SDK 9+ · `ios` workload · Xcode (license accepted) | see [iOS](#ios-ipad-landscape) |
+
+### Common prerequisites (all heads)
+
+1. **.NET SDK 9.0 or newer.** Install from <https://dotnet.microsoft.com/download>
+   (or via `winget` / `brew` / your distro). A **.NET 10 SDK also works** — it builds
+   the `net9.0-*` targets unchanged (this repo is developed on the 10.0.300 SDK). The
+   only caveat: if your installed mobile/wasm *workload* is .NET-10-only, bump that
+   head's `TargetFramework` from `net9.0-…` to `net10.0-…` (the relevant csprojs note
+   this inline).
+2. **Git**, to clone the repo.
+
+Check what you have, and what's already installed:
 
 ```bash
-# one-time: install the WebAssembly build tools (needs elevated privileges)
-sudo dotnet workload install wasm-tools-net9     # or: dotnet workload restore
-
-# build & serve the browser app (opens a local dev server)
-dotnet run --project src/BardsTale.Browser
+dotnet --version          # 9.x or 10.x
+dotnet workload list      # shows android / ios / wasm-tools-net9 if installed
 ```
 
-> If your installed wasm workload targets .NET 10 instead, change the browser
-> project's `TargetFramework` to `net10.0-browser`.
+> **Workloads need elevation.** On macOS/Linux prefix `dotnet workload install …`
+> with `sudo`; on Windows run the terminal as Administrator. `dotnet workload restore`
+> (run from the repo root) installs everything the projects in the solution require in
+> one shot.
+
+### Desktop (Windows / macOS / Linux)
+
+The desktop head (`net9.0`, `Avalonia.Desktop`) needs **only the .NET SDK** — no
+workload. It runs natively on all three OSes:
+
+- **Windows** — Windows 10 or later. Nothing extra; Avalonia renders via Direct3D/ANGLE.
+- **macOS** — macOS 11 (Big Sur) or later, Apple Silicon or Intel.
+- **Linux** — an X11 or Wayland desktop. Avalonia needs the usual native graphics/font
+  libraries, present on most desktop installs. On a minimal/headless box install them
+  explicitly, e.g. on Debian/Ubuntu:
+  ```bash
+  sudo apt-get install -y libx11-6 libice6 libsm6 libfontconfig1 libicu-dev
+  ```
+
+```bash
+# run from source
+dotnet run --project src/BardsTale.Desktop
+
+# publish a self-contained build for distribution (pick your runtime ID)
+dotnet publish src/BardsTale.Desktop -c Release -r win-x64   --self-contained
+dotnet publish src/BardsTale.Desktop -c Release -r osx-arm64 --self-contained
+dotnet publish src/BardsTale.Desktop -c Release -r linux-x64 --self-contained
+```
+
+### Browser (WebAssembly / PWA)
+
+The `BardsTale.Browser` head (`net9.0-browser`, RID `browser-wasm`) runs the exact
+same UI in a browser. It needs the one-time WASM workload and is deliberately
+**excluded from `BardsTale.slnx`** so the solution still builds/tests without it.
+Buildable from **any** OS (Windows/macOS/Linux):
+
+```bash
+# one-time: install the WebAssembly build tools
+sudo dotnet workload install wasm-tools          # .NET 9 SDK
+# on a .NET 10 SDK building the net9 target, install the matching pack instead:
+sudo dotnet workload install wasm-tools-net9
+
+# build & serve on a local dev server (prints the URL to open)
+dotnet run --project src/BardsTale.Browser
+
+# publish static files for hosting (output under bin/Release/.../AppBundle)
+dotnet publish src/BardsTale.Browser -c Release
+```
+
+Serve the published `AppBundle` from any static web host. The **service worker and
+"install app" PWA features require HTTPS** (browsers exempt `localhost`, so the dev
+server works as-is).
+
+> If your installed wasm workload targets .NET 10, change the browser project's
+> `TargetFramework` to `net10.0-browser`.
 
 #### Persistent saves & installable PWA
 
@@ -67,9 +143,98 @@ The browser head is a **Progressive Web App**:
   installable to the desktop/home screen, and a service worker (`service-worker.js`)
   caches the app shell and WASM runtime so it runs offline after the first load.
 
-Persistence is selected per-platform through `App.SaveStoreFactory`: the desktop heads
-use the file-backed `SaveService`, the browser head swaps in `IndexedDbSaveStore`. Both
-implement the shared async `ISaveStore` interface, so the view models are storage-agnostic.
+Persistence is selected per-platform through `App.SaveStoreFactory`: the desktop and
+mobile heads use the file-backed `SaveService`, the browser head swaps in
+`IndexedDbSaveStore`. Both implement the shared async `ISaveStore` interface, so the
+view models are storage-agnostic.
+
+### Android (tablet, landscape)
+
+The `BardsTale.Android` head (`net9.0-android`, min SDK **API 23**) builds on
+**Windows, macOS or Linux**. Beyond the .NET SDK it needs three things:
+
+1. **The `android` workload:**
+   ```bash
+   sudo dotnet workload install android
+   ```
+2. **A JDK (Microsoft OpenJDK 17 recommended).** The `android` workload can install a
+   bundled JDK for you; otherwise install JDK 17 and point the build at it via
+   `JAVA_HOME` (or `-p:JavaSdkDirectory=…`).
+3. **The Android SDK** — platform-tools, build-tools, a platform (API 34/35), and (for
+   the emulator) the emulator package + a tablet system image. Two ways to get it:
+   - **Android Studio** (easiest): install it, open *SDK Manager*, and it sets
+     `ANDROID_HOME` for you.
+   - **Command line:** install the `cmdline-tools`, then
+     `sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "emulator" "system-images;android-34;google_apis;arm64-v8a"`
+     and accept licences with `sdkmanager --licenses`. Point the build at it with
+     `ANDROID_HOME` / `-p:AndroidSdkDirectory=…`.
+
+Create a **tablet** emulator (the UI is laid out for a wide screen and locks to
+landscape), or plug in a device with USB debugging enabled, then:
+
+```bash
+# build, deploy and launch on the running emulator / connected device
+dotnet build -t:Run -f net9.0-android src/BardsTale.Android/BardsTale.Android.csproj
+
+# produce a distributable .apk (or .aab) under bin/Release
+dotnet publish src/BardsTale.Android -c Release -f net9.0-android
+```
+
+Sound is provided by a native `AudioTrack` backend (`AndroidAudioService`); saves use
+the file-backed `SaveService` against the app's private storage.
+
+### iOS (iPad, landscape)
+
+The `BardsTale.iOS` head (`net9.0-ios`, min iOS **13.0**) **must be built on a Mac**,
+because it requires Xcode's toolchain. Setup:
+
+1. **Xcode** from the App Store, then accept its licence and select it:
+   ```bash
+   sudo xcodebuild -license accept
+   sudo xcode-select -s /Applications/Xcode.app          # point the toolchain at full Xcode
+   ```
+   (If `xcode-select` still points at the Command Line Tools, prefix the dotnet
+   commands below with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.)
+2. **The `ios` workload:**
+   ```bash
+   sudo dotnet workload install ios
+   ```
+3. **A simulator runtime**, if you don't already have one:
+   ```bash
+   xcodebuild -downloadPlatform iOS
+   ```
+
+Build and run on the **iOS Simulator** (no signing required):
+
+```bash
+# create + boot an iPad simulator once
+xcrun simctl create "iPad" "iPad Pro 11-inch (M4)" >/tmp/ipad_udid
+xcrun simctl boot "$(cat /tmp/ipad_udid)" && open -a Simulator
+
+# build, install and launch on it
+dotnet build -t:Run -f net9.0-ios -p:RuntimeIdentifier=iossimulator-arm64 \
+  src/BardsTale.iOS/BardsTale.iOS.csproj
+```
+
+Deploying to a **physical iPhone/iPad** additionally needs an **Apple Developer
+account** and a signing certificate + provisioning profile (configure
+`CodesignKey` / `CodesignProvision`, or open the generated Xcode project to let Xcode
+manage signing). The simulator path above needs none of that.
+
+Sound is provided by an `AVAudioPlayer` backend (`IosAudioService`); the app takes the
+full screen and locks to landscape via `Info.plist`.
+
+### Building the whole solution
+
+`BardsTale.slnx` includes Core, UI, Desktop, **Android**, **iOS** and the tests, so a
+solution-wide `dotnet build` requires the `android` **and** `ios` workloads (and, for
+iOS, a Mac with Xcode). To work on just the engine and desktop app without any
+workloads, build those projects directly:
+
+```bash
+dotnet test                                   # Core + UI + Desktop + tests
+dotnet build src/BardsTale.Desktop
+```
 
 ### Controls
 
@@ -234,7 +399,10 @@ recreation of the original:
   has yielded so a cleared level stays cleared on revisit.
 - **Deeper character system** — the full original spell lists per school, more Bard
   song effects, class change, and a wider monster bestiary.
-- **Audio & polish** — music and sound effects, richer combat animation, and a
-  controller/keyboard-remap pass.
-- **Mobile/browser targets** — the engine is UI-agnostic, so Avalonia's mobile and
-  WASM heads are a natural extension of the desktop app.
+- **Audio & polish** — *sound effects are in* (procedurally synthesised footsteps,
+  combat, spells, town services, with a per-platform backend on each head); still to
+  come are music, richer combat animation, and a controller/keyboard-remap pass.
+
+The desktop, **browser (PWA)**, **Android** and **iOS** heads are all implemented —
+see **Platform setup & build** above. The engine stays UI-agnostic, so further targets
+remain a thin entry-point project away.

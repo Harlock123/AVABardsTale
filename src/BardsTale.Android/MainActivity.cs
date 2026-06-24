@@ -19,5 +19,8 @@ namespace BardsTale.Android;
 public class MainActivity : AvaloniaMainActivity<App>
 {
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
-        => base.CustomizeAppBuilder(builder).WithInterFont();
+    {
+        App.AudioFactory = () => new AndroidAudioService();
+        return base.CustomizeAppBuilder(builder).WithInterFont();
+    }
 }

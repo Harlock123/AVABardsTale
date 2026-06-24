@@ -13,14 +13,19 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
+    <LayoutTransformControl>
+        <LayoutTransformControl.LayoutTransform>
+            <ScaleTransform ScaleX="{Binding Settings.UiScale}" ScaleY="{Binding Settings.UiScale}"/>
+        </LayoutTransformControl.LayoutTransform>
     <Grid Margin="12" RowDefinitions="Auto,*">
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="2,0,0,10">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="2,0,0,10">
             <TextBlock Grid.Column="0" Text="THE BARD'S TALE" FontSize="22" FontWeight="Bold"
                        Foreground="#E8C56B" VerticalAlignment="Center"/>
             <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Foreground="#A9D0B0"
                        VerticalAlignment="Center" Margin="16,0" FontFamily="Consolas,monospace"/>
-            <Button Grid.Column="2" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="3" Content="Load" Command="{Binding ShowLoadSlotsCommand}"/>
+            <Button Grid.Column="2" Content="⚙ Settings" Command="{Binding ShowSettingsCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="3" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="4" Content="Load" Command="{Binding ShowLoadSlotsCommand}"/>
         </Grid>
 
         <Panel Grid.Row="1">
@@ -120,6 +125,69 @@
                     </DockPanel>
                 </Border>
             </Border>
+            <!-- Settings -->
+            <Border IsVisible="{Binding IsSettingsOpen}" Background="#E60B0D14">
+                <Border Width="470" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="#161A24" BorderBrush="#3A3F52" BorderThickness="2" CornerRadius="6" Padding="22">
+                    <StackPanel Spacing="18">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Settings" FontSize="20" FontWeight="Bold"
+                                       Foreground="#E8C56B" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Close" Command="{Binding CloseSettingsCommand}"/>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="Reduced motion" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Stops the hanging storefront signs from swaying."
+                                           Foreground="#9AA0B5" FontSize="11"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                          IsChecked="{Binding Settings.ReducedMotion}"/>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="Autosave" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Saves automatically when you return to town."
+                                           Foreground="#9AA0B5" FontSize="11"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                          IsChecked="{Binding Settings.Autosave}"/>
+                        </Grid>
+
+                        <StackPanel Spacing="4">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" Text="Interface size" Foreground="#E8E9F0"/>
+                                <TextBlock Grid.Column="1" Foreground="#9AA0B5"
+                                           Text="{Binding Settings.UiScale, StringFormat='{}{0:P0}'}"/>
+                            </Grid>
+                            <Slider Minimum="0.8" Maximum="1.2" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                    Value="{Binding Settings.UiScale}"/>
+                        </StackPanel>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="Mute sound" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Silences all sound effects." Foreground="#9AA0B5" FontSize="11"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                          IsChecked="{Binding Settings.Muted}"/>
+                        </Grid>
+
+                        <StackPanel Spacing="4">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" Text="Sound volume" Foreground="#E8E9F0"/>
+                                <TextBlock Grid.Column="1" Foreground="#9AA0B5"
+                                           Text="{Binding Settings.SoundVolume, StringFormat='{}{0:P0}'}"/>
+                            </Grid>
+                            <Slider Minimum="0" Maximum="1" TickFrequency="0.1" IsSnapToTickEnabled="True"
+                                    Value="{Binding Settings.SoundVolume}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Border>
         </Panel>
     </Grid>
+    </LayoutTransformControl>
 </UserControl>

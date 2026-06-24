@@ -6,6 +6,7 @@ using BardsTale.Core.Dungeon;
 using BardsTale.Core.Game;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Magic;
+using BardsTale.UI.Audio;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -79,10 +80,16 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     public bool CanExplore => !IsInCombat;
 
     [RelayCommand(CanExecute = nameof(CanExplore))]
-    private void MoveForward() => Handle(_game.StepForward());
+    private void MoveForward() => Walk(_game.StepForward());
 
     [RelayCommand(CanExecute = nameof(CanExplore))]
-    private void MoveBackward() => Handle(_game.StepBackward());
+    private void MoveBackward() => Walk(_game.StepBackward());
+
+    private void Walk(MoveResult result)
+    {
+        Handle(result);
+        if (result.Kind == MoveResultKind.Moved) Sfx.Play(GameSound.FootstepDungeon);
+    }
 
     [RelayCommand(CanExecute = nameof(CanExplore))]
     private void TurnLeft() => Handle(_game.TurnLeft());
@@ -96,6 +103,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         Handle(_game.Descend());
         _stats.DeepestDepth = Math.Max(_stats.DeepestDepth, _game.Depth);
         OnPropertyChanged(nameof(Maze));
+        Sfx.Play(GameSound.StairsDown);
     }
 
     [RelayCommand(CanExecute = nameof(CanAscend))]
@@ -103,6 +111,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     {
         Handle(_game.Ascend());
         OnPropertyChanged(nameof(Maze));
+        Sfx.Play(GameSound.StairsUp);
     }
 
     [RelayCommand(CanExecute = nameof(CanReturnToTown))]

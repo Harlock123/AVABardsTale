@@ -22,6 +22,10 @@ internal sealed partial class Program
         App.SaveStoreFactory = () => new IndexedDbSaveStore();
         await IndexedDbSaveStore.RequestPersistentStorageAsync();
 
+        // Route sound through the Web Audio backend.
+        await JSHost.ImportAsync("audio", "../audio.js");
+        App.AudioFactory = () => new BrowserAudioService();
+
         await BuildAvaloniaApp()
             .WithInterFont()
             .StartBrowserAppAsync("out");

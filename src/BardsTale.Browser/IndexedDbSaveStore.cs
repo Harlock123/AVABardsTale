@@ -31,6 +31,10 @@ public sealed class IndexedDbSaveStore : ISaveStore
 
     public async Task<string> DescribeAsync(string slot) => SaveSummary.Describe(await SaveStoreInterop.Get(slot));
 
+    // Settings and other small values live under a "cfg:" prefix, separate from save slots.
+    public Task<string?> LoadTextAsync(string key) => SaveStoreInterop.Get("cfg:" + key);
+    public Task SaveTextAsync(string key, string value) => SaveStoreInterop.Set("cfg:" + key, value);
+
     /// <summary>Requests durable storage so saves resist browser eviction. Best-effort.</summary>
     public static Task<bool> RequestPersistentStorageAsync() => SaveStoreInterop.RequestPersist();
 }

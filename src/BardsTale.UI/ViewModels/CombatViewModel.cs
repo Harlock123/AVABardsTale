@@ -7,6 +7,7 @@ using BardsTale.Core.Combat;
 using BardsTale.Core.Items;
 using BardsTale.Core.Magic;
 using BardsTale.Core.Util;
+using BardsTale.UI.Audio;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -311,7 +312,9 @@ public sealed partial class CombatViewModel : ViewModelBase
 
     private void ResolveRound(List<CombatCommand>? commands = null)
     {
-        var round = _engine.ExecuteRound(commands ?? _queued);
+        var resolved = commands ?? _queued;
+        PlayActionSounds(resolved);
+        var round = _engine.ExecuteRound(resolved);
         foreach (var line in round.Log)
             Log.Add(line);
 
@@ -328,6 +331,23 @@ public sealed partial class CombatViewModel : ViewModelBase
             return;
         }
         BeginSelection();
+    }
+
+    // Play a sound for each distinct kind of action the party takes this round, so
+    // combat is audible whether orders were given by hand or filled by Auto.
+    private static void PlayActionSounds(List<CombatCommand> commands)
+    {
+        var sounds = new HashSet<GameSound>();
+        foreach (var cmd in commands)
+        {
+            switch (cmd.Action)
+            {
+                case CombatActionType.Attack: sounds.Add(GameSound.Attack); break;
+                case CombatActionType.CastSpell when cmd.Spell is { } s: sounds.Add(SpellSounds.For(s.Effect)); break;
+                case CombatActionType.Sing: sounds.Add(GameSound.SpellBuff); break;
+            }
+        }
+        foreach (var sound in sounds) Sfx.Play(sound);
     }
 
     // --- Targeting helpers ---
@@ -365,6 +385,8 @@ public sealed partial class CombatViewModel : ViewModelBase
             CombatOutcome.Defeat => "The party has fallen...",
             _ => ""
         };
+        if (outcome == CombatOutcome.Victory) Sfx.Play(GameSound.EnemyDefeated);
+        else if (outcome == CombatOutcome.Defeat) Sfx.Play(GameSound.Defeat);
         Finished?.Invoke(outcome, _encounter);
     }
 }

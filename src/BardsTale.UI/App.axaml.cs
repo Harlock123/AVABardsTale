@@ -6,6 +6,7 @@ using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Styling;
+using BardsTale.UI.Audio;
 using BardsTale.UI.Services;
 using BardsTale.UI.ViewModels;
 using BardsTale.UI.Views;
@@ -20,6 +21,13 @@ public partial class App : Application
     /// </summary>
     public static System.Func<ISaveStore> SaveStoreFactory { get; set; } = () => new SaveService();
 
+    /// <summary>
+    /// How the app obtains its audio backend. Defaults to macOS desktop audio (silent
+    /// elsewhere); the browser head overrides this with a Web Audio backend.
+    /// </summary>
+    public static System.Func<IAudioService> AudioFactory { get; set; } =
+        () => System.OperatingSystem.IsMacOS() ? new DesktopAudioService() : new NullAudioService();
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -30,6 +38,8 @@ public partial class App : Application
         // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
         // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
         DisableAvaloniaDataAnnotationValidation();
+
+        Sfx.Current = AudioFactory();
 
         // On touch devices, enlarge tap targets (desktop/browser stay compact).
         if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())

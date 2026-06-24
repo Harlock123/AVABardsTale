@@ -4,8 +4,11 @@
     <Project Path="src/BardsTale.UI/BardsTale.UI.csproj" />
     <Project Path="src/BardsTale.Desktop/BardsTale.Desktop.csproj" />
     <Project Path="src/BardsTale.Android/BardsTale.Android.csproj" />
-    <!-- Note: BardsTale.Android requires the 'android' workload (+ JDK/Android SDK),
-         so a full `dotnet build`/`dotnet test` of this solution now needs it installed.
+    <Project Path="src/BardsTale.iOS/BardsTale.iOS.csproj" />
+    <!-- Note: BardsTale.Android needs the 'android' workload (+ JDK/Android SDK), and
+         BardsTale.iOS needs the 'ios' workload + Xcode with its license accepted
+         (sudo xcodebuild -license accept; sudo xcode-select -s /Applications/Xcode.app).
+         A full `dotnet build`/`dotnet test` of this solution requires both.
          BardsTale.Browser (WebAssembly) is still omitted; build it directly with
          dotnet run on src/BardsTale.Browser (after installing wasm-tools). -->
   </Folder>

@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using BardsTale.Core.Dungeon;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Town;
+using BardsTale.UI.Settings;
 
 namespace BardsTale.UI.Controls;
 
@@ -75,7 +76,7 @@ public sealed class DungeonView : Control
     {
         base.OnAttachedToVisualTree(e);
         _swayTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Render,
-            (_, _) => { if (_signOnScreen) InvalidateVisual(); });
+            (_, _) => { if (_signOnScreen && !AppSettings.Current.ReducedMotion) InvalidateVisual(); });
         _swayTimer.Start();
     }
 
@@ -122,7 +123,9 @@ public sealed class DungeonView : Control
         }
 
         _signOnScreen = false;
-        var sway = SwayAmplitudeRad * Math.Sin(_swayClock.Elapsed.TotalSeconds * (2 * Math.PI / SwayPeriodSec));
+        var sway = AppSettings.Current.ReducedMotion
+            ? 0
+            : SwayAmplitudeRad * Math.Sin(_swayClock.Elapsed.TotalSeconds * (2 * Math.PI / SwayPeriodSec));
 
         var pos = new Position(PartyX, PartyY);
         var forward = Facing;

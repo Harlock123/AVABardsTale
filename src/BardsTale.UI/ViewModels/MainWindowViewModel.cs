@@ -3,7 +3,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using BardsTale.Core.Game;
+using BardsTale.UI.Audio;
 using BardsTale.UI.Services;
+using BardsTale.UI.Settings;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -32,8 +34,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             _saves.ManualSlots.Select((s, i) => new SaveSlotViewModel(s, $"Slot {i + 1}", isAutosave: false))
                 .Append(new SaveSlotViewModel(SaveSlots.Autosave, "Autosave", isAutosave: true)));
 
+        // Persist preference changes; then load any saved settings over the defaults.
+        Settings.PropertyChanged += (_, _) => _ = SettingsService.SaveAsync(_saves, Settings);
+        _ = SettingsService.LoadAsync(_saves, Settings);
+
         ShowTown();
     }
+
+    /// <summary>Shared user preferences, bound by the settings screen.</summary>
+    public AppSettings Settings => AppSettings.Current;
 
     [ObservableProperty] private ViewModelBase _currentView = null!;
     [ObservableProperty] private string _statusMessage = "";
@@ -41,6 +50,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private bool _isSlotPanelOpen;
     [ObservableProperty] private SlotPanelMode _slotMode;
     [ObservableProperty] private bool _isGameWon;
+    [ObservableProperty] private bool _isSettingsOpen;
 
     public ObservableCollection<SaveSlotViewModel> Slots { get; }
 
@@ -79,6 +89,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void CloseSlots() => IsSlotPanelOpen = false;
+
+    [RelayCommand]
+    private void ShowSettings() => IsSettingsOpen = true;
+
+    [RelayCommand]
+    private void CloseSettings() => IsSettingsOpen = false;
 
     [RelayCommand]
     private async Task SaveToSlot(SaveSlotViewModel? slot)
@@ -159,6 +175,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
         IsGameWon = true;
         StatusMessage = "Victory! Skara Brae is freed.";
+        Sfx.Play(GameSound.Victory);
     }
 
     [RelayCommand]
@@ -170,17 +187,20 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ShowTown();
     }
 
-    /// <summary>Returning to town is a safe checkpoint, so the game autosaves there.</summary>
+    /// <summary>Returning to town is a safe checkpoint, so the game autosaves there (if enabled).</summary>
     private async void ReturnFromDungeon()
     {
-        try
+        if (Settings.Autosave)
         {
-            await _saves.SaveAsync(_session, SaveSlots.Autosave);
-            StatusMessage = "Returned to town — autosaved.";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Autosave failed: {ex.Message}";
+            try
+            {
+                await _saves.SaveAsync(_session, SaveSlots.Autosave);
+                StatusMessage = "Returned to town — autosaved.";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Autosave failed: {ex.Message}";
+            }
         }
         ShowTown();
     }

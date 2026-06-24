@@ -1,8 +1,11 @@
+using System.Collections.Generic;
+using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using BardsTale.Core.Dungeon;
 using BardsTale.Core.Geometry;
+using BardsTale.Core.Town;
 
 namespace BardsTale.UI.Controls;
 
@@ -34,10 +37,14 @@ public sealed class DungeonView : Control
     public static readonly StyledProperty<bool> HasLightProperty =
         AvaloniaProperty.Register<DungeonView, bool>(nameof(HasLight));
 
+    /// <summary>Town building types by cell, used to put a stylized storefront sign on the facade.</summary>
+    public static readonly StyledProperty<IReadOnlyDictionary<Position, TownBuilding>?> BuildingsProperty =
+        AvaloniaProperty.Register<DungeonView, IReadOnlyDictionary<Position, TownBuilding>?>(nameof(Buildings));
+
     static DungeonView()
     {
         AffectsRender<DungeonView>(MazeProperty, PartyXProperty, PartyYProperty, FacingProperty,
-            RevisionProperty, HasLightProperty);
+            RevisionProperty, HasLightProperty, BuildingsProperty);
     }
 
     public Maze? Maze { get => GetValue(MazeProperty); set => SetValue(MazeProperty, value); }
@@ -46,6 +53,13 @@ public sealed class DungeonView : Control
     public Direction Facing { get => GetValue(FacingProperty); set => SetValue(FacingProperty, value); }
     public int Revision { get => GetValue(RevisionProperty); set => SetValue(RevisionProperty, value); }
     public bool HasLight { get => GetValue(HasLightProperty); set => SetValue(HasLightProperty, value); }
+    public IReadOnlyDictionary<Position, TownBuilding>? Buildings
+    {
+        get => GetValue(BuildingsProperty);
+        set => SetValue(BuildingsProperty, value);
+    }
+
+    private static readonly Color SignGold = Color.FromRgb(0xE8, 0xC5, 0x6B);
 
     private static readonly IBrush CeilingBrush = new SolidColorBrush(Color.FromRgb(28, 30, 40));
     private static readonly IBrush FloorBrush = new SolidColorBrush(Color.FromRgb(46, 40, 34));
@@ -106,7 +120,17 @@ public sealed class DungeonView : Control
             var blockedAhead = cell.HasWall(forward) || !maze.InBounds(pos.Step(forward));
             if (blockedAhead)
             {
-                DrawFrontWall(context, cx, cy, halfW[d + 1], halfH[d + 1], DepthShade(d + 1), cell.Feature);
+                // A building facade gets its name on a stylized sign, tinted by its type.
+                string? signName = null;
+                var accent = SignGold;
+                if (cell.Feature == CellFeature.Building && !string.IsNullOrEmpty(cell.Text))
+                {
+                    signName = cell.Text;
+                    if (Buildings is { } b && b.TryGetValue(pos, out var type)
+                        && BuildingMarkers.For(type).Background is ISolidColorBrush accentBrush)
+                        accent = accentBrush.Color;
+                }
+                DrawFrontWall(context, cx, cy, halfW[d + 1], halfH[d + 1], DepthShade(d + 1), cell.Feature, signName, accent);
                 break;
             }
 
@@ -145,13 +169,91 @@ public sealed class DungeonView : Control
     }
 
     private static void DrawFrontWall(DrawingContext ctx, double cx, double cy,
-        double halfW, double halfH, byte shade, CellFeature feature = CellFeature.None)
+        double halfW, double halfH, byte shade, CellFeature feature = CellFeature.None,
+        string? signName = null, Color accent = default)
     {
         var rect = new Rect(cx - halfW, cy - halfH, halfW * 2, halfH * 2);
         ctx.DrawRectangle(new SolidColorBrush(Color.FromRgb(shade, shade, (byte)(shade * 0.92))),
             new Pen(Brushes.Black, 1.5), rect);
 
         DrawFeature(ctx, rect, feature);
+
+        if (!string.IsNullOrEmpty(signName))
+            DrawStorefront(ctx, rect, signName, accent);
+    }
+
+    // A hanging storefront sign on the building facade: a weathered wood board that
+    // hangs from an iron bracket, with a coloured frame (matching the map marker) and
+    // the building's name in gold serif lettering.
+    private static void DrawStorefront(DrawingContext ctx, Rect wall, string name, Color accent)
+    {
+        var signW = wall.Width * 0.84;
+        var signH = wall.Height * 0.17;
+        if (signW < 16 || signH < 9) return; // too small/far to be legible
+
+        var board = new Rect(wall.X + (wall.Width - signW) / 2, wall.Y + wall.Height * 0.10, signW, signH);
+        var radius = signH * 0.18;
+
+        // --- hanging hardware: a wall-mounted iron bracket with two chains ---
+        var iron = new SolidColorBrush(Color.FromRgb(0x55, 0x5A, 0x69));
+        var ironDark = new SolidColorBrush(Color.FromRgb(0x23, 0x26, 0x30));
+        var beamH = System.Math.Max(2, wall.Height * 0.022);
+        var beam = new Rect(board.X - signW * 0.05, wall.Y + wall.Height * 0.035, signW * 1.10, beamH);
+        ctx.DrawRectangle(iron, new Pen(ironDark, 1), beam, beamH * 0.4, beamH * 0.4);
+
+        var chainW = System.Math.Max(1.5, signW * 0.012);
+        var chainPen = new Pen(iron, chainW, lineCap: PenLineCap.Round);
+        var bolt = chainW * 1.3;
+        foreach (var fx in new[] { 0.15, 0.85 })
+        {
+            var x = board.X + board.Width * fx;
+            ctx.DrawLine(chainPen, new Point(x, beam.Bottom), new Point(x, board.Y + 1));
+            ctx.DrawEllipse(ironDark, new Pen(iron, 1), new Point(x, beam.Bottom), bolt, bolt);
+            ctx.DrawEllipse(ironDark, new Pen(iron, 1), new Point(x, board.Y + 1), bolt, bolt);
+        }
+
+        // --- weathered wood board ---
+        ctx.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x2E, 0x21, 0x14)), null, board, radius, radius);
+        using (ctx.PushClip(board))
+        {
+            // horizontal grain
+            var grain = new Pen(new SolidColorBrush(Color.FromArgb(60, 0x52, 0x3D, 0x24)),
+                System.Math.Max(0.6, signH * 0.03));
+            foreach (var gy in new[] { 0.2, 0.38, 0.55, 0.72, 0.87 })
+                ctx.DrawLine(grain, new Point(board.X, board.Y + board.Height * gy),
+                    new Point(board.Right, board.Y + board.Height * gy));
+            // vertical plank seams
+            var seam = new Pen(new SolidColorBrush(Color.FromArgb(80, 0x10, 0x0A, 0x05)),
+                System.Math.Max(0.6, signW * 0.005));
+            foreach (var sx in new[] { 0.34, 0.67 })
+                ctx.DrawLine(seam, new Point(board.X + board.Width * sx, board.Y),
+                    new Point(board.X + board.Width * sx, board.Bottom));
+            // knots / wear spots
+            var knot = new SolidColorBrush(Color.FromArgb(65, 0x14, 0x0D, 0x06));
+            ctx.DrawEllipse(knot, null, new Point(board.X + board.Width * 0.2, board.Y + board.Height * 0.62),
+                signH * 0.09, signH * 0.07);
+            ctx.DrawEllipse(knot, null, new Point(board.X + board.Width * 0.79, board.Y + board.Height * 0.33),
+                signH * 0.08, signH * 0.06);
+        }
+        // aged inner shadow + coloured frame
+        ctx.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromArgb(85, 0, 0, 0)),
+            System.Math.Max(1, signH * 0.05)), board.Deflate(signH * 0.05), radius, radius);
+        ctx.DrawRectangle(null, new Pen(new SolidColorBrush(accent), System.Math.Max(1, signH * 0.08)),
+            board, radius, radius);
+
+        // --- name in gold serif ---
+        var typeface = new Typeface(new FontFamily("Georgia, Times New Roman, serif"),
+            FontStyle.Normal, FontWeight.Bold);
+        var fontSize = signH * 0.58;
+        var text = new FormattedText(name, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+            typeface, fontSize, new SolidColorBrush(SignGold));
+        var maxW = board.Width * 0.88;
+        if (text.Width > maxW)
+        {
+            text = new FormattedText(name, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                typeface, fontSize * maxW / text.Width, new SolidColorBrush(SignGold));
+        }
+        ctx.DrawText(text, new Point(board.Center.X - text.Width / 2, board.Center.Y - text.Height / 2));
     }
 
     private static void DrawFeature(DrawingContext ctx, Rect wall, CellFeature feature)

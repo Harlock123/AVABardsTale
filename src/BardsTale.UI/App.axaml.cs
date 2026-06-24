@@ -1,9 +1,11 @@
+using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using Avalonia.Markup.Xaml.Styling;
 using BardsTale.UI.Services;
 using BardsTale.UI.ViewModels;
 using BardsTale.UI.Views;
@@ -28,6 +30,13 @@ public partial class App : Application
         // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
         // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
         DisableAvaloniaDataAnnotationValidation();
+
+        // On touch devices, enlarge tap targets (desktop/browser stay compact).
+        if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
+            Styles.Add(new StyleInclude(new Uri("avares://BardsTale.UI/"))
+            {
+                Source = new Uri("avares://BardsTale.UI/Styles/TouchStyles.axaml")
+            });
 
         var viewModel = new MainWindowViewModel();
         switch (ApplicationLifetime)

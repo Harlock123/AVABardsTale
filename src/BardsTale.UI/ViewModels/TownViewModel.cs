@@ -72,7 +72,7 @@ public sealed partial class TownViewModel : ViewModelBase
     // --- Building state ---
     [ObservableProperty] private TownBuilding _activeBuilding = TownBuilding.None;
     [ObservableProperty] private string _currentBuildingName = "";
-    [ObservableProperty] private string _notice = "Welcome to Skara Brae. Walk to a building and press Enter.";
+    [ObservableProperty] private string _notice = "Welcome to Skara Brae. Step onto a building to go inside.";
     [ObservableProperty] private CharacterViewModel? _selectedHero;
     [ObservableProperty] private ShopItemViewModel? _selectedItem;
     [ObservableProperty] private ShopItemViewModel? _selectedStashItem;
@@ -545,7 +545,7 @@ public sealed partial class TownViewModel : ViewModelBase
 
         var here = BuildingHere;
         BannerText = here is not null
-            ? $"Skara Brae — you stand before {here.Name}  (press Enter)"
+            ? $"Skara Brae — you stand before {here.Name}  (Enter Building)"
             : "Skara Brae — the town square";
 
         OnPropertyChanged(nameof(CanEnter));

@@ -18,7 +18,8 @@
             <Panel>
                 <controls:DungeonView
                     Maze="{Binding Maze}" PartyX="{Binding PartyX}" PartyY="{Binding PartyY}"
-                    Facing="{Binding Facing}" Revision="{Binding Revision}"/>
+                    Facing="{Binding Facing}" Revision="{Binding Revision}"
+                    Buildings="{Binding Buildings}"/>
 
                 <Border VerticalAlignment="Top" HorizontalAlignment="Stretch" Background="#AA000000" Padding="8,4">
                     <Grid ColumnDefinitions="*,Auto">
@@ -426,7 +427,7 @@
         <!-- Bottom: movement controls -->
         <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,12,0,0" ColumnDefinitions="*,Auto">
             <TextBlock Grid.Column="0" VerticalAlignment="Center" Foreground="#9AA0B5"
-                       Text="Walk with the arrow keys / WASD. Step onto a building and press Enter."/>
+                       Text="Move with the on-screen arrows (or WASD), then step onto a building to enter it."/>
             <StackPanel Grid.Column="1" Width="320">
                 <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
                     <Button Grid.Row="0" Grid.Column="1" Content="▲ Fwd" Command="{Binding MoveForwardCommand}"

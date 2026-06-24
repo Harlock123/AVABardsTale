@@ -2,6 +2,7 @@ using BardsTale.Core.Characters;
 using BardsTale.Core.Dungeon;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Items;
+using BardsTale.Core.Quests;
 using BardsTale.Core.Town;
 using BardsTale.Core.Util;
 
@@ -32,6 +33,9 @@ public sealed class GameSession
 
     /// <summary>Running tally of the party's deeds, shown on the victory screen.</summary>
     public RunStats Stats { get; } = new();
+
+    /// <summary>The party's side-quest journal — quests offered by townsfolk and their progress.</summary>
+    public QuestLog Quests { get; } = new();
 
     /// <summary>The walkable Skara Brae overworld, plus the party's persisted position in it.</summary>
     public TownMap Town { get; }

@@ -15,7 +15,17 @@ public static class MovementKeys
         // Escape backs out: close the save/load panel, leave a building, or close the spell menu.
         if (e.Key is Key.Escape)
         {
-            if (vm.IsSlotPanelOpen)
+            if (vm.IsQuestLogOpen)
+            {
+                vm.CloseQuestLogCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (vm.Town is { IsQuestOfferOpen: true } offer)
+            {
+                offer.DeclineQuestOfferCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (vm.IsSlotPanelOpen)
             {
                 vm.CloseSlotsCommand.Execute(null);
                 e.Handled = true;
@@ -48,6 +58,15 @@ public static class MovementKeys
                 else if (ex.CanAscend) { ex.AscendCommand.Execute(null); e.Handled = true; }
                 else if (ex.CanDescend) { ex.DescendCommand.Execute(null); e.Handled = true; }
             }
+            return;
+        }
+
+        // J opens (and closes) the quest journal from anywhere — town or dungeon.
+        if (e.Key is Key.J && !vm.IsSlotPanelOpen && !vm.IsSettingsOpen
+            && vm.Town is not { IsQuestOfferOpen: true })
+        {
+            vm.ToggleQuestLog();
+            e.Handled = true;
             return;
         }
 

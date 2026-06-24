@@ -4,6 +4,8 @@ using BardsTale.Core.Dungeon;
 using BardsTale.Core.Game;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Items;
+using BardsTale.Core.Quests;
+using BardsTale.Core.Town;
 using ItemDb = BardsTale.Core.Items.Items;
 
 namespace BardsTale.Core.Persistence;
@@ -55,8 +57,49 @@ public static class GameSerializer
             DeepestDepth = session.Stats.DeepestDepth
         };
 
+        data.Quests = new QuestLogSave
+        {
+            NextId = session.Quests.NextId,
+            Active = session.Quests.Active.Select(ToQuestSave).ToList(),
+            Completed = session.Quests.Completed.Select(ToQuestSave).ToList()
+        };
+
         return data;
     }
+
+    private static QuestSave ToQuestSave(Quest q) => new()
+    {
+        Id = q.Id,
+        Kind = (int)q.Kind,
+        Giver = (int)q.Giver,
+        GiverName = q.GiverName,
+        TurnInAt = (int)q.TurnInAt,
+        TargetMonster = q.TargetMonster,
+        TrophyName = q.TrophyName,
+        Required = q.Required,
+        Current = q.Current,
+        RewardGold = q.RewardGold,
+        RewardXp = q.RewardXp,
+        RewardItem = q.RewardItem,
+        Status = (int)q.Status
+    };
+
+    private static Quest FromQuestSave(QuestSave s) => new()
+    {
+        Id = s.Id,
+        Kind = (QuestKind)s.Kind,
+        Giver = (QuestGiver)s.Giver,
+        GiverName = s.GiverName,
+        TurnInAt = (TownBuilding)s.TurnInAt,
+        TargetMonster = s.TargetMonster,
+        TrophyName = s.TrophyName,
+        Required = s.Required,
+        Current = s.Current,
+        RewardGold = s.RewardGold,
+        RewardXp = s.RewardXp,
+        RewardItem = s.RewardItem,
+        Status = (QuestStatus)s.Status
+    };
 
     private static CharacterSave ToCharacterSave(Character c) => new()
     {
@@ -156,6 +199,12 @@ public static class GameSerializer
         session.Stats.MonstersSlain = data.Stats.MonstersSlain;
         session.Stats.GoldEarned = data.Stats.GoldEarned;
         session.Stats.DeepestDepth = data.Stats.DeepestDepth;
+
+        foreach (var quest in data.Quests.Active)
+            session.Quests.RestoreActive(FromQuestSave(quest));
+        foreach (var quest in data.Quests.Completed)
+            session.Quests.RestoreCompleted(FromQuestSave(quest));
+        session.Quests.NextId = Math.Max(1, data.Quests.NextId);
 
         if (data.Dungeon is { } dungeonSave && dungeonSave.Levels.Count > 0)
         {

@@ -6,6 +6,7 @@ using BardsTale.Core.Dungeon;
 using BardsTale.Core.Game;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Magic;
+using BardsTale.Core.Quests;
 using BardsTale.UI.Audio;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -21,11 +22,13 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     private readonly GameState _game;
 
     private readonly RunStats _stats;
+    private readonly QuestLog _quests;
 
-    public ExplorationViewModel(GameState game, RunStats? stats = null)
+    public ExplorationViewModel(GameState game, RunStats? stats = null, QuestLog? quests = null)
     {
         _game = game;
         _stats = stats ?? new RunStats();
+        _quests = quests ?? new QuestLog();
         Party = new ObservableCollection<CharacterViewModel>();
         Log = new ObservableCollection<string>();
         foreach (var m in _game.Party.Members)
@@ -215,6 +218,8 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 _stats.MonstersSlain += encounter.Groups.Sum(g => g.Monsters.Count);
                 _stats.GoldEarned += encounter.TotalGold;
                 foreach (var line in _game.ApplyVictory(encounter))
+                    AddLog(line);
+                foreach (var line in _quests.RecordVictory(encounter))
                     AddLog(line);
                 if (encounter.IsFinalBoss)
                 {

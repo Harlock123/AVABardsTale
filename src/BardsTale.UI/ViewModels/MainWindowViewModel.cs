@@ -51,6 +51,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private SlotPanelMode _slotMode;
     [ObservableProperty] private bool _isGameWon;
     [ObservableProperty] private bool _isSettingsOpen;
+    [ObservableProperty] private bool _isQuestLogOpen;
+    [ObservableProperty] private QuestLogViewModel? _questLog;
 
     public ObservableCollection<SaveSlotViewModel> Slots { get; }
 
@@ -95,6 +97,34 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void CloseSettings() => IsSettingsOpen = false;
+
+    /// <summary>Opens the quest journal, rebuilding it from the current quest progress.</summary>
+    [RelayCommand]
+    private void ShowQuestLog()
+    {
+        QuestLog = new QuestLogViewModel(_session.Quests);
+        IsQuestLogOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseQuestLog() => IsQuestLogOpen = false;
+
+    /// <summary>Gives up a quest, forfeiting its progress, and drops it from the journal.</summary>
+    [RelayCommand]
+    private void AbandonQuest(QuestEntryViewModel? entry)
+    {
+        if (entry is null) return;
+        _session.Quests.Abandon(entry.Model);
+        QuestLog?.Remove(entry);
+        StatusMessage = $"Abandoned quest: \"{entry.Model.Title}\".";
+    }
+
+    /// <summary>The 'J' key toggles the journal open and shut.</summary>
+    public void ToggleQuestLog()
+    {
+        if (IsQuestLogOpen) CloseQuestLog();
+        else ShowQuestLog();
+    }
 
     [RelayCommand]
     private async Task SaveToSlot(SaveSlotViewModel? slot)
@@ -149,7 +179,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private void OnEnterDungeon()
     {
         var game = _session.EnterDungeon();
-        var exploration = new ExplorationViewModel(game, _session.Stats);
+        var exploration = new ExplorationViewModel(game, _session.Stats, _session.Quests);
         exploration.ReturnToTownRequested += ReturnFromDungeon;
         exploration.GameWonRequested += OnGameWon;
         CurrentView = exploration;

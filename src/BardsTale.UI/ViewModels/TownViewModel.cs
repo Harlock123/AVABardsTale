@@ -8,6 +8,7 @@ using BardsTale.Core.Game;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Items;
 using BardsTale.Core.Magic;
+using BardsTale.Core.Quests;
 using BardsTale.Core.Town;
 using BardsTale.Core.Util;
 using BardsTale.UI.Audio;
@@ -80,12 +81,40 @@ public sealed partial class TownViewModel : ViewModelBase
     [ObservableProperty] private bool _isSpellMenuOpen;
     [ObservableProperty] private SpellMenuItemViewModel? _selectedSpell;
 
+    // --- Side-quest offer overlay ---
+    [ObservableProperty] private bool _isQuestOfferOpen;
+    [ObservableProperty] private Quest? _pendingOffer;
+
+    public string OfferGiverName => PendingOffer?.GiverName ?? "";
+    public string OfferTitle => PendingOffer?.Title ?? "";
+    public string OfferPitch => PendingOffer?.Pitch ?? "";
+    public string OfferObjective => PendingOffer?.Objective ?? "";
+    public string OfferReward => PendingOffer is null ? "" : $"Reward: {PendingOffer.RewardLine}";
+    public string OfferTurnIn => PendingOffer?.TurnInHint ?? "";
+
+    partial void OnIsQuestOfferOpenChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanExplore));
+        OnPropertyChanged(nameof(CanEnter));
+        NotifyMovementCanExecute();
+    }
+
+    partial void OnPendingOfferChanged(Quest? value)
+    {
+        OnPropertyChanged(nameof(OfferGiverName));
+        OnPropertyChanged(nameof(OfferTitle));
+        OnPropertyChanged(nameof(OfferPitch));
+        OnPropertyChanged(nameof(OfferObjective));
+        OnPropertyChanged(nameof(OfferReward));
+        OnPropertyChanged(nameof(OfferTurnIn));
+    }
+
     public int Gold => _session.Party.Gold;
     public string GoldText => $"{Gold} gold";
     public bool CanEnterDungeon => _session.Party.LivingCount > 0;
 
     public bool IsInBuilding => ActiveBuilding != TownBuilding.None;
-    public bool CanExplore => !IsInBuilding && !IsSpellMenuOpen;
+    public bool CanExplore => !IsInBuilding && !IsSpellMenuOpen && !IsQuestOfferOpen;
     public bool IsGuild => ActiveBuilding == TownBuilding.Guild;
     public bool IsShop => ActiveBuilding == TownBuilding.Shop;
     public bool IsTemple => ActiveBuilding == TownBuilding.Temple;
@@ -138,6 +167,8 @@ public sealed partial class TownViewModel : ViewModelBase
         _session.TownPosition = _session.TownPosition.Step(dir);
         SyncWorld();
         Sfx.Play(GameSound.FootstepStone);
+        // Now and then a stranger stops the party in the street with a job.
+        MaybeOfferQuest(QuestGiver.Stranger, 0.08);
     }
 
     // --- Entering / leaving buildings ---
@@ -170,6 +201,12 @@ public sealed partial class TownViewModel : ViewModelBase
         ActiveBuilding = entrance.Building;
         RefreshEconomy();
         Sfx.Play(GameSound.Door);
+
+        // Return-to-the-giver turn-ins: hand in any completed quests for this place,
+        // and let Garth offer a fresh collecting job on the way in.
+        TurnInReadyQuests(entrance.Building);
+        if (entrance.Building == TownBuilding.Shop)
+            MaybeOfferQuest(QuestGiver.Shopkeeper, 0.6);
     }
 
     [RelayCommand]
@@ -456,6 +493,65 @@ public sealed partial class TownViewModel : ViewModelBase
         Notice = $"You buy a round at {CurrentBuildingName}.";
         Sfx.Play(GameSound.Buy);
         RefreshEconomy();
+        // Loosened tongues sometimes turn up honest work.
+        MaybeOfferQuest(QuestGiver.TavernPatron, 0.5);
+    }
+
+    // --- Side quests ---
+
+    [RelayCommand]
+    private void AcceptQuestOffer()
+    {
+        if (PendingOffer is null) return;
+        if (!_session.Quests.Accept(PendingOffer))
+        {
+            Notice = "Your quest journal is full — finish or abandon a quest first.";
+            return;
+        }
+        Notice = $"Quest accepted: \"{PendingOffer.Title}\". {PendingOffer.TurnInHint}";
+        Sfx.Play(GameSound.UiConfirm);
+        PendingOffer = null;
+        IsQuestOfferOpen = false;
+    }
+
+    [RelayCommand]
+    private void DeclineQuestOffer()
+    {
+        if (PendingOffer is not null)
+            Notice = $"You wave off {PendingOffer.GiverName} and move on.";
+        PendingOffer = null;
+        IsQuestOfferOpen = false;
+    }
+
+    /// <summary>Offers a quest from the given giver, gated so offers don't pile up.</summary>
+    private void MaybeOfferQuest(QuestGiver giver, double chance)
+    {
+        if (IsQuestOfferOpen || PendingOffer is not null) return;
+        if (_session.Quests.IsFull || _session.Quests.HasActiveFrom(giver)) return;
+        if (!_session.Rng.Chance(chance)) return;
+
+        PendingOffer = QuestFactory.Create(giver, _session.Rng, Math.Max(1, _session.Stats.DeepestDepth));
+        IsQuestOfferOpen = true;
+        Sfx.Play(GameSound.UiConfirm);
+    }
+
+    /// <summary>Hands in every quest ready to turn in at this building, paying the rewards.</summary>
+    private void TurnInReadyQuests(TownBuilding building)
+    {
+        var claimed = new List<string>();
+        foreach (var quest in _session.Quests.ReadyAt(building).ToList())
+        {
+            var line = _session.Quests.Claim(quest, _session.Party);
+            if (line is null) continue;
+            claimed.Add($"\"{quest.Title}\" — {line}");
+            if (IsTavern) TavernRumors.Insert(0, $"{quest.GiverName}: {line}");
+        }
+        if (claimed.Count == 0) return;
+
+        Notice = "Quest complete! " + string.Join("   ", claimed);
+        Sfx.Play(GameSound.LevelUp);
+        Sfx.Play(GameSound.Coin);
+        RebuildParty(); // banked XP may unlock a level-up; refresh roster + economy
     }
 
     // --- Town spell menu ---

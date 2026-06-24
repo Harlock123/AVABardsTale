@@ -9,6 +9,32 @@ public sealed class SaveData
     public PartySave Party { get; set; } = new();
     public DungeonSave? Dungeon { get; set; }
     public RunStatsSave Stats { get; set; } = new();
+    public QuestLogSave Quests { get; set; } = new();
+}
+
+/// <summary>The side-quest journal: in-progress quests, the archive, and the next id to hand out.</summary>
+public sealed class QuestLogSave
+{
+    public int NextId { get; set; } = 1;
+    public List<QuestSave> Active { get; set; } = new();
+    public List<QuestSave> Completed { get; set; } = new();
+}
+
+public sealed class QuestSave
+{
+    public string Id { get; set; } = "";
+    public int Kind { get; set; }
+    public int Giver { get; set; }
+    public string GiverName { get; set; } = "";
+    public int TurnInAt { get; set; }
+    public string TargetMonster { get; set; } = "";
+    public string TrophyName { get; set; } = "";
+    public int Required { get; set; }
+    public int Current { get; set; }
+    public int RewardGold { get; set; }
+    public int RewardXp { get; set; }
+    public string? RewardItem { get; set; }
+    public int Status { get; set; }
 }
 
 public sealed class RunStatsSave

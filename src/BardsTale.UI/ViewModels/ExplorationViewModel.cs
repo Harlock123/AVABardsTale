@@ -5,6 +5,7 @@ using BardsTale.Core.Combat;
 using BardsTale.Core.Dungeon;
 using BardsTale.Core.Game;
 using BardsTale.Core.Geometry;
+using BardsTale.Core.Lore;
 using BardsTale.Core.Magic;
 using BardsTale.Core.Quests;
 using BardsTale.UI.Audio;
@@ -23,12 +24,15 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     private readonly RunStats _stats;
     private readonly QuestLog _quests;
+    private readonly MonsterCodex _codex;
 
-    public ExplorationViewModel(GameState game, RunStats? stats = null, QuestLog? quests = null)
+    public ExplorationViewModel(GameState game, RunStats? stats = null, QuestLog? quests = null,
+        MonsterCodex? codex = null)
     {
         _game = game;
         _stats = stats ?? new RunStats();
         _quests = quests ?? new QuestLog();
+        _codex = codex ?? new MonsterCodex();
         Party = new ObservableCollection<CharacterViewModel>();
         Log = new ObservableCollection<string>();
         foreach (var m in _game.Party.Members)
@@ -200,6 +204,8 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     private void StartCombat(Encounter encounter)
     {
+        _codex.Discover(encounter, _game.Depth); // the party learns a foe by facing it, win or flee
+        Music.Play(GameMusic.Combat);
         var vm = new CombatViewModel(_game.Party, encounter, _game.Rng, _game.MagicSuppressed);
         vm.Finished += OnCombatFinished;
         vm.StateChanged += RefreshParty;
@@ -217,6 +223,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 _stats.BattlesWon++;
                 _stats.MonstersSlain += encounter.Groups.Sum(g => g.Monsters.Count);
                 _stats.GoldEarned += encounter.TotalGold;
+                _codex.RecordSlain(encounter, _game.Depth);
                 foreach (var line in _game.ApplyVictory(encounter))
                     AddLog(line);
                 foreach (var line in _quests.RecordVictory(encounter))
@@ -247,6 +254,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
         IsInCombat = false;
         Combat = null;
+        Music.Play(GameMusic.Dungeon); // fight over — back to the catacomb ambience
         UpdateExploreState();
         SyncWorld();
     }

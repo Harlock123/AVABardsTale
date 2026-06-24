@@ -34,6 +34,7 @@ public static class TownMapBuilder
         town.AddBuilding(TownBuilding.Temple, "Temple of Healing", new Position(5, 10));
         town.AddBuilding(TownBuilding.Inn, "Garrick's Inn", new Position(1, 10));
         town.AddBuilding(TownBuilding.DungeonEntrance, "Catacomb Stair", new Position(10, 10));
+        town.AddBuilding(TownBuilding.QuestBoard, "The Notice Board", new Position(0, 0));
 
         return town;
     }

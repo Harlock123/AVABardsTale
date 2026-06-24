@@ -12,7 +12,8 @@ public enum TownBuilding
     ReviewBoard,
     Tavern,
     Inn,
-    DungeonEntrance
+    DungeonEntrance,
+    QuestBoard
 }
 
 /// <summary>A building's door on the streets of Skara Brae.</summary>

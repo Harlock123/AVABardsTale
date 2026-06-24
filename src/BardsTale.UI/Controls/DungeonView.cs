@@ -333,6 +333,11 @@ public sealed class DungeonView : Control
             case TownBuilding.Guild: // shield
                 ctx.DrawGeometry(gold, null, ShieldGeometry(r));
                 break;
+            case TownBuilding.QuestBoard: // a pinned parchment with lines of text
+                ctx.DrawRectangle(gold, null, new Rect(x + w * 0.18, y + h * 0.06, w * 0.64, h * 0.88), w * 0.06, w * 0.06);
+                for (var i = 0; i < 3; i++)
+                    ctx.DrawRectangle(carve, null, new Rect(x + w * 0.28, y + h * (0.26 + i * 0.22), w * 0.44, h * 0.08));
+                break;
             case TownBuilding.Tavern: // foaming tankard
                 ctx.DrawEllipse(null, new Pen(gold, w * 0.09), new Point(x + w * 0.66, cy), w * 0.16, h * 0.2);
                 ctx.DrawRectangle(gold, null, new Rect(x + w * 0.12, y + h * 0.16, w * 0.5, h * 0.7), w * 0.05, w * 0.05);

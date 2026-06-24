@@ -4,6 +4,7 @@ using BardsTale.Core.Dungeon;
 using BardsTale.Core.Game;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Items;
+using BardsTale.Core.Lore;
 using BardsTale.Core.Quests;
 using BardsTale.Core.Town;
 using ItemDb = BardsTale.Core.Items.Items;
@@ -62,6 +63,13 @@ public static class GameSerializer
             NextId = session.Quests.NextId,
             Active = session.Quests.Active.Select(ToQuestSave).ToList(),
             Completed = session.Quests.Completed.Select(ToQuestSave).ToList()
+        };
+
+        data.Codex = new CodexSave
+        {
+            Entries = session.Codex.Entries.Values
+                .Select(e => new CodexEntrySave { Name = e.Name, Slain = e.Slain, FirstSeenDepth = e.FirstSeenDepth })
+                .ToList()
         };
 
         return data;
@@ -205,6 +213,12 @@ public static class GameSerializer
         foreach (var quest in data.Quests.Completed)
             session.Quests.RestoreCompleted(FromQuestSave(quest));
         session.Quests.NextId = Math.Max(1, data.Quests.NextId);
+
+        foreach (var entry in data.Codex.Entries)
+            session.Codex.Restore(new CodexEntry
+            {
+                Name = entry.Name, Slain = entry.Slain, FirstSeenDepth = entry.FirstSeenDepth
+            });
 
         if (data.Dungeon is { } dungeonSave && dungeonSave.Levels.Count > 0)
         {

@@ -21,6 +21,7 @@ public class MainActivity : AvaloniaMainActivity<App>
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
     {
         App.AudioFactory = () => new AndroidAudioService();
+        App.MusicFactory = () => new AndroidMusicService();
         return base.CustomizeAppBuilder(builder).WithInterFont();
     }
 }

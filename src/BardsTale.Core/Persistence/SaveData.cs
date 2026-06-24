@@ -10,6 +10,20 @@ public sealed class SaveData
     public DungeonSave? Dungeon { get; set; }
     public RunStatsSave Stats { get; set; } = new();
     public QuestLogSave Quests { get; set; } = new();
+    public CodexSave Codex { get; set; } = new();
+}
+
+/// <summary>The bestiary: which monsters have been faced, and how many slain.</summary>
+public sealed class CodexSave
+{
+    public List<CodexEntrySave> Entries { get; set; } = new();
+}
+
+public sealed class CodexEntrySave
+{
+    public string Name { get; set; } = "";
+    public int Slain { get; set; }
+    public int FirstSeenDepth { get; set; } = 1;
 }
 
 /// <summary>The side-quest journal: in-progress quests, the archive, and the next id to hand out.</summary>

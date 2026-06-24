@@ -154,6 +154,49 @@ public class QuestTests
     }
 
     [Fact]
+    public void The_board_pins_up_a_full_set_of_notices_and_stocking_is_idempotent()
+    {
+        var rng = new SystemRandomSource(seed: 11);
+        var board = new QuestBoard();
+        board.EnsureStocked(rng, depth: 2);
+        Assert.Equal(QuestBoard.Capacity, board.Postings.Count);
+
+        var first = board.Postings.ToList();
+        board.EnsureStocked(rng, depth: 2); // already stocked → unchanged
+        Assert.Equal(first, board.Postings);
+        Assert.All(board.Postings, q => Assert.True(q.RewardGold > 0));
+    }
+
+    [Fact]
+    public void Restocking_replaces_the_notices_with_a_fresh_batch()
+    {
+        var rng = new SystemRandomSource(seed: 3);
+        var board = new QuestBoard();
+        board.EnsureStocked(rng, 1);
+        var before = board.Postings.ToList();
+
+        board.Restock(rng, 3);
+        Assert.Equal(QuestBoard.Capacity, board.Postings.Count);
+        Assert.NotEqual(before, board.Postings.ToList()); // new quest instances
+    }
+
+    [Fact]
+    public void Taking_a_notice_moves_it_from_the_board_into_the_journal()
+    {
+        var session = new GameSession(seed: 7);
+        session.FillDefaultParty();
+        session.QuestBoard.EnsureStocked(session.Rng, 1);
+
+        var posting = session.QuestBoard.Postings[0];
+        Assert.True(session.Quests.Accept(posting));
+        session.QuestBoard.Remove(posting);
+
+        Assert.DoesNotContain(posting, session.QuestBoard.Postings);
+        Assert.Contains(posting, session.Quests.Active);
+        Assert.Equal(QuestBoard.Capacity - 1, session.QuestBoard.Postings.Count);
+    }
+
+    [Fact]
     public void Quests_survive_a_save_load_round_trip()
     {
         var session = new GameSession(seed: 5);

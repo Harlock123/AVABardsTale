@@ -39,9 +39,13 @@ public sealed partial class TownViewModel : ViewModelBase
         Stash = new ObservableCollection<ShopItemViewModel>();
         TavernRumors = new ObservableCollection<string>();
         SpellMenu = new ObservableCollection<SpellMenuItemViewModel>();
+        Postings = new ObservableCollection<QuestBoardItemViewModel>();
         RebuildParty();
         SyncWorld();
     }
+
+    /// <summary>The quests currently pinned to the town notice board.</summary>
+    public ObservableCollection<QuestBoardItemViewModel> Postings { get; }
 
     public ObservableCollection<CharacterViewModel> Party { get; }
     public CharacterCreationViewModel Creation { get; }
@@ -121,6 +125,7 @@ public sealed partial class TownViewModel : ViewModelBase
     public bool IsReview => ActiveBuilding == TownBuilding.ReviewBoard;
     public bool IsTavern => ActiveBuilding == TownBuilding.Tavern;
     public bool IsInn => ActiveBuilding == TownBuilding.Inn;
+    public bool IsQuestBoard => ActiveBuilding == TownBuilding.QuestBoard;
 
     private Position CurrentPosition => new(PartyX, PartyY);
     private BuildingEntrance? BuildingHere => _town.BuildingAt(CurrentPosition);
@@ -136,6 +141,7 @@ public sealed partial class TownViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsReview));
         OnPropertyChanged(nameof(IsTavern));
         OnPropertyChanged(nameof(IsInn));
+        OnPropertyChanged(nameof(IsQuestBoard));
         OnPropertyChanged(nameof(CanEnter));
         NotifyMovementCanExecute();
     }
@@ -198,6 +204,11 @@ public sealed partial class TownViewModel : ViewModelBase
         }
         if (entrance.Building == TownBuilding.Shop)
             RebuildStash();
+        if (entrance.Building == TownBuilding.QuestBoard)
+        {
+            _session.QuestBoard.EnsureStocked(_session.Rng, Math.Max(1, _session.Stats.DeepestDepth));
+            RebuildPostings();
+        }
         ActiveBuilding = entrance.Building;
         RefreshEconomy();
         Sfx.Play(GameSound.Door);
@@ -498,6 +509,29 @@ public sealed partial class TownViewModel : ViewModelBase
     }
 
     // --- Side quests ---
+
+    /// <summary>Takes a notice off the board into the journal (respecting the journal cap).</summary>
+    [RelayCommand]
+    private void AcceptPosting(QuestBoardItemViewModel? posting)
+    {
+        if (posting is null) return;
+        if (!_session.Quests.Accept(posting.Model))
+        {
+            Notice = "Your quest journal is full — finish or abandon a quest first.";
+            return;
+        }
+        _session.QuestBoard.Remove(posting.Model);
+        Postings.Remove(posting);
+        Notice = $"Accepted: \"{posting.Model.Title}\". {posting.Model.TurnInHint}";
+        Sfx.Play(GameSound.UiConfirm);
+    }
+
+    private void RebuildPostings()
+    {
+        Postings.Clear();
+        foreach (var quest in _session.QuestBoard.Postings)
+            Postings.Add(new QuestBoardItemViewModel(quest));
+    }
 
     [RelayCommand]
     private void AcceptQuestOffer()

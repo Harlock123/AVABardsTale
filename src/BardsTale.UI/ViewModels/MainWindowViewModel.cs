@@ -34,9 +34,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             _saves.ManualSlots.Select((s, i) => new SaveSlotViewModel(s, $"Slot {i + 1}", isAutosave: false))
                 .Append(new SaveSlotViewModel(SaveSlots.Autosave, "Autosave", isAutosave: true)));
 
-        // Persist preference changes; then load any saved settings over the defaults.
-        Settings.PropertyChanged += (_, _) => _ = SettingsService.SaveAsync(_saves, Settings);
-        _ = SettingsService.LoadAsync(_saves, Settings);
+        // Persist preference changes and re-apply music settings; then load saved settings.
+        Settings.PropertyChanged += (_, _) =>
+        {
+            _ = SettingsService.SaveAsync(_saves, Settings);
+            Music.RefreshSettings();
+        };
+        _ = SettingsService.LoadAsync(_saves, Settings).ContinueWith(_ => Music.RefreshSettings());
 
         ShowTown();
     }
@@ -53,6 +57,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private bool _isSettingsOpen;
     [ObservableProperty] private bool _isQuestLogOpen;
     [ObservableProperty] private QuestLogViewModel? _questLog;
+    [ObservableProperty] private bool _isBestiaryOpen;
+    [ObservableProperty] private BestiaryViewModel? _bestiary;
 
     public ObservableCollection<SaveSlotViewModel> Slots { get; }
 
@@ -126,6 +132,24 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         else ShowQuestLog();
     }
 
+    /// <summary>Opens the bestiary, rebuilding it from what the party has discovered.</summary>
+    [RelayCommand]
+    private void ShowBestiary()
+    {
+        Bestiary = new BestiaryViewModel(_session.Codex);
+        IsBestiaryOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseBestiary() => IsBestiaryOpen = false;
+
+    /// <summary>The 'B' key toggles the bestiary.</summary>
+    public void ToggleBestiary()
+    {
+        if (IsBestiaryOpen) CloseBestiary();
+        else ShowBestiary();
+    }
+
     [RelayCommand]
     private async Task SaveToSlot(SaveSlotViewModel? slot)
     {
@@ -174,15 +198,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         var town = new TownViewModel(_session);
         town.EnterDungeonRequested += OnEnterDungeon;
         CurrentView = town;
+        Music.Play(GameMusic.Town);
     }
 
     private void OnEnterDungeon()
     {
         var game = _session.EnterDungeon();
-        var exploration = new ExplorationViewModel(game, _session.Stats, _session.Quests);
+        var exploration = new ExplorationViewModel(game, _session.Stats, _session.Quests, _session.Codex);
         exploration.ReturnToTownRequested += ReturnFromDungeon;
         exploration.GameWonRequested += OnGameWon;
         CurrentView = exploration;
+        Music.Play(GameMusic.Dungeon);
     }
 
     public ObservableCollection<string> VictoryParty { get; } = new();
@@ -206,6 +232,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         IsGameWon = true;
         StatusMessage = "Victory! Skara Brae is freed.";
         Sfx.Play(GameSound.Victory);
+        Music.Play(GameMusic.Victory);
     }
 
     [RelayCommand]
@@ -220,6 +247,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     /// <summary>Returning to town is a safe checkpoint, so the game autosaves there (if enabled).</summary>
     private async void ReturnFromDungeon()
     {
+        // Fresh notices go up on the board while the party was away.
+        _session.QuestBoard.Restock(_session.Rng, System.Math.Max(1, _session.Stats.DeepestDepth));
         if (Settings.Autosave)
         {
             try

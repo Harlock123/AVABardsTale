@@ -22,6 +22,12 @@ public sealed partial class AppSettings : ObservableObject
     /// <summary>Sound-effect volume (0–1).</summary>
     [ObservableProperty] private double _soundVolume = 0.7;
 
-    /// <summary>Silences all sound effects.</summary>
+    /// <summary>Silences all sound effects and music.</summary>
     [ObservableProperty] private bool _muted;
+
+    /// <summary>Whether looping background music plays.</summary>
+    [ObservableProperty] private bool _musicEnabled = true;
+
+    /// <summary>Background-music volume (0–1).</summary>
+    [ObservableProperty] private double _musicVolume = 0.45;
 }

@@ -2,6 +2,7 @@ using BardsTale.Core.Characters;
 using BardsTale.Core.Dungeon;
 using BardsTale.Core.Geometry;
 using BardsTale.Core.Items;
+using BardsTale.Core.Lore;
 using BardsTale.Core.Quests;
 using BardsTale.Core.Town;
 using BardsTale.Core.Util;
@@ -36,6 +37,12 @@ public sealed class GameSession
 
     /// <summary>The party's side-quest journal — quests offered by townsfolk and their progress.</summary>
     public QuestLog Quests { get; } = new();
+
+    /// <summary>The town notice board — a rotating set of quests to pick up. Transient (not saved).</summary>
+    public QuestBoard QuestBoard { get; } = new();
+
+    /// <summary>The bestiary — which monsters the party has faced and how many they've slain.</summary>
+    public MonsterCodex Codex { get; } = new();
 
     /// <summary>The walkable Skara Brae overworld, plus the party's persisted position in it.</summary>
     public TownMap Town { get; }

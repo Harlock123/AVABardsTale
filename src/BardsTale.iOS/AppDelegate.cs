@@ -13,6 +13,7 @@ public partial class AppDelegate : AvaloniaAppDelegate<App>
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
     {
         App.AudioFactory = () => new IosAudioService();
+        App.MusicFactory = () => new IosMusicService();
         return base.CustomizeAppBuilder(builder).WithInterFont();
     }
 }

@@ -18,15 +18,16 @@
             <ScaleTransform ScaleX="{Binding Settings.UiScale}" ScaleY="{Binding Settings.UiScale}"/>
         </LayoutTransformControl.LayoutTransform>
     <Grid Margin="12" RowDefinitions="Auto,*">
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto" Margin="2,0,0,10">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="2,0,0,10">
             <TextBlock Grid.Column="0" Text="THE BARD'S TALE" FontSize="22" FontWeight="Bold"
                        Foreground="#E8C56B" VerticalAlignment="Center"/>
             <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Foreground="#A9D0B0"
                        VerticalAlignment="Center" Margin="16,0" FontFamily="Consolas,monospace"/>
             <Button Grid.Column="2" Content="📜 Quests (J)" Command="{Binding ShowQuestLogCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="3" Content="⚙ Settings" Command="{Binding ShowSettingsCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="4" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="5" Content="Load" Command="{Binding ShowLoadSlotsCommand}"/>
+            <Button Grid.Column="3" Content="📖 Bestiary (B)" Command="{Binding ShowBestiaryCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="4" Content="⚙ Settings" Command="{Binding ShowSettingsCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="5" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="6" Content="Load" Command="{Binding ShowLoadSlotsCommand}"/>
         </Grid>
 
         <Panel Grid.Row="1">
@@ -128,14 +129,16 @@
             </Border>
             <!-- Settings -->
             <Border IsVisible="{Binding IsSettingsOpen}" Background="#E60B0D14">
-                <Border Width="470" VerticalAlignment="Center" HorizontalAlignment="Center"
+                <Border Width="470" MaxHeight="600" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="#161A24" BorderBrush="#3A3F52" BorderThickness="2" CornerRadius="6" Padding="22">
-                    <StackPanel Spacing="18">
-                        <Grid ColumnDefinitions="*,Auto">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
                             <TextBlock Grid.Column="0" Text="Settings" FontSize="20" FontWeight="Bold"
                                        Foreground="#E8C56B" VerticalAlignment="Center"/>
                             <Button Grid.Column="1" Content="Close" Command="{Binding CloseSettingsCommand}"/>
                         </Grid>
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Spacing="18">
 
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
@@ -169,8 +172,8 @@
 
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock Text="Mute sound" Foreground="#E8E9F0"/>
-                                <TextBlock Text="Silences all sound effects." Foreground="#9AA0B5" FontSize="11"/>
+                                <TextBlock Text="Mute everything" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Silences all sound effects and music." Foreground="#9AA0B5" FontSize="11"/>
                             </StackPanel>
                             <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
                                           IsChecked="{Binding Settings.Muted}"/>
@@ -178,14 +181,36 @@
 
                         <StackPanel Spacing="4">
                             <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Grid.Column="0" Text="Sound volume" Foreground="#E8E9F0"/>
-                                <TextBlock Grid.Column="1" Foreground="#9AA0B5"
+                                <TextBlock Grid.Column="0" Text="Sound effects volume" Foreground="#E8E9F0"/>
+                                <TextBlock Grid.Column="1" FontWeight="Bold" Foreground="#E8C56B"
                                            Text="{Binding Settings.SoundVolume, StringFormat='{}{0:P0}'}"/>
                             </Grid>
-                            <Slider Minimum="0" Maximum="1" TickFrequency="0.1" IsSnapToTickEnabled="True"
+                            <Slider Minimum="0" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True"
                                     Value="{Binding Settings.SoundVolume}"/>
                         </StackPanel>
-                    </StackPanel>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="Background music" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Plays looping music in town, the dungeon and combat."
+                                           Foreground="#9AA0B5" FontSize="11"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                          IsChecked="{Binding Settings.MusicEnabled}"/>
+                        </Grid>
+
+                        <StackPanel Spacing="4">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" Text="Background music volume" Foreground="#E8E9F0"/>
+                                <TextBlock Grid.Column="1" FontWeight="Bold" Foreground="#E8C56B"
+                                           Text="{Binding Settings.MusicVolume, StringFormat='{}{0:P0}'}"/>
+                            </Grid>
+                            <Slider Minimum="0" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                    Value="{Binding Settings.MusicVolume}"/>
+                        </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
                 </Border>
             </Border>
 
@@ -250,6 +275,44 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Border>
+
+            <!-- Bestiary -->
+            <Border IsVisible="{Binding IsBestiaryOpen}" Background="#E60B0D14">
+                <Border Width="600" MaxHeight="680" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="#161A24" BorderBrush="#3A3F52" BorderThickness="2" CornerRadius="6" Padding="20">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+                            <TextBlock Grid.Column="0" Text="{Binding Bestiary.Heading}" FontSize="20" FontWeight="Bold"
+                                       Foreground="#E8C56B" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Close" Command="{Binding CloseBestiaryCommand}"/>
+                        </Grid>
+                        <TextBlock DockPanel.Dock="Bottom" Margin="0,12,0,0" FontSize="11" Foreground="#7E879B"
+                                   Text="Press B to open or close the bestiary. Entries fill in as you face each monster."/>
+                        <ScrollViewer>
+                            <ItemsControl ItemsSource="{Binding Bestiary.Entries}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:BestiaryEntryViewModel">
+                                        <Border Margin="0,0,0,8" Padding="12,9" CornerRadius="4" Background="#222634">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"
+                                                           Foreground="{Binding NameBrush}"/>
+                                                <TextBlock Text="{Binding StatLine}" FontSize="12" Foreground="#C7CBDA"
+                                                           FontFamily="Consolas,monospace" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding Notes}" IsVisible="{Binding HasNotes}" FontSize="12"
+                                                           Foreground="#D69FC4" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding Worth}" IsVisible="{Binding IsDiscovered}"
+                                                           FontSize="11" Foreground="#D8C58A"/>
+                                                <TextBlock Text="{Binding TallyLine}" IsVisible="{Binding IsDiscovered}"
+                                                           FontSize="11" Foreground="#8FB7FF"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </ScrollViewer>
                     </DockPanel>
                 </Border>

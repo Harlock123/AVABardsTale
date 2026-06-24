@@ -20,6 +20,11 @@ public static class MovementKeys
                 vm.CloseQuestLogCommand.Execute(null);
                 e.Handled = true;
             }
+            else if (vm.IsBestiaryOpen)
+            {
+                vm.CloseBestiaryCommand.Execute(null);
+                e.Handled = true;
+            }
             else if (vm.Town is { IsQuestOfferOpen: true } offer)
             {
                 offer.DeclineQuestOfferCommand.Execute(null);
@@ -66,6 +71,15 @@ public static class MovementKeys
             && vm.Town is not { IsQuestOfferOpen: true })
         {
             vm.ToggleQuestLog();
+            e.Handled = true;
+            return;
+        }
+
+        // B opens (and closes) the bestiary from anywhere.
+        if (e.Key is Key.B && !vm.IsSlotPanelOpen && !vm.IsSettingsOpen
+            && vm.Town is not { IsQuestOfferOpen: true })
+        {
+            vm.ToggleBestiary();
             e.Handled = true;
             return;
         }

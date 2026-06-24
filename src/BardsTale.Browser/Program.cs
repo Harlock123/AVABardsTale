@@ -26,6 +26,10 @@ internal sealed partial class Program
         await JSHost.ImportAsync("audio", "../audio.js");
         App.AudioFactory = () => new BrowserAudioService();
 
+        // Route looping background music through its own Web Audio backend.
+        await JSHost.ImportAsync("music", "../music.js");
+        App.MusicFactory = () => new BrowserMusicService();
+
         await BuildAvaloniaApp()
             .WithInterFont()
             .StartBrowserAppAsync("out");

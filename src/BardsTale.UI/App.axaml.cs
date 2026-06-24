@@ -28,6 +28,13 @@ public partial class App : Application
     public static System.Func<IAudioService> AudioFactory { get; set; } =
         () => System.OperatingSystem.IsMacOS() ? new DesktopAudioService() : new NullAudioService();
 
+    /// <summary>
+    /// How the app obtains its background-music backend. Defaults to macOS desktop music
+    /// (silent elsewhere); each head overrides this with its own looping backend.
+    /// </summary>
+    public static System.Func<IMusicService> MusicFactory { get; set; } =
+        () => System.OperatingSystem.IsMacOS() ? new DesktopMusicService() : new NullMusicService();
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -40,6 +47,7 @@ public partial class App : Application
         DisableAvaloniaDataAnnotationValidation();
 
         Sfx.Current = AudioFactory();
+        Music.Current = MusicFactory();
 
         // On touch devices, enlarge tap targets (desktop/browser stay compact).
         if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())

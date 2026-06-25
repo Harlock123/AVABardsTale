@@ -41,6 +41,7 @@ public sealed partial class TownViewModel : ViewModelBase
         SpellMenu = new ObservableCollection<SpellMenuItemViewModel>();
         Postings = new ObservableCollection<QuestBoardItemViewModel>();
         Upgrades = new ObservableCollection<GearUpgradeViewModel>();
+        AccessorySlots = new ObservableCollection<AccessorySlotViewModel>();
         RebuildParty();
         SyncWorld();
         CheckAchievements(); // retroactively unlock anything already earned (e.g. on load)
@@ -446,6 +447,89 @@ public sealed partial class TownViewModel : ViewModelBase
             Stash.Add(new ShopItemViewModel(item));
         if (SelectedStashItem is not null && !_session.Party.Inventory.Contains(SelectedStashItem.Item))
             SelectedStashItem = null;
+        RebuildAccessorySlots();
+    }
+
+    // --- Per-slot accessory management (the three ring/amulet slots) ---
+
+    /// <summary>The selected hero's three accessory slots, for the equip/unequip panel at Garth's.</summary>
+    public ObservableCollection<AccessorySlotViewModel> AccessorySlots { get; }
+
+    public bool HasSelectedHero => SelectedHero is not null;
+
+    private void RebuildAccessorySlots()
+    {
+        AccessorySlots.Clear();
+        OnPropertyChanged(nameof(HasSelectedHero));
+        if (SelectedHero?.Model is not { } hero) return;
+
+        var selected = SelectedStashItem?.Item;
+        var canEquipRing = selected is { Slot: ItemSlot.Ring, Identified: true };
+        var canEquipAmulet = selected is { Slot: ItemSlot.Amulet, Identified: true };
+
+        AccessorySlots.Add(new AccessorySlotViewModel("Ring 1", hero.Ring1, canEquipRing));
+        AccessorySlots.Add(new AccessorySlotViewModel("Ring 2", hero.Ring2, canEquipRing));
+        AccessorySlots.Add(new AccessorySlotViewModel("Amulet", hero.Amulet, canEquipAmulet));
+    }
+
+    /// <summary>Equips the selected stashed ring/amulet into a specific slot, displacing what's there.</summary>
+    [RelayCommand]
+    private void EquipAccessory(string? slotLabel)
+    {
+        if (slotLabel is null) return;
+        if (SelectedHero?.Model is not { } hero) { Notice = "Select a hero first."; return; }
+        if (SelectedStashItem?.Item is not { } item) { Notice = "Select a ring or amulet from the stash."; return; }
+        if (!item.Identified) { Notice = "Have it appraised before equipping it."; return; }
+
+        var isRingSlot = slotLabel is "Ring 1" or "Ring 2";
+        if (isRingSlot && item.Slot != ItemSlot.Ring) { Notice = $"{item.Name} is not a ring."; return; }
+        if (slotLabel == "Amulet" && item.Slot != ItemSlot.Amulet) { Notice = $"{item.Name} is not an amulet."; return; }
+
+        var displaced = SlotItem(hero, slotLabel);
+        _session.Party.Inventory.Remove(item);
+        SetSlot(hero, slotLabel, item);
+        if (displaced is not null) _session.Party.Inventory.Add(displaced);
+
+        Notice = displaced is not null
+            ? $"{hero.Name} wears {item.Name} ({slotLabel}), stowing {displaced.Name}."
+            : $"{hero.Name} wears {item.Name} ({slotLabel}).";
+        Sfx.Play(GameSound.Equip);
+        RebuildStash();      // also rebuilds the slot panel
+        RefreshEconomy();    // refresh roster AC / wards in place (keeps the hero selected)
+    }
+
+    /// <summary>Removes the accessory in a specific slot, returning it to the stash.</summary>
+    [RelayCommand]
+    private void UnequipAccessory(string? slotLabel)
+    {
+        if (slotLabel is null) return;
+        if (SelectedHero?.Model is not { } hero) return;
+        if (SlotItem(hero, slotLabel) is not { } item) { Notice = $"{slotLabel} is empty."; return; }
+
+        SetSlot(hero, slotLabel, null);
+        _session.Party.Inventory.Add(item);
+        Notice = $"{hero.Name} removes {item.Name} ({slotLabel}).";
+        Sfx.Play(GameSound.Equip);
+        RebuildStash();      // also rebuilds the slot panel
+        RefreshEconomy();    // refresh roster AC / wards in place
+    }
+
+    private static Item? SlotItem(Character hero, string slotLabel) => slotLabel switch
+    {
+        "Ring 1" => hero.Ring1,
+        "Ring 2" => hero.Ring2,
+        "Amulet" => hero.Amulet,
+        _ => null
+    };
+
+    private static void SetSlot(Character hero, string slotLabel, Item? item)
+    {
+        switch (slotLabel)
+        {
+            case "Ring 1": hero.Ring1 = item; break;
+            case "Ring 2": hero.Ring2 = item; break;
+            case "Amulet": hero.Amulet = item; break;
+        }
     }
 
     // --- Temple ---
@@ -566,9 +650,12 @@ public sealed partial class TownViewModel : ViewModelBase
     partial void OnSelectedHeroChanged(CharacterViewModel? value)
     {
         if (IsSmithy) RebuildUpgrades();
+        RebuildAccessorySlots();
         OnPropertyChanged(nameof(ChangeClassCost));
         OnPropertyChanged(nameof(ChangeClassInfo));
     }
+
+    partial void OnSelectedStashItemChanged(ShopItemViewModel? value) => RebuildAccessorySlots();
 
     // --- Change Class (retrain at the Guild) ---
 

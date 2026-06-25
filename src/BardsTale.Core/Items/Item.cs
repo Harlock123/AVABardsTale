@@ -43,13 +43,23 @@ public sealed record Item(
     int MagicBonus = 0,
     bool Identified = true,
     Spell? ItemPower = null,
-    Element ResistsElement = Element.None)
+    Element ResistsElement = Element.None,
+    // --- Accessory effects (rings & amulets) ---
+    int HitBonus = 0,
+    int RegenPerRound = 0,
+    int LuckBonus = 0,
+    StatusEffect ImmuneStatus = StatusEffect.None)
 {
     public bool IsWeapon => Slot == ItemSlot.Weapon;
     public bool IsAccessory => Slot is ItemSlot.Ring or ItemSlot.Amulet;
     public bool IsConsumable => Slot == ItemSlot.Consumable;
+
+    /// <summary>True when an accessory grants any benefit (armour, ward, or a combat effect).</summary>
+    public bool HasAccessoryEffect => IsAccessory && (ArmorBonus > 0 || ResistsElement != Element.None
+        || HitBonus > 0 || DamageBonus > 0 || RegenPerRound > 0 || LuckBonus > 0 || ImmuneStatus != StatusEffect.None);
+
     public bool IsMagic => MagicBonus > 0 || ItemPower is not null || ResistsElement != Element.None
-        || (IsAccessory && ArmorBonus > 0);
+        || HasAccessoryEffect;
 
     /// <summary>A wielded item with a once-per-fight magical power (a wand, staff or rod).</summary>
     public bool HasPower => ItemPower is not null;
@@ -75,6 +85,33 @@ public sealed record Item(
             var named = MonsterElements.Describe(ResistsElement);
             return named.Length > 0 ? $"wards {named}" : "";
         }
+    }
+
+    /// <summary>A readable summary of an accessory's every benefit, e.g. "+1 armor · wards Fire · +2 regen".</summary>
+    public string AccessoryText
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (ArmorBonus > 0) parts.Add($"+{ArmorBonus} armor");
+            if (ResistsElement != Element.None) parts.Add(ResistText);
+            if (DamageBonus > 0) parts.Add($"+{DamageBonus} dmg");
+            if (HitBonus > 0) parts.Add($"+{HitBonus} to-hit");
+            if (RegenPerRound > 0) parts.Add($"+{RegenPerRound} regen/round");
+            if (LuckBonus > 0) parts.Add($"+{LuckBonus} luck");
+            if (ImmuneStatus != StatusEffect.None) parts.Add($"immune to {DescribeStatuses(ImmuneStatus)}");
+            return parts.Count > 0 ? string.Join(" · ", parts) : "trinket";
+        }
+    }
+
+    /// <summary>Renders a status-effect flag set as a readable list ("paralysis, sleep").</summary>
+    public static string DescribeStatuses(StatusEffect statuses)
+    {
+        var parts = new List<string>();
+        if (statuses.HasFlag(StatusEffect.Paralyzed)) parts.Add("paralysis");
+        if (statuses.HasFlag(StatusEffect.Asleep)) parts.Add("sleep");
+        if (statuses.HasFlag(StatusEffect.Poisoned)) parts.Add("poison");
+        return string.Join(", ", parts);
     }
 
     /// <summary>A concealed copy of this item — same stats underneath, but its identity is hidden.</summary>
@@ -151,12 +188,17 @@ public static class Items
     public static readonly IReadOnlyList<Item> MagicItems =
         (from b in EnchantableBases from n in new[] { 1, 2, 3 } select Enchant(b, n)).ToList();
 
+    /// <summary>An item's base name with any "+N" enchant suffix stripped ("Ring of Fire Ward +2" → "Ring of Fire Ward").</summary>
+    public static string BaseName(string name)
+    {
+        var plus = name.LastIndexOf(" +", System.StringComparison.Ordinal);
+        return plus >= 0 ? name[..plus] : name;
+    }
+
     /// <summary>The next "+N" version of an enchantable item, or null if it can't be upgraded (capped at +3).</summary>
     public static Item? UpgradeOf(Item item)
     {
-        var baseName = item.Name;
-        var plus = baseName.LastIndexOf(" +", System.StringComparison.Ordinal);
-        if (plus >= 0) baseName = baseName[..plus];
+        var baseName = BaseName(item.Name);
         // Weapons/armour and warding accessories share the same +1/+2/+3 forge chain.
         var baseItem = EnchantableBases.FirstOrDefault(b => b.Name == baseName)
                        ?? Accessories.FirstOrDefault(b => b.Name == baseName);
@@ -195,12 +237,28 @@ public static class Items
         ArmorBonus: 1, Value: 3200,
         ResistsElement: Element.Fire | Element.Cold | Element.Lightning | Element.Poison | Element.Arcane);
 
+    // --- Effect accessories: rings & amulets that boost combat rather than ward elements ---
+    public static readonly Item RingOfRegeneration = new("Ring of Regeneration", ItemSlot.Ring,
+        Value: 900, RegenPerRound: 2);
+    public static readonly Item RingOfStriking = new("Ring of Striking", ItemSlot.Ring,
+        Value: 800, DamageBonus: 2);
+    public static readonly Item RingOfAccuracy = new("Ring of Accuracy", ItemSlot.Ring,
+        Value: 800, HitBonus: 2);
+    public static readonly Item RingOfFreeAction = new("Ring of Free Action", ItemSlot.Ring,
+        Value: 1200, ImmuneStatus: StatusEffect.Paralyzed | StatusEffect.Asleep);
+    public static readonly Item AmuletOfFortune = new("Amulet of Fortune", ItemSlot.Amulet,
+        Value: 1000, LuckBonus: 4);
+    public static readonly Item AmuletOfValor = new("Amulet of Valor", ItemSlot.Amulet,
+        Value: 1300, HitBonus: 2, DamageBonus: 1);
+
     /// <summary>Worn accessories that can be bought, sold, or turn up as treasure.</summary>
     public static readonly IReadOnlyList<Item> Accessories =
         new[]
         {
             RingOfProtection, RingOfFireWard, RingOfFrostWard, RingOfStormWard,
-            AmuletOfTheViper, AmuletOfWarding, TalismanOfTheAges
+            AmuletOfTheViper, AmuletOfWarding, TalismanOfTheAges,
+            RingOfRegeneration, RingOfStriking, RingOfAccuracy, RingOfFreeAction,
+            AmuletOfFortune, AmuletOfValor
         };
 
     /// <summary>Every Smithy-forged "+N" accessory — registered so saved enchanted gear resolves on load.</summary>

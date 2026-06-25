@@ -6,7 +6,9 @@ using BardsTale.Core.Dungeon;
 using BardsTale.Core.Game;
 using BardsTale.Core.Items;
 using BardsTale.Core.Persistence;
+using BardsTale.Core.Town;
 using BardsTale.Core.Util;
+using BardsTale.UI.ViewModels;
 using Xunit;
 
 namespace BardsTale.Tests;
@@ -61,14 +63,15 @@ public class AccessoryChestTests
     }
 
     [Fact]
-    public void Two_protection_rings_stack_their_armor()
+    public void Two_protection_rings_stack_their_armor_plus_the_set_bonus()
     {
         var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
         var hero = party.Members[0];
         var before = hero.ArmorClass;
         hero.Ring1 = Items.RingOfProtection;
         hero.Ring2 = Items.RingOfProtection;
-        Assert.Equal(before - 2, hero.ArmorClass);
+        // −1 each, plus −1 from the Twin Bulwark set the pair completes.
+        Assert.Equal(before - 3, hero.ArmorClass);
     }
 
     [Fact]
@@ -315,5 +318,189 @@ public class AccessoryChestTests
         Assert.Contains(MonsterElements.Glyph(Element.Fire), glyphs);
         Assert.Contains(MonsterElements.Glyph(Element.Cold), glyphs);
         Assert.NotEqual("", MonsterElements.Glyph(Element.Lightning));
+    }
+
+    // ── New accessory effects ─────────────────────────────────────────────────
+
+    [Fact]
+    public void Combat_accessories_grant_hit_damage_luck_and_regen()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        var baseLuck = hero.Attributes.Luck;
+        hero.Ring1 = Items.RingOfStriking;     // +2 damage
+        hero.Ring2 = Items.RingOfAccuracy;     // +2 to-hit
+        hero.Amulet = Items.AmuletOfFortune;   // +4 luck
+
+        Assert.Equal(2, hero.GearDamageBonus);
+        Assert.Equal(2, hero.GearHitBonus);
+        Assert.Equal(baseLuck + 4, hero.EffectiveLuck);
+
+        hero.Amulet = null;
+        hero.Ring1 = Items.RingOfRegeneration; // +2 regen/round
+        Assert.Equal(2, hero.RegenPerRound);
+    }
+
+    [Fact]
+    public void A_ring_of_free_action_grants_immunity_that_inflict_respects()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.RingOfFreeAction;
+
+        Assert.True(hero.IsImmuneTo(StatusEffect.Paralyzed));
+        Assert.True(hero.IsImmuneTo(StatusEffect.Asleep));
+        Assert.False(hero.IsImmuneTo(StatusEffect.Poisoned));
+
+        hero.Inflict(StatusEffect.Paralyzed);
+        Assert.False(hero.IsParalyzed);   // warded off entirely
+        hero.Inflict(StatusEffect.Poisoned);
+        Assert.True(hero.IsPoisoned);      // not immune to poison
+    }
+
+    [Fact]
+    public void A_regeneration_ring_mends_the_wearer_each_combat_round()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.RingOfRegeneration;
+        hero.MaxHitPoints = 100;
+        hero.HitPoints = 50;
+
+        // A foe too feeble to kill anyone, so the round ends with everyone alive and regenerating.
+        var t = new MonsterTemplate("Gnat", 2000, 0, 1, 1, 0, 1, 0, 1);
+        var encounter = new Encounter(new[] { new MonsterGroup(t, 1) });
+        var engine = new CombatEngine(party, encounter, new SystemRandomSource(seed: 3), surprise: SurpriseState.None);
+        var commands = party.Members.Select(m => new CombatCommand(m, CombatActionType.Defend)).ToList();
+
+        engine.ExecuteRound(commands);
+        Assert.True(hero.HitPoints > 50); // regenerated at end of round
+    }
+
+    // ── Accessory set bonuses ─────────────────────────────────────────────────
+
+    [Fact]
+    public void Two_rings_of_protection_trigger_the_twin_bulwark_set()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        var bare = hero.ArmorClass;
+
+        hero.Ring1 = Items.RingOfProtection;
+        var oneRing = hero.ArmorClass;           // −1 AC from the ring alone
+        hero.Ring2 = Items.RingOfProtection;     // second ring + the set bonus
+
+        Assert.Equal(bare - 1, oneRing);
+        Assert.Equal(bare - 3, hero.ArmorClass); // −1, −1, and −1 set bonus
+        Assert.Contains(hero.ActiveSets, s => s.Name == "Twin Bulwark");
+    }
+
+    [Fact]
+    public void A_ring_and_amulet_set_adds_an_extra_ward()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Amulet = Items.AmuletOfWarding;  // fire/cold/lightning, but not arcane
+        Assert.False(hero.Resists(Element.Arcane));   // no arcane ward on its own
+
+        // Adding the Storm Ward ring completes the Stormwarden set, which grants an arcane ward.
+        hero.Ring1 = Items.RingOfStormWard;
+        Assert.Contains(hero.ActiveSets, s => s.Name == "Stormwarden");
+        Assert.True(hero.Resists(Element.Arcane));
+    }
+
+    [Fact]
+    public void Set_pieces_still_match_after_being_enchanted()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.Enchant(Items.RingOfProtection, 2); // "Ring of Protection +2"
+        hero.Ring2 = Items.RingOfProtection;
+        Assert.Contains(hero.ActiveSets, s => s.Name == "Twin Bulwark");
+    }
+
+    // ── Per-slot equip control (Garth's) ──────────────────────────────────────
+
+    [Fact]
+    public void Equipping_a_ring_to_a_chosen_slot_displaces_only_that_slot()
+    {
+        var session = new GameSession(seed: 2);
+        session.FillDefaultParty();
+        session.Party.Inventory.Add(Items.RingOfFireWard);
+        session.Party.Inventory.Add(Items.RingOfFrostWard);
+        session.TownPosition = session.Town.Buildings.First(b => b.Building == TownBuilding.Shop).Position;
+        var town = new TownViewModel(session);
+        town.EnterCommand.Execute(null);
+
+        var hero = town.Party.First();
+        hero.Model.Ring1 = Items.RingOfStormWard; // pre-fill Ring 1
+        town.SelectedHero = hero;
+        town.SelectedStashItem = town.Stash.First(s => s.Item == Items.RingOfFireWard);
+
+        town.EquipAccessoryCommand.Execute("Ring 2");
+
+        Assert.Equal(Items.RingOfStormWard, hero.Model.Ring1);  // untouched
+        Assert.Equal(Items.RingOfFireWard, hero.Model.Ring2);   // newly equipped
+        Assert.DoesNotContain(Items.RingOfFireWard, session.Party.Inventory);
+    }
+
+    [Fact]
+    public void Equipping_over_a_full_slot_returns_the_old_ring_to_the_stash()
+    {
+        var session = new GameSession(seed: 2);
+        session.FillDefaultParty();
+        session.Party.Inventory.Add(Items.RingOfFireWard);
+        session.TownPosition = session.Town.Buildings.First(b => b.Building == TownBuilding.Shop).Position;
+        var town = new TownViewModel(session);
+        town.EnterCommand.Execute(null);
+
+        var hero = town.Party.First();
+        hero.Model.Ring1 = Items.RingOfStormWard;
+        town.SelectedHero = hero;
+        town.SelectedStashItem = town.Stash.First(s => s.Item == Items.RingOfFireWard);
+
+        town.EquipAccessoryCommand.Execute("Ring 1");
+
+        Assert.Equal(Items.RingOfFireWard, hero.Model.Ring1);
+        Assert.Contains(Items.RingOfStormWard, session.Party.Inventory); // displaced ring returns
+    }
+
+    [Fact]
+    public void An_amulet_cannot_be_equipped_into_a_ring_slot()
+    {
+        var session = new GameSession(seed: 2);
+        session.FillDefaultParty();
+        session.Party.Inventory.Add(Items.AmuletOfWarding);
+        session.TownPosition = session.Town.Buildings.First(b => b.Building == TownBuilding.Shop).Position;
+        var town = new TownViewModel(session);
+        town.EnterCommand.Execute(null);
+
+        var hero = town.Party.First();
+        town.SelectedHero = hero;
+        town.SelectedStashItem = town.Stash.First(s => s.Item == Items.AmuletOfWarding);
+
+        town.EquipAccessoryCommand.Execute("Ring 1");
+
+        Assert.Null(hero.Model.Ring1);
+        Assert.Contains(Items.AmuletOfWarding, session.Party.Inventory); // rejected, stays in stash
+    }
+
+    [Fact]
+    public void Unequipping_a_slot_returns_the_accessory_to_the_stash()
+    {
+        var session = new GameSession(seed: 2);
+        session.FillDefaultParty();
+        session.TownPosition = session.Town.Buildings.First(b => b.Building == TownBuilding.Shop).Position;
+        var town = new TownViewModel(session);
+        town.EnterCommand.Execute(null);
+
+        var hero = town.Party.First();
+        hero.Model.Amulet = Items.AmuletOfFortune;
+        town.SelectedHero = hero;
+
+        town.UnequipAccessoryCommand.Execute("Amulet");
+
+        Assert.Null(hero.Model.Amulet);
+        Assert.Contains(Items.AmuletOfFortune, session.Party.Inventory);
     }
 }

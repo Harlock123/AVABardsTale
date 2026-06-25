@@ -142,12 +142,14 @@ public sealed class CombatEngine
         foreach (var actor in BuildInitiative(commands, preActed, skipMonsters))
             actor(round);
 
-        // An Aura of Renewal mends the party a little at the end of each round.
-        if (_partyRegen > 0 && _party.Members.Any(m => !m.IsDead))
+        // End-of-round mending: an Aura of Renewal heals the whole party, and any hero
+        // with a regenerative accessory mends a little more (quietly, to spare the log).
+        if (_partyRegen > 0 || _party.Members.Any(m => !m.IsDead && m.RegenPerRound > 0))
         {
             foreach (var m in _party.Members.Where(m => !m.IsDead))
-                m.Heal(_partyRegen);
-            round.Log.Add($"A restoring aura mends the party for {_partyRegen}.");
+                m.Heal(_partyRegen + m.RegenPerRound);
+            if (_partyRegen > 0)
+                round.Log.Add($"A restoring aura mends the party for {_partyRegen}.");
         }
 
         if (_encounter.IsCleared)
@@ -238,6 +240,12 @@ public sealed class CombatEngine
         if (status == StatusEffect.None || target.IsDead) return;
         if (target.Status.HasFlag(status)) return;
         if (!_rng.Chance(monster.Template.StatusChance)) return;
+
+        if (target.IsImmuneTo(status))
+        {
+            round.Log.Add($"{target.Name}'s ward shrugs off the {monster.Name}'s {monster.Template.StatusVerb}.");
+            return;
+        }
 
         target.Inflict(status);
         round.Log.Add($"{monster.Name} {monster.Template.StatusVerb} {target.Name}!");
@@ -366,7 +374,7 @@ public sealed class CombatEngine
         var swings = attacker.AttacksPerRound + _partyExtraAttacks;
         var weapon = attacker.EffectiveWeapon;
         var attackBonus = attacker.StrengthBonus + (attacker.Level - 1) / 2
-            + attacker.Definition.BaseHitBonus + _partyAttackBonus + weapon.MagicBonus;
+            + attacker.Definition.BaseHitBonus + _partyAttackBonus + weapon.MagicBonus + attacker.GearHitBonus;
 
         for (var i = 0; i < swings; i++)
         {
@@ -376,7 +384,7 @@ public sealed class CombatEngine
             if (RollToHit(attackBonus, target.ArmorClass))
             {
                 var raw = Math.Max(1, _rng.Roll(weapon.DamageDice, weapon.DamageSides,
-                    weapon.DamageBonus + attacker.StrengthBonus + _partyAttackBonus));
+                    weapon.DamageBonus + attacker.StrengthBonus + _partyAttackBonus + attacker.GearDamageBonus));
                 var dmg = ScaleByElement(target.Name, raw, Element.Physical, out var note);
                 target.HitPoints -= dmg;
                 round.Log.Add($"{attacker.Name} hits {target.Name} for {dmg}{note}.");
@@ -571,7 +579,7 @@ public sealed class CombatEngine
                     .ToList();
                 foreach (var t in targets)
                 {
-                    if (ResistsSleep(t))
+                    if (t.IsImmuneTo(StatusEffect.Asleep) || ResistsSleep(t))
                         round.Log.Add($"{t.Name} resists the slumber.");
                     else
                     {
@@ -648,10 +656,10 @@ public sealed class CombatEngine
     }
 
     /// <summary>A luckier hero may shrug off half of an area blast.</summary>
-    private bool LuckySave(Character c) => _rng.Next(1, 21) <= c.Attributes.Luck / 3;
+    private bool LuckySave(Character c) => _rng.Next(1, 21) <= c.EffectiveLuck / 3;
 
     /// <summary>A luckier hero is more likely to shrug off an enemy sleep spell.</summary>
-    private bool ResistsSleep(Character c) => _rng.Next(1, 21) <= c.Attributes.Luck / 2;
+    private bool ResistsSleep(Character c) => _rng.Next(1, 21) <= c.EffectiveLuck / 2;
 
     private void ResolveMonsterAttack(Monster monster, CombatRound round)
     {

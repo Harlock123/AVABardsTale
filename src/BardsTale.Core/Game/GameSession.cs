@@ -64,6 +64,8 @@ public sealed class GameSession
         Items.Items.SmallShield, Items.Items.Robes,
         Items.Items.RingOfProtection, Items.Items.RingOfFireWard, Items.Items.RingOfFrostWard,
         Items.Items.RingOfStormWard, Items.Items.AmuletOfTheViper,
+        Items.Items.RingOfRegeneration, Items.Items.RingOfStriking, Items.Items.RingOfAccuracy,
+        Items.Items.RingOfFreeAction, Items.Items.AmuletOfFortune, Items.Items.AmuletOfValor,
         Items.Items.HealingPotion, Items.Items.ManaDraught, Items.Items.Antidote, Items.Items.ResurrectionDust
     };
 

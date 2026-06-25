@@ -1,3 +1,4 @@
+using System.Linq;
 using Avalonia.Media;
 using BardsTale.Core.Characters;
 using BardsTale.Core.Combat;
@@ -80,6 +81,18 @@ public sealed partial class CharacterViewModel : ViewModelBase
 
     public bool HasWards => Model.ResistedElements != Element.None;
 
+    /// <summary>Active accessory set bonuses, e.g. "Set: Twin Bulwark".</summary>
+    public string SetBonusText
+    {
+        get
+        {
+            var sets = Model.ActiveSets;
+            return sets.Count > 0 ? "Set: " + string.Join(", ", sets.Select(s => s.Name)) : "";
+        }
+    }
+
+    public bool HasSetBonus => Model.ActiveSets.Count > 0;
+
     /// <summary>Re-reads all derived values after the underlying model changes.</summary>
     public void Refresh()
     {
@@ -105,5 +118,7 @@ public sealed partial class CharacterViewModel : ViewModelBase
         OnPropertyChanged(nameof(ArmorClassText));
         OnPropertyChanged(nameof(WardText));
         OnPropertyChanged(nameof(HasWards));
+        OnPropertyChanged(nameof(SetBonusText));
+        OnPropertyChanged(nameof(HasSetBonus));
     }
 }

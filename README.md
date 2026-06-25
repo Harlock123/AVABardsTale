@@ -434,14 +434,24 @@ filling the book is a long-game goal. Your progress persists in the save.
 ### Accessories, elemental wards & treasure chests
 
 Beyond weapons, armour and shields, each hero wears up to **three accessories** — **two
-rings and an amulet**. Most are **elemental wards**: a Ring of Fire Ward, Frost Ward,
-Storm Ward or Amulet of the Viper **halves** the damage its element deals to the wearer,
-while the rarer **Amulet of Warding** (fire, cold and lightning) and **Talisman of the
-Ages** (every element) guard against several at once. A plain **Ring of Protection**
-simply sharpens armour class, and **wards from all three slots stack** — two protection
-rings give two points of armour, and a hero can cover several elements at once. Each
-hero's active wards are shown as cyan element glyphs on the roster (*"Wards: 🔥 ❄ ⚡"*)
-and on their character panel at Garth's.
+rings and an amulet** — each managed in its **own slot** at Garth's (equip a chosen ring
+to Ring 1 or Ring 2, or unequip any slot back to the stash). Most accessories are
+**elemental wards**: a Ring of Fire Ward, Frost Ward, Storm Ward or Amulet of the Viper
+**halves** the damage its element deals to the wearer, while the rarer **Amulet of
+Warding** (fire, cold and lightning) and **Talisman of the Ages** (every element) guard
+against several at once. Others grant **combat boons** — a Ring of Striking (+damage),
+Ring of Accuracy (+to-hit), Ring of Regeneration (heals each combat round), Ring of Free
+Action (immunity to paralysis and sleep), Amulet of Fortune (+luck on saves) or Amulet of
+Valor. A plain **Ring of Protection** simply sharpens armour class, and **bonuses from all
+three slots stack**. Each hero's active wards are shown as cyan element glyphs on the
+roster (*"Wards: 🔥 ❄ ⚡"*) and on their character panel at Garth's.
+
+**Set bonuses** reward matched pairs (the pieces still count once enchanted): two Rings of
+Protection (**Twin Bulwark**) grant an extra point of armour; a Ring of Storm Ward + Amulet
+of Warding (**Stormwarden**) adds an arcane ward; a Ring of Regeneration + Amulet of the
+Viper (**Vital Coil**) speeds mending and grants poison immunity; and a Ring of Striking +
+Amulet of Valor (**Duelist's Edge**) sharpens every blow. Active sets show in gold on the
+character panel.
 
 Wards matter because monsters hurl **elemental** attacks — dragon breath, a flame
 shade's cinderblast, a storm giant's thunderclap, an acid breath — and warded gear
@@ -530,13 +540,17 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
   enchantment "+N" up to **+3** for **gold + forge embers**, a crafting material
   that drops from deep-floor fights and bosses (a warding ring keeps its element
   as it gains armour). Works on equipped gear or stash.
-- **Accessories & elemental resistance** — each hero wears **three accessories
-  (two rings + an amulet)**; most are **elemental wards** that halve a matching
-  attack's damage (fire, cold, lightning, poison, or several at once), and wards from
-  all three slots **stack**. Monsters wield elemental breath and blasts, so wards
-  matter; monsters also have their own **weaknesses (×2) and resistances (÷2)**.
-  Bought/sold/appraised at Garth's, dropped in the deep, and enchantable at the Forge.
-  Active wards and bestiary affinities show as cyan **element glyphs**.
+- **Accessories, effects & set bonuses** — each hero wears **three accessories
+  (two rings + an amulet)**, managed in **individual slots** at Garth's (equip to a
+  chosen slot, unequip back to the stash). Most are **elemental wards** that halve a
+  matching attack's damage (fire, cold, lightning, poison, or several at once); others
+  grant **combat effects** — extra damage/to-hit, per-round regeneration, paralysis/sleep
+  immunity (free action), or luck on saves. Bonuses from all three slots **stack**, and
+  matched pairs trigger **set bonuses** (e.g. twin protection rings, or a ring + amulet of
+  the same theme). Monsters wield elemental breath and blasts, so wards matter; monsters
+  also have their own **weaknesses (×2) and resistances (÷2)**. Bought/sold/appraised at
+  Garth's, dropped in the deep, and enchantable at the Forge. Active wards, set bonuses
+  and bestiary affinities show as cyan/gold **glyphs and badges**.
 - **Treasure chests** — scattered each floor, opened on a prompt: a **Rogue**
   disarms an **elemental trap** (warding gear softens it) before the chest spills
   gold and loot weighted toward accessories. **Ornate chests** are always trapped

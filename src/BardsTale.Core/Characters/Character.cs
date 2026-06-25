@@ -53,6 +53,9 @@ public sealed class Character
         }
     }
 
+    /// <summary>The accessory set bonuses currently active (every piece worn).</summary>
+    public IReadOnlyList<AccessorySet> ActiveSets => AccessorySets.ActiveFor(this).ToList();
+
     public StatusEffect Status { get; set; } = StatusEffect.None;
 
     // Levels (and the HP/SP they granted) sapped by level drain, awaiting restoration.
@@ -102,12 +105,13 @@ public sealed class Character
             ac -= Ring1?.ArmorBonus ?? 0;
             ac -= Ring2?.ArmorBonus ?? 0;
             ac -= Amulet?.ArmorBonus ?? 0;
+            foreach (var set in ActiveSets) ac -= set.ArmorBonus;
             ac -= DexterityBonus;
             return ac;
         }
     }
 
-    /// <summary>The elements this character wards against (taking half damage), drawn from equipped gear.</summary>
+    /// <summary>The elements this character wards against (taking half damage), drawn from equipped gear and set bonuses.</summary>
     public Element ResistedElements
     {
         get
@@ -115,12 +119,44 @@ public sealed class Character
             var warded = (Armor?.ResistsElement ?? Element.None) | (Shield?.ResistsElement ?? Element.None);
             foreach (var accessory in Accessories)
                 warded |= accessory.ResistsElement;
+            foreach (var set in ActiveSets)
+                warded |= set.WardBonus;
             return warded;
         }
     }
 
     /// <summary>True when equipped gear wards against the given attack element.</summary>
     public bool Resists(Element element) => element != Element.None && (ResistedElements & element) != 0;
+
+    /// <summary>Accessory + set bonus to melee to-hit rolls.</summary>
+    public int GearHitBonus => Accessories.Sum(a => a.HitBonus) + ActiveSets.Sum(s => s.HitBonus);
+
+    /// <summary>Accessory + set bonus to melee damage.</summary>
+    public int GearDamageBonus => Accessories.Sum(a => a.DamageBonus) + ActiveSets.Sum(s => s.DamageBonus);
+
+    /// <summary>Accessory bonus to luck, sweetening saving throws.</summary>
+    public int GearLuckBonus => Accessories.Sum(a => a.LuckBonus);
+
+    /// <summary>Effective luck for saves: the base attribute plus any accessory bonus.</summary>
+    public int EffectiveLuck => Attributes.Luck + GearLuckBonus;
+
+    /// <summary>HP mended at the end of each combat round by regenerative accessories and sets.</summary>
+    public int RegenPerRound => Accessories.Sum(a => a.RegenPerRound) + ActiveSets.Sum(s => s.RegenBonus);
+
+    /// <summary>Status effects this character cannot be afflicted with, from accessories and sets.</summary>
+    public StatusEffect ImmuneStatuses
+    {
+        get
+        {
+            var immune = StatusEffect.None;
+            foreach (var accessory in Accessories) immune |= accessory.ImmuneStatus;
+            foreach (var set in ActiveSets) immune |= set.ImmuneBonus;
+            return immune;
+        }
+    }
+
+    /// <summary>True when equipped gear makes this character immune to the given status.</summary>
+    public bool IsImmuneTo(StatusEffect status) => (ImmuneStatuses & status) != 0;
 
     public int DexterityBonus => (Attributes.Dexterity - 12) / 4;
     public int StrengthBonus => (Attributes.Strength - 12) / 4;
@@ -169,10 +205,11 @@ public sealed class Character
     public bool IsAsleep => Status.HasFlag(StatusEffect.Asleep);
     public bool IsParalyzed => Status.HasFlag(StatusEffect.Paralyzed);
 
-    /// <summary>Inflicts a status on a living character (the dead can't be poisoned, etc.).</summary>
+    /// <summary>Inflicts a status on a living character — minus any the wearer's gear wards off entirely.</summary>
     public void Inflict(StatusEffect status)
     {
-        if (!IsDead) Status |= status;
+        status &= ~ImmuneStatuses;
+        if (!IsDead && status != StatusEffect.None) Status |= status;
     }
 
     public void Wake() => Status &= ~StatusEffect.Asleep;

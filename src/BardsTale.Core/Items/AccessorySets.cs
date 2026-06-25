@@ -43,17 +43,37 @@ public static class AccessorySets
     {
         var worn = c.Accessories.Select(a => Items.BaseName(a.Name)).ToList();
         foreach (var set in All)
-            if (Covers(worn, set.Pieces))
+            if (Missing(worn, set.Pieces).Count == 0)
                 yield return set;
     }
 
-    // Treats the required pieces as a multiset — each must be matched by a distinct worn slot.
-    private static bool Covers(List<string> worn, IReadOnlyList<string> required)
+    /// <summary>
+    /// Nudges for sets the character is exactly one piece away from completing, e.g.
+    /// "Equip an Amulet of Warding to complete Stormwarden." — to surface set bonuses.
+    /// </summary>
+    public static IEnumerable<string> HintsFor(Character c)
+    {
+        var worn = c.Accessories.Select(a => Items.BaseName(a.Name)).ToList();
+        foreach (var set in All)
+        {
+            var missing = Missing(worn, set.Pieces);
+            if (missing.Count != 1) continue;
+            var piece = missing[0];
+            var article = worn.Contains(piece) ? "another" : StartsWithVowel(piece) ? "an" : "a";
+            yield return $"Equip {article} {piece} to complete {set.Name}.";
+        }
+    }
+
+    // The set pieces not yet matched by a distinct worn slot (multiset difference).
+    private static List<string> Missing(List<string> worn, IReadOnlyList<string> required)
     {
         var pool = new List<string>(worn);
+        var missing = new List<string>();
         foreach (var piece in required)
             if (!pool.Remove(piece))
-                return false;
-        return true;
+                missing.Add(piece);
+        return missing;
     }
+
+    private static bool StartsWithVowel(string s) => s.Length > 0 && "AEIOUaeiou".IndexOf(s[0]) >= 0;
 }

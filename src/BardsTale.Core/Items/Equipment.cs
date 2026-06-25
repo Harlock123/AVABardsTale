@@ -43,12 +43,19 @@ public static class Equipment
                 c.Shield = item;
                 return oldS;
             case ItemSlot.Ring:
-                // Fill the first free ring slot; if both are taken, replace the first.
+                // Prefer a free ring slot; if both are taken, displace the weaker ring
+                // (lower value) so the stronger one stays on.
                 if (c.Ring1 is null) { c.Ring1 = item; return null; }
                 if (c.Ring2 is null) { c.Ring2 = item; return null; }
-                var oldR = c.Ring1;
+                if (c.Ring2.Value < c.Ring1.Value)
+                {
+                    var oldR2 = c.Ring2;
+                    c.Ring2 = item;
+                    return oldR2;
+                }
+                var oldR1 = c.Ring1;
                 c.Ring1 = item;
-                return oldR;
+                return oldR1;
             case ItemSlot.Amulet:
                 var oldAm = c.Amulet;
                 c.Amulet = item;

@@ -93,6 +93,11 @@ public sealed partial class CharacterViewModel : ViewModelBase
 
     public bool HasSetBonus => Model.ActiveSets.Count > 0;
 
+    /// <summary>A nudge toward completing a set the hero is one piece away from.</summary>
+    public string SetHintText => Model.SetHints.Count > 0 ? "Almost: " + string.Join("  ·  ", Model.SetHints) : "";
+
+    public bool HasSetHint => Model.SetHints.Count > 0;
+
     /// <summary>Re-reads all derived values after the underlying model changes.</summary>
     public void Refresh()
     {
@@ -120,5 +125,7 @@ public sealed partial class CharacterViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasWards));
         OnPropertyChanged(nameof(SetBonusText));
         OnPropertyChanged(nameof(HasSetBonus));
+        OnPropertyChanged(nameof(SetHintText));
+        OnPropertyChanged(nameof(HasSetHint));
     }
 }

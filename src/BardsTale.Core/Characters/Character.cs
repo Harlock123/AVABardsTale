@@ -56,6 +56,9 @@ public sealed class Character
     /// <summary>The accessory set bonuses currently active (every piece worn).</summary>
     public IReadOnlyList<AccessorySet> ActiveSets => AccessorySets.ActiveFor(this).ToList();
 
+    /// <summary>Hints for sets this character is one accessory away from completing.</summary>
+    public IReadOnlyList<string> SetHints => AccessorySets.HintsFor(this).ToList();
+
     public StatusEffect Status { get; set; } = StatusEffect.None;
 
     // Levels (and the HP/SP they granted) sapped by level drain, awaiting restoration.

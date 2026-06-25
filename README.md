@@ -451,7 +451,12 @@ Protection (**Twin Bulwark**) grant an extra point of armour; a Ring of Storm Wa
 of Warding (**Stormwarden**) adds an arcane ward; a Ring of Regeneration + Amulet of the
 Viper (**Vital Coil**) speeds mending and grants poison immunity; and a Ring of Striking +
 Amulet of Valor (**Duelist's Edge**) sharpens every blow. Active sets show in gold on the
-character panel.
+character panel and on the combat roster, and when a hero is **one piece away** from a set
+the panel nudges you (*"Almost: Equip a Ring of Storm Ward to complete Stormwarden."*).
+
+Accessory effects are surfaced in the **combat log** as they fire: regeneration ticks
+(*"Brynn regenerates 2 HP."*), elemental wards and luck softening a blast (*"… — luck softens
+it, warded against fire."*), and free-action shrugging off paralysis or sleep.
 
 Wards matter because monsters hurl **elemental** attacks — dragon breath, a flame
 shade's cinderblast, a storm giant's thunderclap, an acid breath — and warded gear

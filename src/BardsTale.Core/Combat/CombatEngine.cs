@@ -142,14 +142,21 @@ public sealed class CombatEngine
         foreach (var actor in BuildInitiative(commands, preActed, skipMonsters))
             actor(round);
 
-        // End-of-round mending: an Aura of Renewal heals the whole party, and any hero
-        // with a regenerative accessory mends a little more (quietly, to spare the log).
-        if (_partyRegen > 0 || _party.Members.Any(m => !m.IsDead && m.RegenPerRound > 0))
+        // End-of-round mending: an Aura of Renewal heals the whole party...
+        if (_partyRegen > 0 && _party.Members.Any(m => !m.IsDead))
         {
             foreach (var m in _party.Members.Where(m => !m.IsDead))
-                m.Heal(_partyRegen + m.RegenPerRound);
-            if (_partyRegen > 0)
-                round.Log.Add($"A restoring aura mends the party for {_partyRegen}.");
+                m.Heal(_partyRegen);
+            round.Log.Add($"A restoring aura mends the party for {_partyRegen}.");
+        }
+
+        // ...and any hero with a regenerative accessory mends a little more, noted when it heals.
+        foreach (var m in _party.Members.Where(m => !m.IsDead && m.RegenPerRound > 0 && m.HitPoints < m.MaxHitPoints))
+        {
+            var before = m.HitPoints;
+            m.Heal(m.RegenPerRound);
+            var healed = m.HitPoints - before;
+            if (healed > 0) round.Log.Add($"{m.Name} regenerates {healed} HP.");
         }
 
         if (_encounter.IsCleared)
@@ -611,8 +618,7 @@ public sealed class CombatEngine
                 foreach (var m in _party.Members.Where(m => !m.IsDead).ToList())
                 {
                     var dmg = _rng.Roll(1, spell.Power);
-                    if (LuckySave(m)) dmg = Math.Max(1, dmg / 2);
-                    HitMemberWithSpell(m, dmg, spell.Element, round);
+                    HitMemberWithSpell(m, dmg, spell.Element, round, luckySave: LuckySave(m));
                 }
                 break;
             }
@@ -638,14 +644,25 @@ public sealed class CombatEngine
         }
     }
 
-    /// <summary>Applies elemental spell damage to a party member; warded gear halves a matching element.</summary>
-    private void HitMemberWithSpell(Character target, int dmg, Element element, CombatRound round)
+    /// <summary>Applies elemental spell damage to a party member; luck and warded gear each halve it (and are noted).</summary>
+    private void HitMemberWithSpell(Character target, int dmg, Element element, CombatRound round, bool luckySave = false)
     {
+        var notes = new List<string>();
+        if (luckySave)
+        {
+            dmg = Math.Max(1, dmg / 2);
+            notes.Add("luck softens it");
+        }
         var warded = target.Resists(element);
-        if (warded) dmg = Math.Max(1, dmg / 2);
+        if (warded)
+        {
+            dmg = Math.Max(1, dmg / 2);
+            notes.Add($"warded against {element.ToString().ToLowerInvariant()}");
+        }
         var wasAsleep = target.IsAsleep;
         target.ApplyDamage(dmg);
-        round.Log.Add($"{target.Name} takes {dmg} damage{(warded ? $" — warded against {element.ToString().ToLowerInvariant()}" : "")}.");
+        var suffix = notes.Count > 0 ? $" — {string.Join(", ", notes)}" : "";
+        round.Log.Add($"{target.Name} takes {dmg} damage{suffix}.");
         if (target.IsDead)
             round.Log.Add($"{target.Name} has fallen!");
         else if (wasAsleep)

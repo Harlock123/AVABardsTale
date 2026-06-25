@@ -486,6 +486,113 @@ public class AccessoryChestTests
     }
 
     [Fact]
+    public void Auto_equip_keeps_the_stronger_ring_when_both_slots_are_full()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.RingOfProtection;                  // value 500 (weaker)
+        hero.Ring2 = Items.Enchant(Items.RingOfFireWard, 3);  // pricey (stronger)
+
+        var displaced = Equipment.Equip(hero, Items.RingOfStormWard);
+
+        Assert.Equal(Items.RingOfProtection, displaced);      // the weaker ring is bumped
+        Assert.Equal(Items.RingOfStormWard, hero.Ring1);      // new ring takes its slot
+        Assert.Equal("Ring of Fire Ward +3", hero.Ring2!.Name); // the stronger ring stays on
+    }
+
+    [Fact]
+    public void Auto_equip_fills_an_empty_ring_slot_first()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.RingOfProtection;
+
+        var displaced = Equipment.Equip(hero, Items.RingOfFireWard);
+
+        Assert.Null(displaced);                          // nothing displaced
+        Assert.Equal(Items.RingOfFireWard, hero.Ring2);  // filled the free slot
+    }
+
+    // ── Set discovery hints ───────────────────────────────────────────────────
+
+    [Fact]
+    public void Wearing_one_set_piece_hints_at_the_missing_one()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Amulet = Items.AmuletOfWarding; // one half of Stormwarden
+
+        Assert.Contains(hero.SetHints, h => h.Contains("Ring of Storm Ward") && h.Contains("Stormwarden"));
+    }
+
+    [Fact]
+    public void A_completed_set_offers_no_hint()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.RingOfStormWard;
+        hero.Amulet = Items.AmuletOfWarding;
+
+        Assert.Contains(hero.ActiveSets, s => s.Name == "Stormwarden");
+        Assert.DoesNotContain(hero.SetHints, h => h.Contains("Stormwarden"));
+    }
+
+    [Fact]
+    public void No_set_pieces_means_no_hints()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        Assert.Empty(party.Members[0].SetHints);
+    }
+
+    [Fact]
+    public void A_second_protection_ring_is_hinted_as_another()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.RingOfProtection;
+        Assert.Contains(hero.SetHints, h => h.Contains("another Ring of Protection") && h.Contains("Twin Bulwark"));
+    }
+
+    // ── Combat feedback for effects ───────────────────────────────────────────
+
+    [Fact]
+    public void Regeneration_is_announced_in_the_combat_log()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.RingOfRegeneration;
+        hero.MaxHitPoints = 100;
+        hero.HitPoints = 50;
+
+        var t = new MonsterTemplate("Gnat", 2000, 0, 1, 1, 0, 1, 0, 1);
+        var encounter = new Encounter(new[] { new MonsterGroup(t, 1) });
+        var engine = new CombatEngine(party, encounter, new SystemRandomSource(seed: 3), surprise: SurpriseState.None);
+        var commands = party.Members.Select(m => new CombatCommand(m, CombatActionType.Defend)).ToList();
+
+        var round = engine.ExecuteRound(commands);
+        Assert.Contains(round.Log, l => l.Contains($"{hero.Name} regenerates"));
+    }
+
+    [Fact]
+    public void A_warded_blast_is_noted_in_the_combat_log()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.MaxHitPoints = 500;
+        hero.HitPoints = 500;
+        hero.Ring1 = Items.RingOfFireWard;
+
+        var breath = new MonsterSpell("Fire Breath", MonsterSpellKind.BlastParty, Power: 20, Chance: 1.0);
+        var drake = new MonsterTemplate("Test Drake", 2000, 0, 1, 1, 0, 10, 0, 1, Spell: breath);
+        var encounter = new Encounter(new[] { new MonsterGroup(drake, 1) });
+        var engine = new CombatEngine(party, encounter, new SystemRandomSource(seed: 7), surprise: SurpriseState.None);
+        var commands = party.Members.Select(m => new CombatCommand(m, CombatActionType.Defend)).ToList();
+
+        var round = engine.ExecuteRound(commands);
+        Assert.Contains(round.Log, l => l.Contains("warded against fire"));
+    }
+
+    [Fact]
     public void Unequipping_a_slot_returns_the_accessory_to_the_stash()
     {
         var session = new GameSession(seed: 2);

@@ -211,6 +211,8 @@
                                                        IsVisible="{Binding SelectedHero.HasWards}" TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding SelectedHero.SetBonusText}" FontSize="11" Foreground="#C9A24B"
                                                        IsVisible="{Binding SelectedHero.HasSetBonus}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding SelectedHero.SetHintText}" FontSize="11" Foreground="#7E86A0"
+                                                       FontStyle="Italic" IsVisible="{Binding SelectedHero.HasSetHint}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                     </Border>
 

@@ -53,13 +53,17 @@ public static class Loot
     /// The spoils of a treasure chest: a purse of gold scaled to the depth, plus one to three
     /// items biased toward warding accessories and enchanted gear — richer than a wandering drop.
     /// </summary>
-    public static (int Gold, List<Item> Items) RollChest(IRandomSource rng, int depth)
+    public static (int Gold, List<Item> Items) RollChest(IRandomSource rng, int depth, bool ornate = false)
     {
         var gold = rng.Roll(2, 20, 10) * (3 + depth);
+        if (ornate) gold = gold * 3 / 2 + depth * 25; // a gilded chest holds a fatter purse
         var items = new List<Item>();
 
-        // A chest always holds at least one prize; deeper chests hold more.
-        var prizes = 1 + (rng.Chance(0.45) ? 1 : 0) + (depth >= 8 && rng.Chance(0.35) ? 1 : 0);
+        // An ornate chest always yields a warding accessory; plain ones may not.
+        if (ornate) items.Add(RollAccessory(rng, depth).AsUnidentified());
+
+        // A chest always holds at least one prize; deeper and ornate chests hold more.
+        var prizes = 1 + (rng.Chance(0.45) ? 1 : 0) + (depth >= 8 && rng.Chance(0.35) ? 1 : 0) + (ornate ? 1 : 0);
         for (var i = 0; i < prizes; i++)
         {
             var roll = rng.Next(0, 100);
@@ -70,7 +74,7 @@ public static class Loot
             else items.Add(Items.ResurrectionDust);
         }
         // Forge embers sweeten a deep chest.
-        if (depth >= 4 && rng.Chance(0.5)) items.Add(Items.ForgeEmber);
+        if (depth >= 4 && rng.Chance(ornate ? 0.8 : 0.5)) items.Add(Items.ForgeEmber);
         return (gold, items);
     }
 

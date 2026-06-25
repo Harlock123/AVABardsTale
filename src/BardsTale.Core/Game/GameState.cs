@@ -27,8 +27,12 @@ public enum MoveResultKind
 
 public sealed record MoveResult(MoveResultKind Kind, string Description, Encounter? Encounter = null);
 
-/// <summary>The outcome of opening a treasure chest: narration, the spoils, and whether a trap went off.</summary>
-public sealed record ChestResult(IReadOnlyList<string> Log, IReadOnlyList<Item> Loot, bool TrapSprang);
+/// <summary>
+/// The outcome of opening a treasure chest: narration, the spoils, and whether a trap went off.
+/// When the "chest" was a disguised <see cref="Mimic"/>, the loot is empty and combat begins instead.
+/// </summary>
+public sealed record ChestResult(IReadOnlyList<string> Log, IReadOnlyList<Item> Loot, bool TrapSprang,
+    Encounter? Mimic = null);
 
 /// <summary>
 /// The live game world: the party exploring the current maze level. Owns movement,
@@ -158,6 +162,9 @@ public sealed class GameState
             case CellFeature.Chest:
                 return new MoveResult(MoveResultKind.Chest,
                     "A heavy treasure chest sits here, its lid latched shut.");
+            case CellFeature.OrnateChest:
+                return new MoveResult(MoveResultKind.Chest,
+                    "An ornate, gold-filigreed chest rests here — clearly valuable, and surely trapped.");
         }
 
         if (CheckForEncounter(out var encounter))
@@ -173,40 +180,55 @@ public sealed class GameState
             CurrentCell.Feature = CellFeature.None;
     }
 
-    /// <summary>True when the party stands on an unopened treasure chest.</summary>
-    public bool OnChest => CurrentCell.Feature == CellFeature.Chest;
+    /// <summary>True when the party stands on an unopened treasure chest (plain or ornate).</summary>
+    public bool OnChest => CurrentCell.Feature is CellFeature.Chest or CellFeature.OrnateChest;
 
     private static readonly Element[] ChestTrapElements =
         { Element.Fire, Element.Cold, Element.Lightning, Element.Poison };
 
+    /// <summary>The odds a plain chest is really a disguised mimic — rising slowly with depth.</summary>
+    private double MimicChance => Math.Min(0.25, 0.08 + 0.01 * Depth);
+
     /// <summary>
-    /// Opens the chest underfoot. The party's ablest Rogue tries to disarm any trap first;
-    /// failure springs an elemental snare on a random hero (warding gear softens it). Either
-    /// way the chest yields its spoils — gold and items — and is then emptied from the map.
+    /// Opens the chest underfoot. A plain chest may instead prove to be a mimic and lunge
+    /// (returning an encounter to fight). Otherwise the ablest Rogue tries to disarm any trap;
+    /// failure springs an elemental snare on a random hero (warding gear softens it). Ornate
+    /// chests are always trapped, harder to crack, and richer. Either way the chest is emptied.
     /// </summary>
     public ChestResult OpenChest()
     {
         var log = new List<string>();
-        if (CurrentCell.Feature != CellFeature.Chest)
+        var ornate = CurrentCell.Feature == CellFeature.OrnateChest;
+        if (CurrentCell.Feature != CellFeature.Chest && !ornate)
             return new ChestResult(new[] { "There is no chest here." }, Array.Empty<Item>(), false);
 
+        // A plain chest may be a mimic in disguise; a gilded one is always genuine treasure.
+        if (!ornate && _rng.Chance(MimicChance))
+        {
+            CurrentCell.Feature = CellFeature.None; // the "chest" lunges — nothing left to loot
+            log.Add("The lid splits into a maw of teeth — it's a Mimic!");
+            return new ChestResult(log, Array.Empty<Item>(), false, ChestMimic.EncounterFor(Depth));
+        }
+
         var trapSprang = false;
-        if (_rng.Chance(0.55))
+        if (_rng.Chance(ornate ? 1.0 : 0.55))
         {
             var rogue = Party.Members
                 .Where(m => !m.IsDead && m.Class == CharacterClass.Rogue)
                 .OrderByDescending(m => m.Level)
                 .FirstOrDefault();
-            // Deft Rogue hands disarm most snares; without one, the party gropes and usually fails.
+            // Deft Rogue hands disarm most snares; ornate locks are tougher, and a party
+            // without any Rogue usually springs the trap.
+            var baseChance = ornate ? 0.30 : 0.45;
             var disarmChance = rogue is null
-                ? 0.15
-                : Math.Min(0.95, 0.45 + 0.04 * rogue.Level + 0.03 * rogue.DexterityBonus);
+                ? (ornate ? 0.05 : 0.15)
+                : Math.Min(0.95, baseChance + 0.04 * rogue.Level + 0.03 * rogue.DexterityBonus);
             if (rogue is not null && _rng.Chance(disarmChance))
-                log.Add($"{rogue.Name} deftly disarms the chest's trap.");
+                log.Add($"{rogue.Name} deftly disarms the {(ornate ? "ornate " : "")}chest's trap.");
             else
             {
                 trapSprang = true;
-                SpringChestTrap(log);
+                SpringChestTrap(log, ornate);
             }
         }
         else
@@ -214,9 +236,9 @@ public sealed class GameState
             log.Add("The chest is unlatched without a hitch.");
         }
 
-        var (gold, items) = Loot.RollChest(_rng, Depth);
+        var (gold, items) = Loot.RollChest(_rng, Depth, ornate);
         Party.Gold += gold;
-        log.Add($"You loot {gold} gold from the chest.");
+        log.Add($"You loot {gold} gold from the {(ornate ? "ornate " : "")}chest.");
         foreach (var item in items)
         {
             Party.Inventory.Add(item);
@@ -228,13 +250,13 @@ public sealed class GameState
     }
 
     /// <summary>An elemental snare bites a random hero; warding gear halves a matching blast.</summary>
-    private void SpringChestTrap(List<string> log)
+    private void SpringChestTrap(List<string> log, bool ornate)
     {
         var living = Party.Members.Where(m => !m.IsDead).ToList();
         if (living.Count == 0) return;
         var victim = living[_rng.Next(0, living.Count)];
         var element = ChestTrapElements[_rng.Next(0, ChestTrapElements.Length)];
-        var dmg = _rng.Roll(2, 6, Depth);
+        var dmg = ornate ? _rng.Roll(3, 6, Depth * 2) : _rng.Roll(2, 6, Depth);
         var warded = victim.Resists(element);
         if (warded) dmg = Math.Max(1, dmg / 2);
         victim.ApplyDamage(dmg);

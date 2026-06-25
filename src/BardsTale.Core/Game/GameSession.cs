@@ -62,6 +62,8 @@ public sealed class GameSession
         Items.Items.Dagger, Items.Items.ShortSword, Items.Items.LongSword, Items.Items.BattleAxe,
         Items.Items.Staff, Items.Items.LeatherArmor, Items.Items.ChainMail, Items.Items.PlateMail,
         Items.Items.SmallShield, Items.Items.Robes,
+        Items.Items.RingOfProtection, Items.Items.RingOfFireWard, Items.Items.RingOfFrostWard,
+        Items.Items.RingOfStormWard, Items.Items.AmuletOfTheViper,
         Items.Items.HealingPotion, Items.Items.ManaDraught, Items.Items.Antidote, Items.Items.ResurrectionDust
     };
 

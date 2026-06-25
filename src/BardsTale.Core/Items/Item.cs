@@ -46,7 +46,8 @@ public sealed record Item(
     public bool IsWeapon => Slot == ItemSlot.Weapon;
     public bool IsAccessory => Slot == ItemSlot.Accessory;
     public bool IsConsumable => Slot == ItemSlot.Consumable;
-    public bool IsMagic => MagicBonus > 0 || ItemPower is not null || ResistsElement != Element.None;
+    public bool IsMagic => MagicBonus > 0 || ItemPower is not null || ResistsElement != Element.None
+        || (Slot == ItemSlot.Accessory && ArmorBonus > 0);
 
     /// <summary>A wielded item with a once-per-fight magical power (a wand, staff or rod).</summary>
     public bool HasPower => ItemPower is not null;
@@ -128,7 +129,8 @@ public static class Items
     public static Item Enchant(Item baseItem, int bonus)
     {
         var isWeapon = baseItem.Slot == ItemSlot.Weapon;
-        var isArmor = baseItem.Slot is ItemSlot.Armor or ItemSlot.Shield;
+        // Armour, shields and accessories all soak the bonus into their armour value.
+        var isArmor = baseItem.Slot is ItemSlot.Armor or ItemSlot.Shield or ItemSlot.Accessory;
         return baseItem with
         {
             Name = $"{baseItem.Name} +{bonus}",
@@ -152,7 +154,9 @@ public static class Items
         var baseName = item.Name;
         var plus = baseName.LastIndexOf(" +", System.StringComparison.Ordinal);
         if (plus >= 0) baseName = baseName[..plus];
-        var baseItem = EnchantableBases.FirstOrDefault(b => b.Name == baseName);
+        // Weapons/armour and warding accessories share the same +1/+2/+3 forge chain.
+        var baseItem = EnchantableBases.FirstOrDefault(b => b.Name == baseName)
+                       ?? Accessories.FirstOrDefault(b => b.Name == baseName);
         if (baseItem is null) return null;
         var next = item.MagicBonus + 1;
         return next <= 3 ? Enchant(baseItem, next) : null;
@@ -169,21 +173,23 @@ public static class Items
     public static readonly Item MangarsStaff =
         new("Mangar's Staff", ItemSlot.Weapon, DamageDice: 2, DamageSides: 8, DamageBonus: 5, Value: 5000, MagicBonus: 5);
 
-    // --- Accessories: rings, amulets and talismans worn for protection and elemental wards ---
+    // --- Accessories: rings, amulets and talismans worn for protection and elemental wards.
+    //     Base accessories carry no enchant; the Smithy can forge +1/+2/+3 onto them, each
+    //     tier adding a point of armour while preserving the elemental ward. ---
     public static readonly Item RingOfProtection = new("Ring of Protection", ItemSlot.Accessory,
-        ArmorBonus: 1, Value: 500, MagicBonus: 1);
+        ArmorBonus: 1, Value: 500);
     public static readonly Item RingOfFireWard = new("Ring of Fire Ward", ItemSlot.Accessory,
-        Value: 700, MagicBonus: 1, ResistsElement: Element.Fire);
+        Value: 700, ResistsElement: Element.Fire);
     public static readonly Item RingOfFrostWard = new("Ring of Frost Ward", ItemSlot.Accessory,
-        Value: 700, MagicBonus: 1, ResistsElement: Element.Cold);
+        Value: 700, ResistsElement: Element.Cold);
     public static readonly Item RingOfStormWard = new("Ring of Storm Ward", ItemSlot.Accessory,
-        Value: 700, MagicBonus: 1, ResistsElement: Element.Lightning);
+        Value: 700, ResistsElement: Element.Lightning);
     public static readonly Item AmuletOfTheViper = new("Amulet of the Viper", ItemSlot.Accessory,
-        Value: 700, MagicBonus: 1, ResistsElement: Element.Poison);
+        Value: 700, ResistsElement: Element.Poison);
     public static readonly Item AmuletOfWarding = new("Amulet of Warding", ItemSlot.Accessory,
-        ArmorBonus: 1, Value: 1800, MagicBonus: 2, ResistsElement: Element.Fire | Element.Cold | Element.Lightning);
+        ArmorBonus: 1, Value: 1800, ResistsElement: Element.Fire | Element.Cold | Element.Lightning);
     public static readonly Item TalismanOfTheAges = new("Talisman of the Ages", ItemSlot.Accessory,
-        ArmorBonus: 1, Value: 3200, MagicBonus: 3,
+        ArmorBonus: 1, Value: 3200,
         ResistsElement: Element.Fire | Element.Cold | Element.Lightning | Element.Poison | Element.Arcane);
 
     /// <summary>Worn accessories that can be bought, sold, or turn up as treasure.</summary>
@@ -193,6 +199,10 @@ public static class Items
             RingOfProtection, RingOfFireWard, RingOfFrostWard, RingOfStormWard,
             AmuletOfTheViper, AmuletOfWarding, TalismanOfTheAges
         };
+
+    /// <summary>Every Smithy-forged "+N" accessory — registered so saved enchanted gear resolves on load.</summary>
+    public static readonly IReadOnlyList<Item> EnchantedAccessories =
+        (from a in Accessories from n in new[] { 1, 2, 3 } select Enchant(a, n)).ToList();
 
     // --- Crafting material: drops in the deep, spent at the Smithy ---
     public static readonly Item ForgeEmber = new("Forge Ember", ItemSlot.Material, Value: 60);
@@ -258,7 +268,8 @@ public static class Items
         Fists, Dagger, ShortSword, LongSword, BattleAxe, Staff,
         Robes, LeatherArmor, ChainMail, PlateMail, SmallShield,
         HealingPotion, ManaDraught, Antidote, ResurrectionDust, MangarsStaff, ForgeEmber
-    }.Concat(MagicItems).Concat(PowerItems).Concat(Accessories).ToDictionary(i => i.Name);
+    }.Concat(MagicItems).Concat(PowerItems).Concat(Accessories).Concat(EnchantedAccessories)
+        .ToDictionary(i => i.Name);
 
     public static Item? Find(string? name)
         => name is not null && ByName.TryGetValue(name, out var item) ? item : null;

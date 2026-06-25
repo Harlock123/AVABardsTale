@@ -634,6 +634,7 @@ public sealed partial class TownViewModel : ViewModelBase
                 case ItemSlot.Weapon: hero.Weapon = row.Upgrade; break;
                 case ItemSlot.Armor: hero.Armor = row.Upgrade; break;
                 case ItemSlot.Shield: hero.Shield = row.Upgrade; break;
+                case ItemSlot.Accessory: hero.Accessory = row.Upgrade; break;
             }
         }
         else
@@ -656,9 +657,10 @@ public sealed partial class TownViewModel : ViewModelBase
             AddUpgradeRow(hero, "Weapon", hero.Weapon);
             AddUpgradeRow(hero, "Armour", hero.Armor);
             AddUpgradeRow(hero, "Shield", hero.Shield);
+            AddUpgradeRow(hero, "Accessory", hero.Accessory);
         }
         foreach (var item in _session.Party.Inventory
-                     .Where(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield))
+                     .Where(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield or ItemSlot.Accessory))
             AddUpgradeRow(null, "Stash", item);
 
         OnPropertyChanged(nameof(ForgeEmbers));

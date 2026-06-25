@@ -156,9 +156,20 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         var result = _game.OpenChest();
         foreach (var line in result.Log)
             AddLog(line);
-        Sfx.Play(result.TrapSprang ? GameSound.Hurt : GameSound.Coin);
         IsAtChest = false;
         ChestPrompt = "";
+
+        // A mimic was lurking — drop straight into the fight instead of looting.
+        if (result.Mimic is not null)
+        {
+            Sfx.Play(GameSound.Attack);
+            StartCombat(result.Mimic);
+            UpdateLocationState();
+            SyncWorld();
+            return;
+        }
+
+        Sfx.Play(result.TrapSprang ? GameSound.Hurt : GameSound.Coin);
         UpdateLocationState();
         SyncWorld();
     }

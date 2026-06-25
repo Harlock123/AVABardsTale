@@ -21,6 +21,7 @@ public static class MonsterCatalog
 
         foreach (var t in Bestiary.AllWandering) Add(t);
         foreach (var boss in Bosses.All) Add(boss);
+        Add(ChestMimic.Template); // a special foe, met only by opening the wrong chest
         return list;
     }
 

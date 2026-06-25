@@ -1,5 +1,6 @@
 using Avalonia.Media;
 using BardsTale.Core.Characters;
+using BardsTale.Core.Combat;
 using BardsTale.Core.Game;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -56,6 +57,18 @@ public sealed partial class CharacterViewModel : ViewModelBase
         + (Model.Accessory is null ? "" : $" · {Model.Accessory.Name}");
     public string ArmorClassText => $"AC {Model.ArmorClass}";
 
+    /// <summary>The elements this hero's equipped gear wards against, e.g. "Wards: Fire, Cold".</summary>
+    public string WardText
+    {
+        get
+        {
+            var wards = MonsterElements.Describe(Model.ResistedElements);
+            return wards.Length > 0 ? $"Wards: {wards}" : "";
+        }
+    }
+
+    public bool HasWards => Model.ResistedElements != Element.None;
+
     /// <summary>Re-reads all derived values after the underlying model changes.</summary>
     public void Refresh()
     {
@@ -79,5 +92,7 @@ public sealed partial class CharacterViewModel : ViewModelBase
         OnPropertyChanged(nameof(ExperienceText));
         OnPropertyChanged(nameof(GearText));
         OnPropertyChanged(nameof(ArmorClassText));
+        OnPropertyChanged(nameof(WardText));
+        OnPropertyChanged(nameof(HasWards));
     }
 }

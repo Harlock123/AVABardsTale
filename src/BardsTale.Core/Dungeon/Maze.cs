@@ -27,8 +27,10 @@ public enum CellFeature
     Teleporter,
     AntiMagic,
     BossLair,
-    /// <summary>A treasure chest — may be trapped; a Rogue can disarm it before it's opened.</summary>
-    Chest
+    /// <summary>A treasure chest — may be trapped (or a disguised mimic); a Rogue can disarm it.</summary>
+    Chest,
+    /// <summary>A gilded chest: always trapped and richer, with a guaranteed warding accessory.</summary>
+    OrnateChest
 }
 
 /// <summary>One tile of a maze level.</summary>

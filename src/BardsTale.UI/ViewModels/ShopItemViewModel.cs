@@ -29,9 +29,18 @@ public sealed class ShopItemViewModel : ViewModelBase
         {
             ItemSlot.Weapon => $"dmg {Item.DamageText}",
             ItemSlot.Armor or ItemSlot.Shield => $"+{Item.ArmorBonus} armor",
+            ItemSlot.Accessory => AccessoryStats(),
             ItemSlot.Consumable => Item.EffectText,
             _ => ""
         };
+
+    private string AccessoryStats()
+    {
+        var parts = new List<string>();
+        if (Item.ArmorBonus > 0) parts.Add($"+{Item.ArmorBonus} armor");
+        if (Item.ResistText.Length > 0) parts.Add(Item.ResistText);
+        return parts.Count > 0 ? string.Join(" · ", parts) : "trinket";
+    }
 
     public string Label => $"{Name}  ({StatsText})";
 }

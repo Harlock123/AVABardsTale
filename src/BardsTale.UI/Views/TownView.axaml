@@ -207,6 +207,8 @@
                                             <TextBlock Text="{Binding SelectedHero.Name}" FontWeight="Bold" Foreground="#E8E9F0"/>
                                             <TextBlock Text="{Binding SelectedHero.GearText}" FontSize="11" Foreground="#9AA0B5" TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding SelectedHero.ArmorClassText}" FontSize="11" Foreground="#9AA0B5"/>
+                                            <TextBlock Text="{Binding SelectedHero.WardText}" FontSize="11" Foreground="#6FD0E8"
+                                                       IsVisible="{Binding SelectedHero.HasWards}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                     </Border>
                                     <Button Content="Buy &amp; Equip selected ware" Command="{Binding BuyCommand}"

@@ -365,16 +365,18 @@ press **Enter** (or the on-screen *Enter Building* button) to go inside:
 - **Adventurers Guild** — create heroes (name, race, class, re-rollable
   attributes) and recruit them into a party of up to six, or hit **Quick Party**
   for a ready-made band. Dismiss heroes here too.
-- **Garth's Equipment Shoppe** — buy and equip weapons, armour and shields
+- **Garth's Equipment Shoppe** — buy and equip weapons, armour, shields and
+  **accessories** (rings & amulets — including basic elemental wards)
   (swapping gear sells the old piece back for half its value; class restrictions
-  apply), stock up on potions, **appraise unidentified magic loot**, and **equip
-  the gear you've looted** from your stash onto any hero (the piece they were
-  wearing returns to the stash).
+  apply), stock up on potions, **sell** loot you don't need for half its value,
+  **appraise unidentified magic loot**, and **equip the gear you've looted** from
+  your stash onto any hero (the piece they were wearing returns to the stash).
 - **The Forge** — the town smithy. It doesn't grant powers; it **sharpens
   enchantments**. Bring **gold and forge embers** (a crafting material that drops
-  from deep-floor fights and bosses) and the smith raises a weapon, armour or
-  shield's "+N" one step at a time, up to **+3** — working on equipped gear or
-  anything in your stash. See *Item powers & the Forge*.
+  from deep-floor fights and bosses) and the smith raises a weapon, armour,
+  shield **or accessory's** "+N" one step at a time, up to **+3** — a warding ring
+  keeps its element as it gains armour — working on equipped gear or anything in
+  your stash. See *Item powers & the Forge*.
 - **Temple of Healing** — heal the whole party, resurrect the fallen, or restore
   levels and attributes sapped by drain attacks, all for gold.
 - **Review Board** — spend banked experience to level heroes up.
@@ -421,12 +423,44 @@ sometimes an item**. The whole journal is saved with the game.
 ### The bestiary
 
 A **bestiary** (the *📖 Bestiary* button or **B**) catalogues all **120 monsters** —
-the wandering foes of all ten tiers plus the twenty floor bosses. An entry fills in
+the wandering foes of all ten tiers plus the twenty floor bosses — and the lurking
+**mimic** besides, for 121 in all. An entry fills in
 the moment you first face a creature (even if you flee), and its kill tally grows
 with every victory. Each discovered card shows the monster's HP, armour class, damage,
 speed, special abilities (poison, drains, breath weapons, spells…), its XP/gold worth,
 and the floor you first met it; undiscovered monsters show as `??? — undiscovered`, so
 filling the book is a long-game goal. Your progress persists in the save.
+
+### Accessories, elemental wards & treasure chests
+
+Beyond weapons, armour and shields, each hero wears one **accessory** — a ring, amulet
+or talisman. Most are **elemental wards**: a Ring of Fire Ward, Frost Ward, Storm Ward
+or Amulet of the Viper **halves** the damage its element deals to the wearer, while the
+rarer **Amulet of Warding** (fire, cold and lightning) and **Talisman of the Ages**
+(every element) guard against several at once. A plain **Ring of Protection** simply
+sharpens armour class. Each hero's active wards are shown in cyan on the roster
+(*"Wards: Fire, Cold"*) and on their character panel at Garth's.
+
+Wards matter because monsters hurl **elemental** attacks — dragon breath, a flame
+shade's cinderblast, a storm giant's thunderclap, an acid breath — and warded gear
+halves the matching blow. (Foes have their own affinities too: strike a monster's
+**weakness** for double damage, its **resistance** for half — both shown in the bestiary.)
+
+Accessories are **bought and sold at Garth's**, drop from deep-floor fights, and fill
+treasure chests. They **appraise** like any magic loot, and the **Forge** can enchant a
+warding ring **+1/+2/+3** — each tier adding a point of armour while keeping its ward.
+
+**Treasure chests** dot every floor. Step onto one and choose to **open** or **leave** it.
+Most are trapped: your ablest **Rogue** tries to disarm the snare first, and a failure
+springs an **elemental trap** on a random hero (which — naturally — warding gear softens).
+Then the chest yields its spoils: gold and prizes weighted toward accessories and
+enchanted gear. Two twists keep them tense:
+
+- **Ornate chests** — gilded and obviously valuable, **always trapped** and harder to
+  crack, but they guarantee a **warding accessory** and a fatter haul.
+- **Mimics** — a plain chest is occasionally a predator in disguise. Open it and it
+  sprouts teeth, dropping you straight into a fight with a depth-scaled **Mimic**
+  (itself a catalogued bestiary entry).
 
 ### Settings, music & sound
 
@@ -490,15 +524,28 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
   party heal/regen/haste/cleanse/mana, armour & attack buffs, or raising the fallen).
   Every power is mirrored by a **learnable spell** across the casting schools. See
   *Item powers & the Forge*.
-- **The Forge (smithy)** — upgrade a weapon, armour or shield's enchantment "+N"
-  up to **+3** for **gold + forge embers**, a crafting material that drops from
-  deep-floor fights and bosses. Works on equipped gear or stash.
+- **The Forge (smithy)** — upgrade a weapon, armour, shield or **accessory's**
+  enchantment "+N" up to **+3** for **gold + forge embers**, a crafting material
+  that drops from deep-floor fights and bosses (a warding ring keeps its element
+  as it gains armour). Works on equipped gear or stash.
+- **Accessories & elemental resistance** — each hero wears a ring/amulet/talisman;
+  most are **elemental wards** that halve a matching attack's damage (fire, cold,
+  lightning, poison, or several at once). Monsters wield elemental breath and blasts,
+  so wards matter; monsters also have their own **weaknesses (×2) and resistances
+  (÷2)**. Bought/sold/appraised at Garth's, dropped in the deep, and enchantable at
+  the Forge. Active wards show in cyan on the roster.
+- **Treasure chests** — scattered each floor, opened on a prompt: a **Rogue**
+  disarms an **elemental trap** (warding gear softens it) before the chest spills
+  gold and loot weighted toward accessories. **Ornate chests** are always trapped
+  and guarantee a warding accessory; some plain chests are **mimics** that spring
+  into a depth-scaled fight.
 - **Side quests** from shopkeepers, tavern patrons, street strangers and a town
   **Notice Board** — hunt, collect and retrieve jobs that progress as you fight,
   tracked in a **quest journal (J)** with an abandon option and turned in at the giver
   for gold, XP and loot. All saved with the game.
-- A **discoverable bestiary (B)** that fills in as you face each of the 120 monsters,
-  recording stats, abilities, kill tallies and the floor first met; persisted in saves.
+- A **discoverable bestiary (B)** that fills in as you face each of the 120 monsters
+  (plus the mimic), recording stats, abilities, kill tallies and the floor first met;
+  persisted in saves.
 - **Procedural music & sound** — code-synthesised sound effects and four looping music
   tracks (town / dungeon / combat / victory) that switch with game state, with a
   per-platform audio backend on every head and independent SFX/music volume settings.
@@ -515,8 +562,9 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
 ## Roadmap toward a fuller remake
 
 The core game loop is complete and winnable, with a 120-monster bestiary, side quests,
-a smithy, item powers, and procedural music & sound all in. Natural next steps toward a
-fuller recreation of the original:
+a smithy, item powers, accessories with elemental wards, trapped treasure chests, and
+procedural music & sound all in. Natural next steps toward a fuller recreation of the
+original:
 
 - **Hand-designed dungeons** — author some of the original's multi-level maps and
   riddles alongside the procedural generator, with stairs that link specific levels.

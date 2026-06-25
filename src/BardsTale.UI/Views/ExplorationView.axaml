@@ -73,7 +73,7 @@
                             <DataTemplate x:DataType="vm:CharacterViewModel">
                                 <Border Margin="0,0,0,6" Padding="8,6" CornerRadius="4"
                                         Background="#222634" BorderBrush="#333A4D" BorderThickness="1">
-                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Name}"
                                                    FontWeight="Bold" Foreground="#E8E9F0"/>
                                         <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StatusText}"
@@ -90,6 +90,9 @@
                                             <TextBlock Grid.Column="2" Text="{Binding Health}" FontSize="11"
                                                        Foreground="#C7CBDA" Margin="6,0,0,0"/>
                                         </Grid>
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                                   Text="{Binding WardText}" FontSize="10" Foreground="#6FD0E8"
+                                                   IsVisible="{Binding HasWards}" Margin="0,3,0,0" TextWrapping="Wrap"/>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

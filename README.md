@@ -4,26 +4,27 @@ A cross-platform .NET 9 re-implementation of the classic 1985 dungeon crawler
 *The Bard's Tale*, built with [Avalonia](https://avaloniaui.net/) and a clean
 MVVM architecture.
 
-It is a **complete playable loop, start to victory**: assemble and outfit a party
-in the town of Skara Brae, descend through a multi-level procedurally generated
-catacomb in a first-person grid view (with an auto-map and per-character turn-based
-combat), survive status ailments, enemy spellcasters and drain attacks, plunder
-magic loot, clear a named boss on each level, and finally destroy **Mangar the
-Mad** to free the town and roll the credits. Town services — healing, levelling,
-shopping, identification and resting — and a full save/load system round out the
-loop.
+It is a **complete, winnable game**: assemble and outfit a party in the town of
+Skara Brae, take on **side quests**, and descend through a **twenty-floor**
+procedurally generated catacomb in a first-person grid view (auto-map, per-character
+turn-based combat). Face a bestiary of **120 monsters** across ten toughness tiers,
+survive status ailments, enemy spellcasters and drain attacks, plunder magic loot and
+**powered wands, staves and banners**, forge your gear at the smithy, clear a **named
+boss on every floor**, and finally destroy **Mangar the Mad** to free the town and roll
+the credits. Town services, a fillable **bestiary**, a **quest journal**, procedural
+**music & sound effects**, and a full save/load system round out the loop.
 
 ## Solution layout
 
 | Project | Purpose |
 | --- | --- |
-| `src/BardsTale.Core` | Pure C# game engine — no UI dependency. Characters, classes, races, items, spells, maze generation, movement, and the combat resolver. Fully unit-testable. |
+| `src/BardsTale.Core` | Pure C# game engine — no UI dependency. Characters, classes, races, items & item powers, spells, the 120-monster bestiary, maze generation, movement, the combat resolver, side quests and the smithy. Fully unit-testable. |
 | `src/BardsTale.UI` | Shared Avalonia MVVM presentation layer — `App`, all views & view models, the custom `DungeonView` / `MiniMap` render controls, the save service, and a single `MainView` root. **Platform-agnostic** (no backend package), so every head below reuses it unchanged. |
 | `src/BardsTale.Desktop` | Thin desktop head (Windows / macOS / Linux) — just the entry point + `Avalonia.Desktop`, wrapping `MainView` in a `Window`. |
 | `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime, as an installable PWA with IndexedDB saves. (Kept out of the default solution; see below.) |
 | `src/BardsTale.Android` | Thin Android head (tablet, landscape) — a launcher `Activity` + an `AudioTrack` sound backend, wrapping `MainView` via the single-view lifetime. |
 | `src/BardsTale.iOS` | Thin iOS head (iPad, landscape) — an `AvaloniaAppDelegate` entry point + an `AVAudioPlayer` sound backend. |
-| `tests/BardsTale.Tests` | xUnit suite (**146 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses), town services, save/load round-trips, and per-depth map persistence. |
+| `tests/BardsTale.Tests` | xUnit suite (**183 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses), item powers & forging, town services, save/load round-trips, and per-depth map persistence. |
 
 The split follows Avalonia's standard cross-platform layout: a shared UI library plus
 one thin "head" project per platform. Every head reuses `BardsTale.UI` unchanged —
@@ -244,6 +245,12 @@ dotnet build src/BardsTale.Desktop
   above. Each level keeps its own layout and explored map, so revisiting one finds
   it exactly as you left it.
 - **Exit to Town** — from the entrance stairway, return to Skara Brae.
+- **Enter / Return** — enter the building you're standing before, or use the stairway
+  you're on. **Esc** backs out of a building, panel or quest offer. **Q** assembles a
+  Quick Party in the Adventurers Guild.
+- **Quest journal (J)** and **Bestiary (B)** — open from anywhere (also top-bar
+  buttons). **Settings (⚙)** holds reduced-motion, interface size, autosave, and the
+  independent sound-effects / music volumes.
 - **Light** — conjure light (a Bard's *Watchwood Melody* for free, or a mage's
   *Mage Flame* for spell points) to see and map darkness for a number of steps.
 - **Save / Load** (top bar) — opens a slot picker with **three named save slots**
@@ -265,6 +272,8 @@ every able party member in turn:
 - **Sing** a Bard song for a party-wide effect (no spell points).
 - **Use** a consumable from the party stash — healing potions, mana draughts,
   antidotes and resurrection dust, each targeted at a chosen ally.
+- **⚡ Use** a wielded item's **once-per-fight power** (if you carry a wand, staff,
+  rod or banner — see *Item powers & the Forge*).
 - **Defend** to become harder to hit.
 
 Pick a **Target** group on the left for offensive actions. **Auto** fills the
@@ -311,6 +320,41 @@ Some monsters cast spells of their own instead of attacking:
   (*Spark* / *Cinderblast*); a luckier hero takes only half.
 - The **Hex Adept** hurls a focused *Soul Bolt* at a single hero for heavy damage.
 
+### Item powers & the Forge
+
+Beyond plain "+N" gear, the deeper floors and bosses drop **powered items** — wands,
+staves, rods and banners you wield in place of a weapon. Each carries a single
+**once-per-fight power** that fires for **free** (no spell points) from the **⚡ Use**
+action in combat. They drop unidentified, so appraise them at Garth's like any magic
+loot. The full set:
+
+| Item | Power | Effect |
+| --- | --- | --- |
+| Wand of Flames | Flame Burst | ~18 fire damage to one foe |
+| Wand of Frost | Frost Lance | ~24 cold damage to one foe |
+| Staff of Ruin | Ruinous Bolt | ~32 damage to one foe |
+| Staff of Storms | Thunderstrike | damage to **all** foes |
+| Wand of Leeching | Soul Drain | damages a foe and **heals the wielder** |
+| Rod of Mending | Renewal | heals the whole party |
+| Scepter of Grace | Mending Touch | heals one ally |
+| Rod of Resurrection | Raise Ally | **revives a fallen companion** |
+| Banner of Haste | Haste | party gains **+1 attack each round**, all fight |
+| Standard of Renewal | Aura of Renewal | party **regenerates HP every round**, all fight |
+| Aegis Banner | Aegis | party armour **+3** for the fight |
+| Horn of Valor | Warcry | party attacks **+3** for the fight |
+| Chime of Cleansing | Cleansing Peal | cures the whole party of ailments |
+| Orb of Mana | Mana Font | restores **spell points** to the party |
+
+Every one of these effects is **also a learnable spell**, spread across the schools —
+the heal / cleanse / regen / revive ones live with the **Conjurer**, and the
+drain / haste / mana ones with the **Magician / Sorcerer** war-mages — so a caster
+can wield the effect from memory at the Review Board even without the item.
+
+> **The Forge is a separate thing.** It never bestows powers — it upgrades
+> **enchantment bonuses**. Spend **gold + forge embers** (a material dropped by
+> deep-floor fights and bosses) and the town smith raises a weapon/armour/shield's
+> "+N" one step at a time, up to **+3**, on equipped or stashed gear.
+
 ### The Skara Brae overworld
 
 The game opens in the frozen town square of **Skara Brae**, which you explore in
@@ -326,6 +370,11 @@ press **Enter** (or the on-screen *Enter Building* button) to go inside:
   apply), stock up on potions, **appraise unidentified magic loot**, and **equip
   the gear you've looted** from your stash onto any hero (the piece they were
   wearing returns to the stash).
+- **The Forge** — the town smithy. It doesn't grant powers; it **sharpens
+  enchantments**. Bring **gold and forge embers** (a crafting material that drops
+  from deep-floor fights and bosses) and the smith raises a weapon, armour or
+  shield's "+N" one step at a time, up to **+3** — working on equipped gear or
+  anything in your stash. See *Item powers & the Forge*.
 - **Temple of Healing** — heal the whole party, resurrect the fallen, or restore
   levels and attributes sapped by drain attacks, all for gold.
 - **Review Board** — spend banked experience to level heroes up.
@@ -334,12 +383,65 @@ press **Enter** (or the on-screen *Enter Building* button) to go inside:
 - **Garrick's Inn** — rent a room for the night to fully restore the party's hit
   points **and spell points** for a flat per-head fee (the fallen still need the
   Temple).
+- **The Notice Board** — browse and accept **side quests** posted by Garth, the
+  tavern regulars, and folk you meet in the streets. A fresh batch goes up after
+  each trip below. See *Side quests*.
 - **The Catacomb Stair** — step onto it to descend into the dungeon (and return to
   town from the dungeon's entrance stairway any time).
 
 The town also has a **Cast a Spell** menu (no building needed): pick a caster's
 restorative spell — heal an ally, heal the party, cure ailments, or revive the
 fallen — and a target, and cast it for spell points instead of paying the Temple.
+
+### The twenty floors
+
+The catacomb runs **twenty floors** deep. Each carries its own procedurally generated
+maze (persisted per depth), a **distinct named boss lair** guarding it, and a
+wandering-monster pool drawn from progressively tougher tiers — rats and kobolds up
+top, dragons, liches and titans at the bottom. **Experience scales with depth** (it
+grows geometrically as you descend), so the party's level keeps pace with the climb
+down to **Mangar the Mad** on floor 20.
+
+### Side quests
+
+Townsfolk hand out **side quests** three ways: **Garth** offers them at the Shoppe,
+**tavern regulars** when you buy a round, and **strangers** stop you in the streets —
+or you can browse the **Notice Board** for a rotating batch. There are three kinds:
+
+- **Hunt** — slay a number of a given monster ("cull six Kobolds").
+- **Collect** — gather trophies dropped by a monster ("three Spider Venom Glands").
+- **Retrieve** — recover a relic carried by a tougher foe of the deep.
+
+Progress ticks automatically as you fight. Open the **quest journal** (the *📜 Quests*
+button or **J**) to review active quests, their progress, the reward, and where to
+hand each in — or **abandon** one (with a confirm). Turn a finished quest in by
+returning to its giver (Garth's, or a tavern) to collect **gold, experience and
+sometimes an item**. The whole journal is saved with the game.
+
+### The bestiary
+
+A **bestiary** (the *📖 Bestiary* button or **B**) catalogues all **120 monsters** —
+the wandering foes of all ten tiers plus the twenty floor bosses. An entry fills in
+the moment you first face a creature (even if you flee), and its kill tally grows
+with every victory. Each discovered card shows the monster's HP, armour class, damage,
+speed, special abilities (poison, drains, breath weapons, spells…), its XP/gold worth,
+and the floor you first met it; undiscovered monsters show as `??? — undiscovered`, so
+filling the book is a long-game goal. Your progress persists in the save.
+
+### Settings, music & sound
+
+A **Settings** screen (the ⚙ button) exposes, all persisted across sessions:
+
+- **Reduced motion** (stops idle animations such as the swaying storefront signs),
+  **autosave** on return to town, and **interface size** (0.8–1.2× scale).
+- **Independent volume sliders** for **sound effects** and **background music**, a
+  master **mute**, and a **music on/off** toggle.
+
+All audio is **synthesised procedurally** — no asset files. Short **sound effects**
+(footsteps, combat, spells, town services) and four looping **music tracks** (town,
+dungeon, combat, victory) that switch with the game state are generated in code and
+played through a per-platform backend on each head (macOS `afplay`, browser Web Audio,
+Android `AudioTrack`, iOS `AVAudioPlayer`).
 
 ## What's implemented
 
@@ -366,6 +468,10 @@ fallen — and a target, and cast it for spell points instead of paying the Temp
 - Auto-map that reveals only visited cells, with a directional party marker.
 - Per-character turn-based combat: initiative, multiple attacks per round,
   monster groups, fleeing, and XP/gold rewards.
+- A **twenty-floor dungeon** with a **bestiary of 120 monsters** across ten toughness
+  tiers, depth-banded so each floor draws from a tougher pool than the last, plus a
+  **distinct named boss lair on every floor** (twenty in all) down to Mangar. **XP
+  scales geometrically with depth**, keeping the party's level in step with the climb.
 - Per-school spell lists (Conjurer / Magician / Sorcerer / Wizard) that grow with
   caster level, Bard songs, and encounter-long party buffs from protective spells
   and songs.
@@ -379,29 +485,51 @@ fallen — and a target, and cast it for spell points instead of paying the Temp
   Garth's you can reveal it three ways before equipping it: **pay Garth** a flat
   fee, have a **Rogue** appraise it for free (skill-based, can fail and be retried),
   or cast a Magician's **Scrye Sight** spell for a reliable read.
+- **Powered items** — fourteen wands, staves, rods and banners that drop on the
+  deeper floors, each with a **once-per-fight power** (damage, drain-and-self-heal,
+  party heal/regen/haste/cleanse/mana, armour & attack buffs, or raising the fallen).
+  Every power is mirrored by a **learnable spell** across the casting schools. See
+  *Item powers & the Forge*.
+- **The Forge (smithy)** — upgrade a weapon, armour or shield's enchantment "+N"
+  up to **+3** for **gold + forge embers**, a crafting material that drops from
+  deep-floor fights and bosses. Works on equipped gear or stash.
+- **Side quests** from shopkeepers, tavern patrons, street strangers and a town
+  **Notice Board** — hunt, collect and retrieve jobs that progress as you fight,
+  tracked in a **quest journal (J)** with an abandon option and turned in at the giver
+  for gold, XP and loot. All saved with the game.
+- A **discoverable bestiary (B)** that fills in as you face each of the 120 monsters,
+  recording stats, abilities, kill tallies and the floor first met; persisted in saves.
+- **Procedural music & sound** — code-synthesised sound effects and four looping music
+  tracks (town / dungeon / combat / victory) that switch with game state, with a
+  per-platform audio backend on every head and independent SFX/music volume settings.
+- A **Settings** screen (reduced motion, interface scale, autosave, mute, and separate
+  sound-effects and music volumes), persisted across sessions.
 - **Per-depth dungeon persistence**: every level you descend into keeps its own
   layout and revealed auto-map, so climbing back up (or re-descending) finds each
   floor exactly as you left it rather than a freshly generated maze.
 - Save / load of the entire session to JSON save files — three named slots plus an
-  autosave-on-return-to-town — covering party, gold, inventory, town position, and
-  **all explored dungeon levels** with the current depth and each floor's revealed map.
+  autosave-on-return-to-town — covering party, gold, inventory, town position,
+  **active and completed quests**, **bestiary discoveries**, and **all explored
+  dungeon levels** with the current depth and each floor's revealed map.
 
 ## Roadmap toward a fuller remake
 
-The core game loop is complete and winnable. Natural next steps toward a fuller
-recreation of the original:
+The core game loop is complete and winnable, with a 120-monster bestiary, side quests,
+a smithy, item powers, and procedural music & sound all in. Natural next steps toward a
+fuller recreation of the original:
 
-- **Hand-designed dungeons** — replace (or mix in) the original's authored multi-level
-  maps and riddles alongside the procedural generator, with stairs that link specific
-  levels rather than always entrance-to-entrance.
-- **More special tiles** — one-way doors, portcullises, and scripted message/event tiles.
+- **Hand-designed dungeons** — author some of the original's multi-level maps and
+  riddles alongside the procedural generator, with stairs that link specific levels.
+- **More special tiles** — one-way doors, portcullises, levers, hidden doors you
+  *search* for, and scripted message/event tiles.
 - **Persistent per-level state** — remember which wandering monsters and loot a floor
   has yielded so a cleared level stays cleared on revisit.
-- **Deeper character system** — the full original spell lists per school, more Bard
-  song effects, class change, and a wider monster bestiary.
-- **Audio & polish** — *sound effects are in* (procedurally synthesised footsteps,
-  combat, spells, town services, with a per-platform backend on each head); still to
-  come are music, richer combat animation, and a controller/keyboard-remap pass.
+- **Class change & deeper magic** — retire a maxed hero into a new class, the full
+  original per-school spell lists, and more Bard song effects.
+- **Achievements & renown** — tie rewards to filling the bestiary, finishing quest
+  lines, and beating each floor.
+- **Polish** — a full-screen map, dungeon camping, richer combat animation, and a
+  controller / keyboard-remap pass.
 
 The desktop, **browser (PWA)**, **Android** and **iOS** heads are all implemented —
 see **Platform setup & build** above. The engine stays UI-agnostic, so further targets

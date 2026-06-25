@@ -176,9 +176,40 @@ public static class Items
         ItemPower: new Spell("PWR_GRACE", "GRAC", "Mending Touch", MagicSchool.Conjurer, 0, 0,
             SpellEffect.HealAlly, SpellTarget.SingleAlly, 22, "Channels healing into one companion."));
 
+    // Encounter-long party buffs — invoked once, they shape the whole fight.
+    public static readonly Item BannerOfHaste = new("Banner of Haste", ItemSlot.Weapon, 1, 6, 0, 0, 2600, MagicBonus: 1,
+        ItemPower: new Spell("PWR_HASTE", "HAST", "Haste", MagicSchool.Sorcerer, 0, 0,
+            SpellEffect.HasteParty, SpellTarget.Party, 1, "The whole party gains an extra attack each round."));
+    public static readonly Item StandardOfRenewal = new("Standard of Renewal", ItemSlot.Weapon, 1, 4, 0, 0, 2200, MagicBonus: 1,
+        ItemPower: new Spell("PWR_RENEW", "RENW", "Aura of Renewal", MagicSchool.Conjurer, 0, 0,
+            SpellEffect.RegenParty, SpellTarget.Party, 8, "A healing aura mends the party each round."));
+    public static readonly Item AegisBanner = new("Aegis Banner", ItemSlot.Weapon, 1, 6, 0, 0, 1600, MagicBonus: 1,
+        ItemPower: new Spell("PWR_AEGIS", "AEGS", "Aegis", MagicSchool.Conjurer, 0, 0,
+            SpellEffect.BuffPartyArmor, SpellTarget.Party, 3, "Wards the party, turning aside blows all fight."));
+    public static readonly Item HornOfValor = new("Horn of Valor", ItemSlot.Weapon, 1, 6, 0, 0, 1600, MagicBonus: 1,
+        ItemPower: new Spell("PWR_VALOR", "VALR", "Warcry", MagicSchool.Sorcerer, 0, 0,
+            SpellEffect.BuffPartyAttack, SpellTarget.Party, 3, "A rousing blast sharpens the party's blows all fight."));
+    public static readonly Item ChimeOfCleansing = new("Chime of Cleansing", ItemSlot.Weapon, 1, 4, 0, 0, 1200, MagicBonus: 1,
+        ItemPower: new Spell("PWR_CLEAN", "CLNS", "Cleansing Peal", MagicSchool.Conjurer, 0, 0,
+            SpellEffect.CleanseParty, SpellTarget.Party, 0, "A clear note cures the whole party of ailments."));
+    public static readonly Item OrbOfMana = new("Orb of Mana", ItemSlot.Weapon, 1, 4, 0, 0, 1400, MagicBonus: 1,
+        ItemPower: new Spell("PWR_MANA", "MANA", "Mana Font", MagicSchool.Wizard, 0, 0,
+            SpellEffect.RestorePartySpellPoints, SpellTarget.Party, 14, "Restores spell points to the whole party."));
+    public static readonly Item WandOfLeeching = new("Wand of Leeching", ItemSlot.Weapon, 1, 4, 0, 0, 1800, MagicBonus: 2,
+        ItemPower: new Spell("PWR_LEECH", "LECH", "Soul Drain", MagicSchool.Sorcerer, 0, 0,
+            SpellEffect.DrainEnemy, SpellTarget.SingleEnemy, 22, "Drains a foe's life into the wielder."));
+    public static readonly Item RodOfResurrection = new("Rod of Resurrection", ItemSlot.Weapon, 1, 4, 0, 0, 2400, MagicBonus: 1,
+        ItemPower: new Spell("PWR_RAISE", "RAIS", "Raise Ally", MagicSchool.Conjurer, 0, 0,
+            SpellEffect.Revive, SpellTarget.SingleAlly, 12, "Calls a fallen companion back to life."));
+
     /// <summary>Powered items that can drop as treasure on the deeper floors.</summary>
     public static readonly IReadOnlyList<Item> PowerItems =
-        new[] { WandOfFlames, WandOfFrost, StaffOfStorms, StaffOfRuin, RodOfMending, ScepterOfGrace };
+        new[]
+        {
+            WandOfFlames, WandOfFrost, StaffOfStorms, StaffOfRuin, RodOfMending, ScepterOfGrace,
+            BannerOfHaste, StandardOfRenewal, AegisBanner, HornOfValor, ChimeOfCleansing, OrbOfMana,
+            WandOfLeeching, RodOfResurrection
+        };
 
     /// <summary>Every known item, keyed by name — used to resolve items when loading a save.</summary>
     public static readonly IReadOnlyDictionary<string, Item> ByName = new[]

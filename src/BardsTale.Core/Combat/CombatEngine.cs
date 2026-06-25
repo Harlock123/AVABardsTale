@@ -44,6 +44,8 @@ public sealed class CombatEngine
     // Party-wide buffs from songs and protection spells; last for the whole encounter.
     private int _partyAttackBonus;
     private int _partyArmorBonus;
+    private int _partyExtraAttacks; // Haste: extra swings per round
+    private int _partyRegen;        // Aura: HP restored to the party each round
 
     // Consumed on the first round: the surprised side sits it out.
     private bool _skipMonstersFirstRound;
@@ -140,6 +142,14 @@ public sealed class CombatEngine
         foreach (var actor in BuildInitiative(commands, preActed, skipMonsters))
             actor(round);
 
+        // An Aura of Renewal mends the party a little at the end of each round.
+        if (_partyRegen > 0 && _party.Members.Any(m => !m.IsDead))
+        {
+            foreach (var m in _party.Members.Where(m => !m.IsDead))
+                m.Heal(_partyRegen);
+            round.Log.Add($"A restoring aura mends the party for {_partyRegen}.");
+        }
+
         if (_encounter.IsCleared)
         {
             round.Outcome = CombatOutcome.Victory;
@@ -235,7 +245,9 @@ public sealed class CombatEngine
 
     private static bool IsBuffSpell(CombatCommand c)
         => c.Action == CombatActionType.CastSpell && c.Actor.CanAct
-           && c.Spell?.Effect is SpellEffect.BuffPartyArmor or SpellEffect.BuffPartyAttack;
+           && c.Spell?.Effect is SpellEffect.BuffPartyArmor or SpellEffect.BuffPartyAttack
+               or SpellEffect.HasteParty or SpellEffect.RegenParty
+               or SpellEffect.CleanseParty or SpellEffect.RestorePartySpellPoints;
 
     /// <summary>Interleaves party and monster actions by an initiative roll (higher acts first).</summary>
     private List<Action<CombatRound>> BuildInitiative(IReadOnlyList<CombatCommand> commands,
@@ -334,7 +346,7 @@ public sealed class CombatEngine
         if (group is null) return;
 
         var attacker = cmd.Actor;
-        var swings = attacker.AttacksPerRound;
+        var swings = attacker.AttacksPerRound + _partyExtraAttacks;
         var weapon = attacker.EffectiveWeapon;
         var attackBonus = attacker.StrengthBonus + (attacker.Level - 1) / 2
             + attacker.Definition.BaseHitBonus + _partyAttackBonus + weapon.MagicBonus;
@@ -381,6 +393,19 @@ public sealed class CombatEngine
                 var dmg = _rng.Roll(1, spell.Power, spell.Power / 2);
                 target.HitPoints -= dmg;
                 round.Log.Add($"{caster.Name} casts {spell.Name}, blasting {target.Name} for {dmg}.");
+                if (target.IsDead) round.Log.Add($"{target.Name} is slain!");
+                break;
+            }
+            case SpellEffect.DrainEnemy:
+            {
+                var group = GetTargetGroup(cmd.TargetGroup);
+                var target = group?.FirstAlive();
+                if (target is null) break;
+                var dmg = _rng.Roll(1, spell.Power, spell.Power / 2);
+                target.HitPoints -= dmg;
+                var healed = Math.Max(1, dmg / 2);
+                caster.Heal(healed);
+                round.Log.Add($"{caster.Name} casts {spell.Name}, draining {dmg} from {target.Name} and healing {healed}.");
                 if (target.IsDead) round.Log.Add($"{target.Name} is slain!");
                 break;
             }
@@ -440,6 +465,24 @@ public sealed class CombatEngine
             case SpellEffect.BuffPartyAttack:
                 _partyAttackBonus = Math.Max(_partyAttackBonus, spell.Power);
                 round.Log.Add($"{caster.Name} casts {spell.Name}; the party strikes with renewed force.");
+                break;
+            case SpellEffect.HasteParty:
+                _partyExtraAttacks = Math.Max(_partyExtraAttacks, spell.Power);
+                round.Log.Add($"{caster.Name} invokes {spell.Name}; the party blurs into a flurry of blows!");
+                break;
+            case SpellEffect.RegenParty:
+                _partyRegen = Math.Max(_partyRegen, spell.Power);
+                round.Log.Add($"{caster.Name} invokes {spell.Name}; a healing aura wraps the party.");
+                break;
+            case SpellEffect.CleanseParty:
+                foreach (var m in _party.Members.Where(m => !m.IsDead))
+                    m.CureAilments();
+                round.Log.Add($"{caster.Name} invokes {spell.Name}; ailments are washed away.");
+                break;
+            case SpellEffect.RestorePartySpellPoints:
+                foreach (var m in _party.Members.Where(m => !m.IsDead))
+                    m.SpellPoints = Math.Min(m.MaxSpellPoints, m.SpellPoints + spell.Power);
+                round.Log.Add($"{caster.Name} invokes {spell.Name}; arcane vigour returns to the party.");
                 break;
             case SpellEffect.RestoreLight:
                 round.Log.Add($"{caster.Name} casts {spell.Name}; light floods the area.");

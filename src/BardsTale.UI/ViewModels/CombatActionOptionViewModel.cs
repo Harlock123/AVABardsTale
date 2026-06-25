@@ -60,7 +60,15 @@ public sealed class CombatActionOptionViewModel : ViewModelBase
         var detail = p.Effect switch
         {
             SpellEffect.DamageEnemy or SpellEffect.DamageAllEnemies => $"once per fight · ~{p.Power} dmg",
+            SpellEffect.DrainEnemy => $"once per fight · ~{p.Power} dmg, heal self",
+            SpellEffect.Revive => "once per fight · revive an ally",
             SpellEffect.HealAlly or SpellEffect.HealParty => $"once per fight · ~{p.Power} heal",
+            SpellEffect.HasteParty => $"once per fight · party +{p.Power} attack/round",
+            SpellEffect.RegenParty => $"once per fight · party regen {p.Power}/round",
+            SpellEffect.BuffPartyArmor => $"once per fight · party AC +{p.Power}",
+            SpellEffect.BuffPartyAttack => $"once per fight · party hits +{p.Power}",
+            SpellEffect.CleanseParty => "once per fight · cure the party",
+            SpellEffect.RestorePartySpellPoints => $"once per fight · party +{p.Power} SP",
             _ => "once per fight"
         };
         return new($"⚡ Use {item.Name}", detail, CombatActionType.CastSpell, p, null, item, p.TargetsEnemies,

@@ -13,7 +13,17 @@ public enum SpellEffect
     BuffPartyArmor,
     BuffPartyAttack,
     CureStatus,
-    Identify
+    Identify,
+    /// <summary>Grants the party extra attacks each round for the fight (Power = extra swings).</summary>
+    HasteParty,
+    /// <summary>Heals the party a little at the end of every round for the fight (Power = HP).</summary>
+    RegenParty,
+    /// <summary>Cures every ailment from the whole party at once.</summary>
+    CleanseParty,
+    /// <summary>Restores spell points to the whole party (Power = SP).</summary>
+    RestorePartySpellPoints,
+    /// <summary>Damages one enemy and heals the caster for part of the harm done.</summary>
+    DrainEnemy
 }
 
 public enum SpellTarget
@@ -55,11 +65,15 @@ public sealed record Spell(
     public string Summary => Effect switch
     {
         SpellEffect.DamageEnemy or SpellEffect.DamageAllEnemies => $"{Cost} SP · ~{Power} dmg",
+        SpellEffect.DrainEnemy => $"{Cost} SP · ~{Power} dmg, heal self",
         SpellEffect.HealAlly or SpellEffect.HealParty => $"{Cost} SP · ~{Power} heal",
         SpellEffect.BuffPartyArmor => $"{Cost} SP · party AC +{Power}",
         SpellEffect.BuffPartyAttack => $"{Cost} SP · party hits +{Power}",
         SpellEffect.Revive => $"{Cost} SP · revive",
-        SpellEffect.CureStatus => $"{Cost} SP · cure ailments",
+        SpellEffect.CureStatus or SpellEffect.CleanseParty => $"{Cost} SP · cure ailments",
+        SpellEffect.HasteParty => $"{Cost} SP · party +{Power} attack/round",
+        SpellEffect.RegenParty => $"{Cost} SP · party regen {Power}/round",
+        SpellEffect.RestorePartySpellPoints => $"{Cost} SP · party +{Power} SP",
         SpellEffect.Identify => $"{Cost} SP · identify an item",
         _ => $"{Cost} SP"
     };
@@ -80,6 +94,10 @@ public static class Spells
             "Cleanses poison, paralysis and sleep from a companion."),
         new Spell("REST", "REST", "Restoration", MagicSchool.Conjurer, 3, 8, SpellEffect.Revive, SpellTarget.SingleAlly, 1,
             "Calls a fallen companion back from death."),
+        new Spell("RETI", "RETI", "Renewing Tide", MagicSchool.Conjurer, 3, 6, SpellEffect.RegenParty, SpellTarget.Party, 6,
+            "A tide of life washes the party each round of the fight."),
+        new Spell("MACL", "MACL", "Mass Cleansing", MagicSchool.Conjurer, 3, 5, SpellEffect.CleanseParty, SpellTarget.Party, 0,
+            "Purges poison, sleep and paralysis from the whole party."),
 
         // --- Magician: fire & utility ---
         new Spell("MAFL", "MAFL", "Mage Flame", MagicSchool.Magician, 1, 1, SpellEffect.RestoreLight, SpellTarget.None, 0,
@@ -88,6 +106,8 @@ public static class Spells
             "Hurls a bolt of fire at a single foe."),
         new Spell("SCSI", "SCSI", "Scrye Sight", MagicSchool.Magician, 1, 2, SpellEffect.Identify, SpellTarget.None, 0,
             "Reveals the true nature of an unidentified item."),
+        new Spell("MAFO", "MAFO", "Mana Font", MagicSchool.Magician, 3, 3, SpellEffect.RestorePartySpellPoints, SpellTarget.Party, 10,
+            "Channels arcane vigour, restoring spell points to the whole party."),
         new Spell("FROS", "FROS", "Frost Blast", MagicSchool.Magician, 2, 3, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 13,
             "A lance of cold transfixes an enemy."),
         new Spell("FIHO", "FIHO", "Fire Horn", MagicSchool.Magician, 3, 5, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 8,
@@ -98,6 +118,10 @@ public static class Spells
             "Crushes one enemy with focused force."),
         new Spell("BASP", "BASP", "Battle Spirit", MagicSchool.Sorcerer, 2, 4, SpellEffect.BuffPartyAttack, SpellTarget.Party, 2,
             "Fills the party with martial fervour, sharpening their blows."),
+        new Spell("SOLE", "SOLE", "Soul Leech", MagicSchool.Sorcerer, 2, 5, SpellEffect.DrainEnemy, SpellTarget.SingleEnemy, 16,
+            "Rips life from a foe and pours it into the caster."),
+        new Spell("QUBL", "QUBL", "Quicken Blood", MagicSchool.Sorcerer, 3, 8, SpellEffect.HasteParty, SpellTarget.Party, 1,
+            "Hastens the party's blood, granting an extra strike each round."),
         new Spell("MIJA", "MIJA", "Mind Jab", MagicSchool.Sorcerer, 2, 5, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 17,
             "A spike of pure thought lances an enemy's mind."),
         new Spell("PSST", "PSST", "Psychic Storm", MagicSchool.Sorcerer, 3, 7, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 10,

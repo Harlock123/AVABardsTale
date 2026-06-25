@@ -42,10 +42,17 @@ public static class Equipment
                 var oldS = c.Shield;
                 c.Shield = item;
                 return oldS;
-            case ItemSlot.Accessory:
-                var oldAcc = c.Accessory;
-                c.Accessory = item;
-                return oldAcc;
+            case ItemSlot.Ring:
+                // Fill the first free ring slot; if both are taken, replace the first.
+                if (c.Ring1 is null) { c.Ring1 = item; return null; }
+                if (c.Ring2 is null) { c.Ring2 = item; return null; }
+                var oldR = c.Ring1;
+                c.Ring1 = item;
+                return oldR;
+            case ItemSlot.Amulet:
+                var oldAm = c.Amulet;
+                c.Amulet = item;
+                return oldAm;
             default:
                 return null;
         }

@@ -206,7 +206,7 @@ public sealed class GameState
         if (!ornate && _rng.Chance(MimicChance))
         {
             CurrentCell.Feature = CellFeature.None; // the "chest" lunges — nothing left to loot
-            log.Add("The lid splits into a maw of teeth — it's a Mimic!");
+            log.Add("As you reach for the latch, the lid splits into a maw of teeth — it's a Mimic!");
             return new ChestResult(log, Array.Empty<Item>(), false, ChestMimic.EncounterFor(Depth));
         }
 

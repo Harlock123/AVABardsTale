@@ -29,7 +29,7 @@ public sealed class ShopItemViewModel : ViewModelBase
         {
             ItemSlot.Weapon => $"dmg {Item.DamageText}",
             ItemSlot.Armor or ItemSlot.Shield => $"+{Item.ArmorBonus} armor",
-            ItemSlot.Accessory => AccessoryStats(),
+            ItemSlot.Ring or ItemSlot.Amulet => AccessoryStats(),
             ItemSlot.Consumable => Item.EffectText,
             _ => ""
         };

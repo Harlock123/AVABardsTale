@@ -142,7 +142,9 @@ public static class GameSerializer
         Weapon = c.Weapon?.Name,
         Armor = c.Armor?.Name,
         Shield = c.Shield?.Name,
-        Accessory = c.Accessory?.Name,
+        Ring1 = c.Ring1?.Name,
+        Ring2 = c.Ring2?.Name,
+        Amulet = c.Amulet?.Name,
         KnownSpells = c.KnownSpells.ToList(),
         KnownSongs = c.KnownSongs.ToList()
     };
@@ -274,8 +276,17 @@ public static class GameSerializer
             Weapon = ItemDb.Find(s.Weapon),
             Armor = ItemDb.Find(s.Armor),
             Shield = ItemDb.Find(s.Shield),
-            Accessory = ItemDb.Find(s.Accessory)
+            Ring1 = ItemDb.Find(s.Ring1),
+            Ring2 = ItemDb.Find(s.Ring2),
+            Amulet = ItemDb.Find(s.Amulet)
         };
+        // Older saves stored a single accessory; slot it where it now belongs.
+        if (ItemDb.Find(s.Accessory) is { } legacy)
+        {
+            if (legacy.Slot == ItemSlot.Amulet) c.Amulet ??= legacy;
+            else if (c.Ring1 is null) c.Ring1 = legacy;
+            else c.Ring2 ??= legacy;
+        }
         c.KnownSpells.AddRange(s.KnownSpells);
         c.KnownSongs.AddRange(s.KnownSongs);
         c.DrainedAttributes.Strength = s.DrainedStrength;

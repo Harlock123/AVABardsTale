@@ -36,7 +36,22 @@ public sealed class Character
     public Item? Weapon { get; set; }
     public Item? Armor { get; set; }
     public Item? Shield { get; set; }
-    public Item? Accessory { get; set; }
+
+    // Worn accessories: two ring slots and one amulet slot.
+    public Item? Ring1 { get; set; }
+    public Item? Ring2 { get; set; }
+    public Item? Amulet { get; set; }
+
+    /// <summary>Every equipped accessory, skipping empty slots.</summary>
+    public IEnumerable<Item> Accessories
+    {
+        get
+        {
+            if (Ring1 is not null) yield return Ring1;
+            if (Ring2 is not null) yield return Ring2;
+            if (Amulet is not null) yield return Amulet;
+        }
+    }
 
     public StatusEffect Status { get; set; } = StatusEffect.None;
 
@@ -84,17 +99,25 @@ public sealed class Character
             var ac = 10;
             ac -= Armor?.ArmorBonus ?? 0;
             ac -= Shield?.ArmorBonus ?? 0;
-            ac -= Accessory?.ArmorBonus ?? 0;
+            ac -= Ring1?.ArmorBonus ?? 0;
+            ac -= Ring2?.ArmorBonus ?? 0;
+            ac -= Amulet?.ArmorBonus ?? 0;
             ac -= DexterityBonus;
             return ac;
         }
     }
 
     /// <summary>The elements this character wards against (taking half damage), drawn from equipped gear.</summary>
-    public Element ResistedElements =>
-        (Armor?.ResistsElement ?? Element.None)
-        | (Shield?.ResistsElement ?? Element.None)
-        | (Accessory?.ResistsElement ?? Element.None);
+    public Element ResistedElements
+    {
+        get
+        {
+            var warded = (Armor?.ResistsElement ?? Element.None) | (Shield?.ResistsElement ?? Element.None);
+            foreach (var accessory in Accessories)
+                warded |= accessory.ResistsElement;
+            return warded;
+        }
+    }
 
     /// <summary>True when equipped gear wards against the given attack element.</summary>
     public bool Resists(Element element) => element != Element.None && (ResistedElements & element) != 0;

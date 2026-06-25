@@ -441,7 +441,8 @@ public sealed partial class TownViewModel : ViewModelBase
     {
         Stash.Clear();
         foreach (var item in _session.Party.Inventory
-                     .Where(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield or ItemSlot.Accessory))
+                     .Where(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield
+                                 or ItemSlot.Ring or ItemSlot.Amulet))
             Stash.Add(new ShopItemViewModel(item));
         if (SelectedStashItem is not null && !_session.Party.Inventory.Contains(SelectedStashItem.Item))
             SelectedStashItem = null;
@@ -629,12 +630,15 @@ public sealed partial class TownViewModel : ViewModelBase
 
         if (row.Owner is { } hero)
         {
-            switch (row.Item.Slot)
+            // The slot label disambiguates the two ring slots (Item.Slot alone can't).
+            switch (row.SlotLabel)
             {
-                case ItemSlot.Weapon: hero.Weapon = row.Upgrade; break;
-                case ItemSlot.Armor: hero.Armor = row.Upgrade; break;
-                case ItemSlot.Shield: hero.Shield = row.Upgrade; break;
-                case ItemSlot.Accessory: hero.Accessory = row.Upgrade; break;
+                case "Weapon": hero.Weapon = row.Upgrade; break;
+                case "Armour": hero.Armor = row.Upgrade; break;
+                case "Shield": hero.Shield = row.Upgrade; break;
+                case "Ring 1": hero.Ring1 = row.Upgrade; break;
+                case "Ring 2": hero.Ring2 = row.Upgrade; break;
+                case "Amulet": hero.Amulet = row.Upgrade; break;
             }
         }
         else
@@ -657,10 +661,13 @@ public sealed partial class TownViewModel : ViewModelBase
             AddUpgradeRow(hero, "Weapon", hero.Weapon);
             AddUpgradeRow(hero, "Armour", hero.Armor);
             AddUpgradeRow(hero, "Shield", hero.Shield);
-            AddUpgradeRow(hero, "Accessory", hero.Accessory);
+            AddUpgradeRow(hero, "Ring 1", hero.Ring1);
+            AddUpgradeRow(hero, "Ring 2", hero.Ring2);
+            AddUpgradeRow(hero, "Amulet", hero.Amulet);
         }
         foreach (var item in _session.Party.Inventory
-                     .Where(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield or ItemSlot.Accessory))
+                     .Where(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield
+                                 or ItemSlot.Ring or ItemSlot.Amulet))
             AddUpgradeRow(null, "Stash", item);
 
         OnPropertyChanged(nameof(ForgeEmbers));

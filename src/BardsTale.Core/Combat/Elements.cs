@@ -109,6 +109,9 @@ public static class MonsterElements
         ["Archlich"] = new(UndeadResist, Element.Fire | Element.Arcane),
         ["Dragon Tyrant"] = new(Element.Fire, Element.Cold),
         ["Mangar the Mad"] = new(Element.Arcane, Element.None),
+
+        // --- The chest-lurker: its wooden hide catches fire easily ---
+        ["Mimic"] = new(Element.None, Element.Fire),
     };
 
     public static Element ResistOf(string name) => Table.TryGetValue(name, out var a) ? a.Resist : Element.None;
@@ -154,5 +157,28 @@ public static class MonsterElements
             if (e != Element.None && elements.HasFlag(e))
                 parts.Add(e.ToString());
         return string.Join(", ", parts);
+    }
+
+    /// <summary>A single evocative glyph for one element (used for compact affinity/ward badges).</summary>
+    public static string Glyph(Element e) => e switch
+    {
+        Element.Physical => "⚔",
+        Element.Fire => "🔥",
+        Element.Cold => "❄",
+        Element.Lightning => "⚡",
+        Element.Poison => "☠",
+        Element.Arcane => "✦",
+        _ => ""
+    };
+
+    /// <summary>Renders an element set as a row of glyphs ("🔥 ❄"), or "" if none.</summary>
+    public static string DescribeGlyphs(Element elements)
+    {
+        if (elements == Element.None) return "";
+        var parts = new List<string>();
+        foreach (Element e in Enum.GetValues<Element>())
+            if (e != Element.None && elements.HasFlag(e))
+                parts.Add(Glyph(e));
+        return string.Join(" ", parts);
     }
 }

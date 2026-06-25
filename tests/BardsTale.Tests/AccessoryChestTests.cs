@@ -16,30 +16,59 @@ public class AccessoryChestTests
     // ── Accessory slots ───────────────────────────────────────────────────────
 
     [Fact]
-    public void Equipping_an_accessory_fills_the_accessory_slot_and_returns_the_displaced_one()
+    public void Rings_fill_two_slots_then_the_third_displaces_the_first()
     {
         var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
         var hero = party.Members[0];
 
-        var first = Equipment.Equip(hero, Items.RingOfFireWard);
-        Assert.Null(first);
-        Assert.Equal(Items.RingOfFireWard, hero.Accessory);
+        Assert.Null(Equipment.Equip(hero, Items.RingOfFireWard));  // → Ring 1
+        Assert.Equal(Items.RingOfFireWard, hero.Ring1);
 
-        var displaced = Equipment.Equip(hero, Items.RingOfFrostWard);
+        Assert.Null(Equipment.Equip(hero, Items.RingOfFrostWard)); // → Ring 2, no displacement
+        Assert.Equal(Items.RingOfFrostWard, hero.Ring2);
+
+        var displaced = Equipment.Equip(hero, Items.RingOfStormWard); // both full → displaces Ring 1
         Assert.Equal(Items.RingOfFireWard, displaced);
-        Assert.Equal(Items.RingOfFrostWard, hero.Accessory);
+        Assert.Equal(Items.RingOfStormWard, hero.Ring1);
     }
 
     [Fact]
-    public void A_warding_accessory_grants_the_matching_resistance_only()
+    public void An_amulet_goes_in_its_own_slot_independent_of_rings()
     {
         var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
         var hero = party.Members[0];
-        hero.Accessory = Items.RingOfFireWard;
+        Equipment.Equip(hero, Items.RingOfFireWard);
+        var displaced = Equipment.Equip(hero, Items.AmuletOfTheViper);
+        Assert.Null(displaced);
+        Assert.Equal(Items.AmuletOfTheViper, hero.Amulet);
+        Assert.Equal(Items.RingOfFireWard, hero.Ring1); // ring slot untouched
+    }
+
+    [Fact]
+    public void All_three_accessory_slots_stack_their_wards_and_armor()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        var baseAc = hero.ArmorClass;
+        hero.Ring1 = Items.RingOfFireWard;
+        hero.Ring2 = Items.RingOfProtection;          // +1 AC
+        hero.Amulet = Items.AmuletOfTheViper;         // poison ward
 
         Assert.True(hero.Resists(Element.Fire));
+        Assert.True(hero.Resists(Element.Poison));
         Assert.False(hero.Resists(Element.Cold));
-        Assert.False(hero.Resists(Element.Lightning));
+        Assert.Equal(baseAc - 1, hero.ArmorClass);    // the protection ring lowers AC by one
+    }
+
+    [Fact]
+    public void Two_protection_rings_stack_their_armor()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        var before = hero.ArmorClass;
+        hero.Ring1 = Items.RingOfProtection;
+        hero.Ring2 = Items.RingOfProtection;
+        Assert.Equal(before - 2, hero.ArmorClass);
     }
 
     [Fact]
@@ -47,22 +76,12 @@ public class AccessoryChestTests
     {
         var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
         var hero = party.Members[0];
-        hero.Accessory = Items.AmuletOfWarding;
+        hero.Amulet = Items.AmuletOfWarding;
 
         Assert.True(hero.Resists(Element.Fire));
         Assert.True(hero.Resists(Element.Cold));
         Assert.True(hero.Resists(Element.Lightning));
         Assert.False(hero.Resists(Element.Poison));
-    }
-
-    [Fact]
-    public void A_ring_of_protection_improves_armor_class()
-    {
-        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
-        var hero = party.Members[0];
-        var before = hero.ArmorClass;
-        hero.Accessory = Items.RingOfProtection;
-        Assert.Equal(before - 1, hero.ArmorClass); // lower AC is better
     }
 
     // ── Party-side elemental resistance in combat ─────────────────────────────
@@ -75,7 +94,7 @@ public class AccessoryChestTests
         var hero = party.Members[0];
         hero.MaxHitPoints = 1000;
         hero.HitPoints = 1000;
-        hero.Accessory = accessory;
+        hero.Ring1 = accessory;
 
         var breath = new MonsterSpell("Fire Breath", MonsterSpellKind.BlastParty, Power: 30, Chance: 1.0);
         var drake = new MonsterTemplate("Test Drake", 2000, 0, 1, 4, 0, 10, 0, 1, Spell: breath);
@@ -179,7 +198,7 @@ public class AccessoryChestTests
     {
         var (gold, items) = Loot.RollChest(new SystemRandomSource(seed: 11), depth: 5, ornate: true);
         Assert.True(gold > 0);
-        Assert.Contains(items, i => i.Slot == ItemSlot.Accessory);
+        Assert.Contains(items, i => i.IsAccessory);
     }
 
     [Fact]
@@ -188,7 +207,7 @@ public class AccessoryChestTests
         var game = NewChestGame(out _, ornate: true);
         var result = game.OpenChest();
         Assert.Null(result.Mimic);
-        Assert.Contains(result.Loot, i => i.Slot == ItemSlot.Accessory);
+        Assert.Contains(result.Loot, i => i.IsAccessory);
         Assert.False(game.OnChest);
     }
 
@@ -253,23 +272,48 @@ public class AccessoryChestTests
         var plus2 = Items.Enchant(Items.RingOfFireWard, 2);
         var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
         var hero = party.Members[0];
-        hero.Accessory = plus2;
+        hero.Ring1 = plus2;
         Assert.True(hero.Resists(Element.Fire));
-        Assert.Equal(2, hero.Accessory!.ArmorBonus);
+        Assert.Equal(2, hero.Ring1!.ArmorBonus);
     }
 
     // ── Persistence ───────────────────────────────────────────────────────────
 
     [Fact]
-    public void A_saved_game_remembers_an_equipped_accessory()
+    public void A_saved_game_remembers_all_three_accessory_slots()
     {
         var session = new GameSession(seed: 5);
         session.FillDefaultParty();
-        session.Party.Members[0].Accessory = Items.AmuletOfWarding;
+        var hero = session.Party.Members[0];
+        hero.Ring1 = Items.RingOfFireWard;
+        hero.Ring2 = Items.RingOfStormWard;
+        hero.Amulet = Items.AmuletOfWarding;
 
-        var loaded = GameSerializer.FromJson(GameSerializer.ToJson(session));
+        var loaded = GameSerializer.FromJson(GameSerializer.ToJson(session)).Party.Members[0];
 
-        Assert.Equal("Amulet of Warding", loaded.Party.Members[0].Accessory?.Name);
-        Assert.True(loaded.Party.Members[0].Resists(Element.Fire));
+        Assert.Equal("Ring of Fire Ward", loaded.Ring1?.Name);
+        Assert.Equal("Ring of Storm Ward", loaded.Ring2?.Name);
+        Assert.Equal("Amulet of Warding", loaded.Amulet?.Name);
+        Assert.True(loaded.Resists(Element.Fire));
+        Assert.True(loaded.Resists(Element.Lightning));
+        Assert.True(loaded.Resists(Element.Cold));
+    }
+
+    // ── Bestiary affinity polish ──────────────────────────────────────────────
+
+    [Fact]
+    public void The_mimic_has_a_fire_weakness_in_the_affinity_table()
+    {
+        Assert.True((MonsterElements.WeakOf("Mimic") & Element.Fire) != 0);
+    }
+
+    [Fact]
+    public void Affinities_render_as_element_glyphs()
+    {
+        Assert.Equal("", MonsterElements.DescribeGlyphs(Element.None));
+        var glyphs = MonsterElements.DescribeGlyphs(Element.Fire | Element.Cold);
+        Assert.Contains(MonsterElements.Glyph(Element.Fire), glyphs);
+        Assert.Contains(MonsterElements.Glyph(Element.Cold), glyphs);
+        Assert.NotEqual("", MonsterElements.Glyph(Element.Lightning));
     }
 }

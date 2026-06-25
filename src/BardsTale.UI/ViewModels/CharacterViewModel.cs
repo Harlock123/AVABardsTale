@@ -52,9 +52,20 @@ public sealed partial class CharacterViewModel : ViewModelBase
             .Select(a => $"−{Model.DrainedAttributes[a]} {AttributeSet.Abbreviation(a)}"));
     public string RestoreStatsCostText => $"Restore ({50 * Model.TotalDrainedStats} gold)";
     public string ExperienceText => $"XP {Model.Experience}/{Model.ExperienceForNextLevel}";
-    public string GearText => $"{Model.Weapon?.Name ?? "—"} · {Model.Armor?.Name ?? "—"}"
-        + (Model.Shield is null ? "" : $" · {Model.Shield.Name}")
-        + (Model.Accessory is null ? "" : $" · {Model.Accessory.Name}");
+    public string GearText
+    {
+        get
+        {
+            var parts = new System.Collections.Generic.List<string>
+            {
+                Model.Weapon?.Name ?? "—",
+                Model.Armor?.Name ?? "—"
+            };
+            if (Model.Shield is not null) parts.Add(Model.Shield.Name);
+            foreach (var accessory in Model.Accessories) parts.Add(accessory.Name);
+            return string.Join(" · ", parts);
+        }
+    }
     public string ArmorClassText => $"AC {Model.ArmorClass}";
 
     /// <summary>The elements this hero's equipped gear wards against, e.g. "Wards: Fire, Cold".</summary>
@@ -62,7 +73,7 @@ public sealed partial class CharacterViewModel : ViewModelBase
     {
         get
         {
-            var wards = MonsterElements.Describe(Model.ResistedElements);
+            var wards = MonsterElements.DescribeGlyphs(Model.ResistedElements);
             return wards.Length > 0 ? $"Wards: {wards}" : "";
         }
     }

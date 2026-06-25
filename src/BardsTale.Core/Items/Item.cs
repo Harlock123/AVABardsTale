@@ -10,8 +10,10 @@ public enum ItemSlot
     Weapon,
     Armor,
     Shield,
-    /// <summary>A ring, amulet or talisman — worn for protection and elemental wards.</summary>
-    Accessory,
+    /// <summary>A ring — worn for protection and elemental wards. A hero wears up to two.</summary>
+    Ring,
+    /// <summary>An amulet or talisman — worn for protection and elemental wards. One per hero.</summary>
+    Amulet,
     Consumable,
     /// <summary>A crafting material (e.g. forge embers) — carried, never equipped or quaffed.</summary>
     Material
@@ -44,10 +46,10 @@ public sealed record Item(
     Element ResistsElement = Element.None)
 {
     public bool IsWeapon => Slot == ItemSlot.Weapon;
-    public bool IsAccessory => Slot == ItemSlot.Accessory;
+    public bool IsAccessory => Slot is ItemSlot.Ring or ItemSlot.Amulet;
     public bool IsConsumable => Slot == ItemSlot.Consumable;
     public bool IsMagic => MagicBonus > 0 || ItemPower is not null || ResistsElement != Element.None
-        || (Slot == ItemSlot.Accessory && ArmorBonus > 0);
+        || (IsAccessory && ArmorBonus > 0);
 
     /// <summary>A wielded item with a once-per-fight magical power (a wand, staff or rod).</summary>
     public bool HasPower => ItemPower is not null;
@@ -60,7 +62,8 @@ public sealed record Item(
         ItemSlot.Weapon => "Weapon",
         ItemSlot.Armor => "Armor",
         ItemSlot.Shield => "Shield",
-        ItemSlot.Accessory => "Accessory",
+        ItemSlot.Ring => "Ring",
+        ItemSlot.Amulet => "Amulet",
         _ => "Item"
     };
 
@@ -129,8 +132,8 @@ public static class Items
     public static Item Enchant(Item baseItem, int bonus)
     {
         var isWeapon = baseItem.Slot == ItemSlot.Weapon;
-        // Armour, shields and accessories all soak the bonus into their armour value.
-        var isArmor = baseItem.Slot is ItemSlot.Armor or ItemSlot.Shield or ItemSlot.Accessory;
+        // Armour, shields, rings and amulets all soak the bonus into their armour value.
+        var isArmor = baseItem.Slot is ItemSlot.Armor or ItemSlot.Shield or ItemSlot.Ring or ItemSlot.Amulet;
         return baseItem with
         {
             Name = $"{baseItem.Name} +{bonus}",
@@ -176,19 +179,19 @@ public static class Items
     // --- Accessories: rings, amulets and talismans worn for protection and elemental wards.
     //     Base accessories carry no enchant; the Smithy can forge +1/+2/+3 onto them, each
     //     tier adding a point of armour while preserving the elemental ward. ---
-    public static readonly Item RingOfProtection = new("Ring of Protection", ItemSlot.Accessory,
+    public static readonly Item RingOfProtection = new("Ring of Protection", ItemSlot.Ring,
         ArmorBonus: 1, Value: 500);
-    public static readonly Item RingOfFireWard = new("Ring of Fire Ward", ItemSlot.Accessory,
+    public static readonly Item RingOfFireWard = new("Ring of Fire Ward", ItemSlot.Ring,
         Value: 700, ResistsElement: Element.Fire);
-    public static readonly Item RingOfFrostWard = new("Ring of Frost Ward", ItemSlot.Accessory,
+    public static readonly Item RingOfFrostWard = new("Ring of Frost Ward", ItemSlot.Ring,
         Value: 700, ResistsElement: Element.Cold);
-    public static readonly Item RingOfStormWard = new("Ring of Storm Ward", ItemSlot.Accessory,
+    public static readonly Item RingOfStormWard = new("Ring of Storm Ward", ItemSlot.Ring,
         Value: 700, ResistsElement: Element.Lightning);
-    public static readonly Item AmuletOfTheViper = new("Amulet of the Viper", ItemSlot.Accessory,
+    public static readonly Item AmuletOfTheViper = new("Amulet of the Viper", ItemSlot.Amulet,
         Value: 700, ResistsElement: Element.Poison);
-    public static readonly Item AmuletOfWarding = new("Amulet of Warding", ItemSlot.Accessory,
+    public static readonly Item AmuletOfWarding = new("Amulet of Warding", ItemSlot.Amulet,
         ArmorBonus: 1, Value: 1800, ResistsElement: Element.Fire | Element.Cold | Element.Lightning);
-    public static readonly Item TalismanOfTheAges = new("Talisman of the Ages", ItemSlot.Accessory,
+    public static readonly Item TalismanOfTheAges = new("Talisman of the Ages", ItemSlot.Amulet,
         ArmorBonus: 1, Value: 3200,
         ResistsElement: Element.Fire | Element.Cold | Element.Lightning | Element.Poison | Element.Arcane);
 

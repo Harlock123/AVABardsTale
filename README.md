@@ -433,13 +433,15 @@ filling the book is a long-game goal. Your progress persists in the save.
 
 ### Accessories, elemental wards & treasure chests
 
-Beyond weapons, armour and shields, each hero wears one **accessory** — a ring, amulet
-or talisman. Most are **elemental wards**: a Ring of Fire Ward, Frost Ward, Storm Ward
-or Amulet of the Viper **halves** the damage its element deals to the wearer, while the
-rarer **Amulet of Warding** (fire, cold and lightning) and **Talisman of the Ages**
-(every element) guard against several at once. A plain **Ring of Protection** simply
-sharpens armour class. Each hero's active wards are shown in cyan on the roster
-(*"Wards: Fire, Cold"*) and on their character panel at Garth's.
+Beyond weapons, armour and shields, each hero wears up to **three accessories** — **two
+rings and an amulet**. Most are **elemental wards**: a Ring of Fire Ward, Frost Ward,
+Storm Ward or Amulet of the Viper **halves** the damage its element deals to the wearer,
+while the rarer **Amulet of Warding** (fire, cold and lightning) and **Talisman of the
+Ages** (every element) guard against several at once. A plain **Ring of Protection**
+simply sharpens armour class, and **wards from all three slots stack** — two protection
+rings give two points of armour, and a hero can cover several elements at once. Each
+hero's active wards are shown as cyan element glyphs on the roster (*"Wards: 🔥 ❄ ⚡"*)
+and on their character panel at Garth's.
 
 Wards matter because monsters hurl **elemental** attacks — dragon breath, a flame
 shade's cinderblast, a storm giant's thunderclap, an acid breath — and warded gear
@@ -528,17 +530,19 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
   enchantment "+N" up to **+3** for **gold + forge embers**, a crafting material
   that drops from deep-floor fights and bosses (a warding ring keeps its element
   as it gains armour). Works on equipped gear or stash.
-- **Accessories & elemental resistance** — each hero wears a ring/amulet/talisman;
-  most are **elemental wards** that halve a matching attack's damage (fire, cold,
-  lightning, poison, or several at once). Monsters wield elemental breath and blasts,
-  so wards matter; monsters also have their own **weaknesses (×2) and resistances
-  (÷2)**. Bought/sold/appraised at Garth's, dropped in the deep, and enchantable at
-  the Forge. Active wards show in cyan on the roster.
+- **Accessories & elemental resistance** — each hero wears **three accessories
+  (two rings + an amulet)**; most are **elemental wards** that halve a matching
+  attack's damage (fire, cold, lightning, poison, or several at once), and wards from
+  all three slots **stack**. Monsters wield elemental breath and blasts, so wards
+  matter; monsters also have their own **weaknesses (×2) and resistances (÷2)**.
+  Bought/sold/appraised at Garth's, dropped in the deep, and enchantable at the Forge.
+  Active wards and bestiary affinities show as cyan **element glyphs**.
 - **Treasure chests** — scattered each floor, opened on a prompt: a **Rogue**
   disarms an **elemental trap** (warding gear softens it) before the chest spills
   gold and loot weighted toward accessories. **Ornate chests** are always trapped
-  and guarantee a warding accessory; some plain chests are **mimics** that spring
-  into a depth-scaled fight.
+  and guarantee a warding accessory; some plain chests are **mimics** that **ambush
+  the party** (a free surprise round) in a depth-scaled fight — a fire-weak foe now
+  catalogued in the bestiary.
 - **Side quests** from shopkeepers, tavern patrons, street strangers and a town
   **Notice Board** — hunt, collect and retrieve jobs that progress as you fight,
   tracked in a **quest journal (J)** with an abandon option and turned in at the giver

@@ -78,7 +78,8 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 .GroupBy(i => i)
                 .Select(g => $"{g.Key.Name} x{g.Count()}")
                 .ToList();
-            var gear = _game.Party.Inventory.Count(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield or ItemSlot.Accessory);
+            var gear = _game.Party.Inventory.Count(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield
+                or ItemSlot.Ring or ItemSlot.Amulet);
             if (gear > 0) parts.Add($"{gear} gear to equip");
             var embers = _game.Party.Inventory.Count(i => i.Slot == ItemSlot.Material);
             if (embers > 0) parts.Add($"{embers} forge embers");
@@ -159,11 +160,12 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         IsAtChest = false;
         ChestPrompt = "";
 
-        // A mimic was lurking — drop straight into the fight instead of looting.
+        // A mimic was lurking — it gets a free swipe, then drop straight into the fight.
         if (result.Mimic is not null)
         {
+            AddLog("Pseudopods lash out before anyone can react!");
             Sfx.Play(GameSound.Attack);
-            StartCombat(result.Mimic);
+            StartCombat(result.Mimic, SurpriseState.PartySurprised);
             UpdateLocationState();
             SyncWorld();
             return;
@@ -266,11 +268,11 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         }
     }
 
-    private void StartCombat(Encounter encounter)
+    private void StartCombat(Encounter encounter, SurpriseState? surprise = null)
     {
         _codex.Discover(encounter, _game.Depth); // the party learns a foe by facing it, win or flee
         Music.Play(GameMusic.Combat);
-        var vm = new CombatViewModel(_game.Party, encounter, _game.Rng, _game.MagicSuppressed);
+        var vm = new CombatViewModel(_game.Party, encounter, _game.Rng, _game.MagicSuppressed, surprise);
         vm.Finished += OnCombatFinished;
         vm.StateChanged += RefreshParty;
         Combat = vm;

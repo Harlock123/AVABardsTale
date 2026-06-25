@@ -142,6 +142,7 @@ public static class GameSerializer
         Weapon = c.Weapon?.Name,
         Armor = c.Armor?.Name,
         Shield = c.Shield?.Name,
+        Accessory = c.Accessory?.Name,
         KnownSpells = c.KnownSpells.ToList(),
         KnownSongs = c.KnownSongs.ToList()
     };
@@ -272,7 +273,8 @@ public static class GameSerializer
             DrainedSpellPoints = s.DrainedSpellPoints,
             Weapon = ItemDb.Find(s.Weapon),
             Armor = ItemDb.Find(s.Armor),
-            Shield = ItemDb.Find(s.Shield)
+            Shield = ItemDb.Find(s.Shield),
+            Accessory = ItemDb.Find(s.Accessory)
         };
         c.KnownSpells.AddRange(s.KnownSpells);
         c.KnownSongs.AddRange(s.KnownSongs);

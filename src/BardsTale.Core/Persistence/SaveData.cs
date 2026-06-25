@@ -113,6 +113,7 @@ public sealed class CharacterSave
     public string? Weapon { get; set; }
     public string? Armor { get; set; }
     public string? Shield { get; set; }
+    public string? Accessory { get; set; }
     public List<string> KnownSpells { get; set; } = new();
     public List<string> KnownSongs { get; set; } = new();
 }

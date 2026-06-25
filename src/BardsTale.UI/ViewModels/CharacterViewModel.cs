@@ -52,7 +52,8 @@ public sealed partial class CharacterViewModel : ViewModelBase
     public string RestoreStatsCostText => $"Restore ({50 * Model.TotalDrainedStats} gold)";
     public string ExperienceText => $"XP {Model.Experience}/{Model.ExperienceForNextLevel}";
     public string GearText => $"{Model.Weapon?.Name ?? "—"} · {Model.Armor?.Name ?? "—"}"
-        + (Model.Shield is null ? "" : $" · {Model.Shield.Name}");
+        + (Model.Shield is null ? "" : $" · {Model.Shield.Name}")
+        + (Model.Accessory is null ? "" : $" · {Model.Accessory.Name}");
     public string ArmorClassText => $"AC {Model.ArmorClass}";
 
     /// <summary>Re-reads all derived values after the underlying model changes.</summary>

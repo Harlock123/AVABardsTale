@@ -441,7 +441,7 @@ public sealed partial class TownViewModel : ViewModelBase
     {
         Stash.Clear();
         foreach (var item in _session.Party.Inventory
-                     .Where(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield))
+                     .Where(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield or ItemSlot.Accessory))
             Stash.Add(new ShopItemViewModel(item));
         if (SelectedStashItem is not null && !_session.Party.Inventory.Contains(SelectedStashItem.Item))
             SelectedStashItem = null;

@@ -604,7 +604,7 @@ public sealed class CombatEngine
                 {
                     var dmg = _rng.Roll(1, spell.Power);
                     if (LuckySave(m)) dmg = Math.Max(1, dmg / 2);
-                    HitMemberWithSpell(m, dmg, round);
+                    HitMemberWithSpell(m, dmg, spell.Element, round);
                 }
                 break;
             }
@@ -614,7 +614,7 @@ public sealed class CombatEngine
                 if (target is null) break;
                 var dmg = _rng.Roll(1, spell.Power, spell.Power / 2);
                 round.Log.Add($"{caster.Name} hurls {spell.Name} at {target.Name}!");
-                HitMemberWithSpell(target, dmg, round);
+                HitMemberWithSpell(target, dmg, spell.Element, round);
                 break;
             }
             case MonsterSpellKind.Summon:
@@ -630,12 +630,14 @@ public sealed class CombatEngine
         }
     }
 
-    /// <summary>Applies spell damage to a party member, rousing sleepers and noting deaths.</summary>
-    private void HitMemberWithSpell(Character target, int dmg, CombatRound round)
+    /// <summary>Applies elemental spell damage to a party member; warded gear halves a matching element.</summary>
+    private void HitMemberWithSpell(Character target, int dmg, Element element, CombatRound round)
     {
+        var warded = target.Resists(element);
+        if (warded) dmg = Math.Max(1, dmg / 2);
         var wasAsleep = target.IsAsleep;
         target.ApplyDamage(dmg);
-        round.Log.Add($"{target.Name} takes {dmg} damage.");
+        round.Log.Add($"{target.Name} takes {dmg} damage{(warded ? $" — warded against {element.ToString().ToLowerInvariant()}" : "")}.");
         if (target.IsDead)
             round.Log.Add($"{target.Name} has fallen!");
         else if (wasAsleep)

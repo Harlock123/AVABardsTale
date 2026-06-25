@@ -1,3 +1,4 @@
+using BardsTale.Core.Combat;
 using BardsTale.Core.Items;
 
 namespace BardsTale.Core.Characters;
@@ -35,6 +36,7 @@ public sealed class Character
     public Item? Weapon { get; set; }
     public Item? Armor { get; set; }
     public Item? Shield { get; set; }
+    public Item? Accessory { get; set; }
 
     public StatusEffect Status { get; set; } = StatusEffect.None;
 
@@ -82,10 +84,20 @@ public sealed class Character
             var ac = 10;
             ac -= Armor?.ArmorBonus ?? 0;
             ac -= Shield?.ArmorBonus ?? 0;
+            ac -= Accessory?.ArmorBonus ?? 0;
             ac -= DexterityBonus;
             return ac;
         }
     }
+
+    /// <summary>The elements this character wards against (taking half damage), drawn from equipped gear.</summary>
+    public Element ResistedElements =>
+        (Armor?.ResistsElement ?? Element.None)
+        | (Shield?.ResistsElement ?? Element.None)
+        | (Accessory?.ResistsElement ?? Element.None);
+
+    /// <summary>True when equipped gear wards against the given attack element.</summary>
+    public bool Resists(Element element) => element != Element.None && (ResistedElements & element) != 0;
 
     public int DexterityBonus => (Attributes.Dexterity - 12) / 4;
     public int StrengthBonus => (Attributes.Strength - 12) / 4;

@@ -42,6 +42,10 @@ public static class Equipment
                 var oldS = c.Shield;
                 c.Shield = item;
                 return oldS;
+            case ItemSlot.Accessory:
+                var oldAcc = c.Accessory;
+                c.Accessory = item;
+                return oldAcc;
             default:
                 return null;
         }

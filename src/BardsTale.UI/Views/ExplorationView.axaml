@@ -36,6 +36,30 @@
                 <Border IsVisible="{Binding IsInCombat}" Background="#E60B0D14">
                     <ContentControl Content="{Binding Combat}"/>
                 </Border>
+
+                <!-- Treasure chest prompt -->
+                <Border IsVisible="{Binding IsAtChest}" Background="#C00B0D14"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="420"
+                            Background="#1B1E2A" BorderBrush="#C9A24B" BorderThickness="2"
+                            CornerRadius="6" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="🗝  Treasure Chest" FontSize="18" FontWeight="Bold"
+                                       Foreground="#E8C56B" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding ChestPrompt}" Foreground="#CFD3E0"
+                                       TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBlock Text="Your Rogue will try to disarm any trap before you open it."
+                                       Foreground="#8C93AB" FontSize="11" TextWrapping="Wrap"
+                                       TextAlignment="Center" Margin="0,0,0,14"/>
+                            <Grid ColumnDefinitions="*,*">
+                                <Button Grid.Column="0" Content="Open Chest" Command="{Binding OpenChestCommand}"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                                <Button Grid.Column="1" Content="Leave It" Command="{Binding LeaveChestCommand}"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Border>
             </Panel>
         </Border>
 

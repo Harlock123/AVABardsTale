@@ -10,6 +10,8 @@ public enum ItemSlot
     Weapon,
     Armor,
     Shield,
+    /// <summary>A ring, amulet or talisman — worn for protection and elemental wards.</summary>
+    Accessory,
     Consumable,
     /// <summary>A crafting material (e.g. forge embers) — carried, never equipped or quaffed.</summary>
     Material
@@ -38,11 +40,13 @@ public sealed record Item(
     int Power = 0,
     int MagicBonus = 0,
     bool Identified = true,
-    Spell? ItemPower = null)
+    Spell? ItemPower = null,
+    Element ResistsElement = Element.None)
 {
     public bool IsWeapon => Slot == ItemSlot.Weapon;
+    public bool IsAccessory => Slot == ItemSlot.Accessory;
     public bool IsConsumable => Slot == ItemSlot.Consumable;
-    public bool IsMagic => MagicBonus > 0 || ItemPower is not null;
+    public bool IsMagic => MagicBonus > 0 || ItemPower is not null || ResistsElement != Element.None;
 
     /// <summary>A wielded item with a once-per-fight magical power (a wand, staff or rod).</summary>
     public bool HasPower => ItemPower is not null;
@@ -55,8 +59,19 @@ public sealed record Item(
         ItemSlot.Weapon => "Weapon",
         ItemSlot.Armor => "Armor",
         ItemSlot.Shield => "Shield",
+        ItemSlot.Accessory => "Accessory",
         _ => "Item"
     };
+
+    /// <summary>What this item wards against, e.g. "wards Fire, Cold" — empty if it grants no resistance.</summary>
+    public string ResistText
+    {
+        get
+        {
+            var named = MonsterElements.Describe(ResistsElement);
+            return named.Length > 0 ? $"wards {named}" : "";
+        }
+    }
 
     /// <summary>A concealed copy of this item — same stats underneath, but its identity is hidden.</summary>
     public Item AsUnidentified() => this with { Identified = false };
@@ -154,6 +169,31 @@ public static class Items
     public static readonly Item MangarsStaff =
         new("Mangar's Staff", ItemSlot.Weapon, DamageDice: 2, DamageSides: 8, DamageBonus: 5, Value: 5000, MagicBonus: 5);
 
+    // --- Accessories: rings, amulets and talismans worn for protection and elemental wards ---
+    public static readonly Item RingOfProtection = new("Ring of Protection", ItemSlot.Accessory,
+        ArmorBonus: 1, Value: 500, MagicBonus: 1);
+    public static readonly Item RingOfFireWard = new("Ring of Fire Ward", ItemSlot.Accessory,
+        Value: 700, MagicBonus: 1, ResistsElement: Element.Fire);
+    public static readonly Item RingOfFrostWard = new("Ring of Frost Ward", ItemSlot.Accessory,
+        Value: 700, MagicBonus: 1, ResistsElement: Element.Cold);
+    public static readonly Item RingOfStormWard = new("Ring of Storm Ward", ItemSlot.Accessory,
+        Value: 700, MagicBonus: 1, ResistsElement: Element.Lightning);
+    public static readonly Item AmuletOfTheViper = new("Amulet of the Viper", ItemSlot.Accessory,
+        Value: 700, MagicBonus: 1, ResistsElement: Element.Poison);
+    public static readonly Item AmuletOfWarding = new("Amulet of Warding", ItemSlot.Accessory,
+        ArmorBonus: 1, Value: 1800, MagicBonus: 2, ResistsElement: Element.Fire | Element.Cold | Element.Lightning);
+    public static readonly Item TalismanOfTheAges = new("Talisman of the Ages", ItemSlot.Accessory,
+        ArmorBonus: 1, Value: 3200, MagicBonus: 3,
+        ResistsElement: Element.Fire | Element.Cold | Element.Lightning | Element.Poison | Element.Arcane);
+
+    /// <summary>Worn accessories that can be bought, sold, or turn up as treasure.</summary>
+    public static readonly IReadOnlyList<Item> Accessories =
+        new[]
+        {
+            RingOfProtection, RingOfFireWard, RingOfFrostWard, RingOfStormWard,
+            AmuletOfTheViper, AmuletOfWarding, TalismanOfTheAges
+        };
+
     // --- Crafting material: drops in the deep, spent at the Smithy ---
     public static readonly Item ForgeEmber = new("Forge Ember", ItemSlot.Material, Value: 60);
 
@@ -218,7 +258,7 @@ public static class Items
         Fists, Dagger, ShortSword, LongSword, BattleAxe, Staff,
         Robes, LeatherArmor, ChainMail, PlateMail, SmallShield,
         HealingPotion, ManaDraught, Antidote, ResurrectionDust, MangarsStaff, ForgeEmber
-    }.Concat(MagicItems).Concat(PowerItems).ToDictionary(i => i.Name);
+    }.Concat(MagicItems).Concat(PowerItems).Concat(Accessories).ToDictionary(i => i.Name);
 
     public static Item? Find(string? name)
         => name is not null && ByName.TryGetValue(name, out var item) ? item : null;

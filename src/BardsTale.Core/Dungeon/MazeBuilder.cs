@@ -71,6 +71,8 @@ public sealed class MazeBuilder
         Place(CellFeature.Trap, 2);
         Place(CellFeature.Darkness, 3);
         Place(CellFeature.AntiMagic, 2);
+        // A couple of treasure chests reward the bold (and the party's Rogue).
+        Place(CellFeature.Chest, 2);
 
         if (Take() is { } tele && Take() is { } dest)
         {

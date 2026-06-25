@@ -21,10 +21,14 @@ public enum MoveResultKind
     Teleported,
     Trapped,
     Darkness,
-    AntiMagic
+    AntiMagic,
+    Chest
 }
 
 public sealed record MoveResult(MoveResultKind Kind, string Description, Encounter? Encounter = null);
+
+/// <summary>The outcome of opening a treasure chest: narration, the spoils, and whether a trap went off.</summary>
+public sealed record ChestResult(IReadOnlyList<string> Log, IReadOnlyList<Item> Loot, bool TrapSprang);
 
 /// <summary>
 /// The live game world: the party exploring the current maze level. Owns movement,
@@ -151,6 +155,9 @@ public sealed class GameState
                 return new MoveResult(MoveResultKind.Encounter,
                     $"A monstrous presence rises to bar your way — the {Bosses.BossForDepth(Depth).Name}!",
                     Bosses.Create(Depth));
+            case CellFeature.Chest:
+                return new MoveResult(MoveResultKind.Chest,
+                    "A heavy treasure chest sits here, its lid latched shut.");
         }
 
         if (CheckForEncounter(out var encounter))
@@ -164,6 +171,82 @@ public sealed class GameState
     {
         if (CurrentCell.Feature == CellFeature.BossLair)
             CurrentCell.Feature = CellFeature.None;
+    }
+
+    /// <summary>True when the party stands on an unopened treasure chest.</summary>
+    public bool OnChest => CurrentCell.Feature == CellFeature.Chest;
+
+    private static readonly Element[] ChestTrapElements =
+        { Element.Fire, Element.Cold, Element.Lightning, Element.Poison };
+
+    /// <summary>
+    /// Opens the chest underfoot. The party's ablest Rogue tries to disarm any trap first;
+    /// failure springs an elemental snare on a random hero (warding gear softens it). Either
+    /// way the chest yields its spoils — gold and items — and is then emptied from the map.
+    /// </summary>
+    public ChestResult OpenChest()
+    {
+        var log = new List<string>();
+        if (CurrentCell.Feature != CellFeature.Chest)
+            return new ChestResult(new[] { "There is no chest here." }, Array.Empty<Item>(), false);
+
+        var trapSprang = false;
+        if (_rng.Chance(0.55))
+        {
+            var rogue = Party.Members
+                .Where(m => !m.IsDead && m.Class == CharacterClass.Rogue)
+                .OrderByDescending(m => m.Level)
+                .FirstOrDefault();
+            // Deft Rogue hands disarm most snares; without one, the party gropes and usually fails.
+            var disarmChance = rogue is null
+                ? 0.15
+                : Math.Min(0.95, 0.45 + 0.04 * rogue.Level + 0.03 * rogue.DexterityBonus);
+            if (rogue is not null && _rng.Chance(disarmChance))
+                log.Add($"{rogue.Name} deftly disarms the chest's trap.");
+            else
+            {
+                trapSprang = true;
+                SpringChestTrap(log);
+            }
+        }
+        else
+        {
+            log.Add("The chest is unlatched without a hitch.");
+        }
+
+        var (gold, items) = Loot.RollChest(_rng, Depth);
+        Party.Gold += gold;
+        log.Add($"You loot {gold} gold from the chest.");
+        foreach (var item in items)
+        {
+            Party.Inventory.Add(item);
+            log.Add($"Found: {item.DisplayName}.");
+        }
+
+        CurrentCell.Feature = CellFeature.None; // the chest is now empty
+        return new ChestResult(log, items, trapSprang);
+    }
+
+    /// <summary>An elemental snare bites a random hero; warding gear halves a matching blast.</summary>
+    private void SpringChestTrap(List<string> log)
+    {
+        var living = Party.Members.Where(m => !m.IsDead).ToList();
+        if (living.Count == 0) return;
+        var victim = living[_rng.Next(0, living.Count)];
+        var element = ChestTrapElements[_rng.Next(0, ChestTrapElements.Length)];
+        var dmg = _rng.Roll(2, 6, Depth);
+        var warded = victim.Resists(element);
+        if (warded) dmg = Math.Max(1, dmg / 2);
+        victim.ApplyDamage(dmg);
+        var elementName = element.ToString().ToLowerInvariant();
+        log.Add($"A {elementName} trap springs! {victim.Name} takes {dmg} damage"
+            + (warded ? $" (warded)" : "") + ".");
+        if (element == Element.Poison && !victim.IsDead && _rng.Chance(0.5))
+        {
+            victim.Inflict(StatusEffect.Poisoned);
+            log.Add($"{victim.Name} is poisoned!");
+        }
+        if (victim.IsDead) log.Add($"{victim.Name} has fallen!");
     }
 
     private MoveResult SpringTrap()

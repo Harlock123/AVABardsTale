@@ -78,7 +78,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 .GroupBy(i => i)
                 .Select(g => $"{g.Key.Name} x{g.Count()}")
                 .ToList();
-            var gear = _game.Party.Inventory.Count(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield);
+            var gear = _game.Party.Inventory.Count(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield or ItemSlot.Accessory);
             if (gear > 0) parts.Add($"{gear} gear to equip");
             var embers = _game.Party.Inventory.Count(i => i.Slot == ItemSlot.Material);
             if (embers > 0) parts.Add($"{embers} forge embers");
@@ -101,7 +101,13 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     [ObservableProperty] private bool _isInCombat;
     [ObservableProperty] private CombatViewModel? _combat;
 
-    public bool CanExplore => !IsInCombat;
+    /// <summary>True while the party stands at an unopened chest, with the open/leave prompt showing.</summary>
+    [ObservableProperty] private bool _isAtChest;
+    [ObservableProperty] private string _chestPrompt = "";
+
+    partial void OnIsAtChestChanged(bool value) => UpdateExploreState();
+
+    public bool CanExplore => !IsInCombat && !IsAtChest;
 
     [RelayCommand(CanExecute = nameof(CanExplore))]
     private void MoveForward() => Walk(_game.StepForward());
@@ -141,6 +147,30 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     [RelayCommand(CanExecute = nameof(CanReturnToTown))]
     private void ReturnToTown() => ReturnToTownRequested?.Invoke();
+
+    /// <summary>Opens the chest underfoot — the Rogue tries the trap, then the party claims the spoils.</summary>
+    [RelayCommand]
+    private void OpenChest()
+    {
+        if (!IsAtChest) return;
+        var result = _game.OpenChest();
+        foreach (var line in result.Log)
+            AddLog(line);
+        Sfx.Play(result.TrapSprang ? GameSound.Hurt : GameSound.Coin);
+        IsAtChest = false;
+        ChestPrompt = "";
+        UpdateLocationState();
+        SyncWorld();
+    }
+
+    /// <summary>Walks away from the chest, leaving it latched (it remains for a later visit).</summary>
+    [RelayCommand]
+    private void LeaveChest()
+    {
+        AddLog("You leave the chest untouched for now.");
+        IsAtChest = false;
+        ChestPrompt = "";
+    }
 
     /// <summary>Conjures light from a Bard's song (free) or a mage's light spell to pierce darkness.</summary>
     [RelayCommand(CanExecute = nameof(CanExplore))]
@@ -197,6 +227,11 @@ public sealed partial class ExplorationViewModel : ViewModelBase
             case MoveResultKind.Darkness:
             case MoveResultKind.AntiMagic:
                 AddLog(result.Description);
+                break;
+            case MoveResultKind.Chest:
+                AddLog(result.Description);
+                ChestPrompt = result.Description;
+                IsAtChest = true;
                 break;
         }
 

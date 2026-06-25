@@ -29,6 +29,8 @@ public static class Loot
             if (depth >= 4 && rng.Chance(0.10 + 0.01 * depth)) drops.Add(Items.ForgeEmber);
             // A powered wand or staff is a rare deep find.
             if (depth >= 6 && rng.Chance(0.02 + 0.004 * depth)) drops.Add(rng.Pick(Items.PowerItems).AsUnidentified());
+            // A warding ring or amulet occasionally turns up deeper down.
+            if (depth >= 3 && rng.Chance(0.03 + 0.004 * depth)) drops.Add(RollAccessory(rng, depth));
         }
 
         // Bosses always yield treasure; Mangar yields his signature staff.
@@ -45,6 +47,41 @@ public static class Loot
         }
 
         return drops;
+    }
+
+    /// <summary>
+    /// The spoils of a treasure chest: a purse of gold scaled to the depth, plus one to three
+    /// items biased toward warding accessories and enchanted gear — richer than a wandering drop.
+    /// </summary>
+    public static (int Gold, List<Item> Items) RollChest(IRandomSource rng, int depth)
+    {
+        var gold = rng.Roll(2, 20, 10) * (3 + depth);
+        var items = new List<Item>();
+
+        // A chest always holds at least one prize; deeper chests hold more.
+        var prizes = 1 + (rng.Chance(0.45) ? 1 : 0) + (depth >= 8 && rng.Chance(0.35) ? 1 : 0);
+        for (var i = 0; i < prizes; i++)
+        {
+            var roll = rng.Next(0, 100);
+            if (roll < 35) items.Add(RollAccessory(rng, depth).AsUnidentified());
+            else if (roll < 60) items.Add(RollMagic(rng));
+            else if (roll < 75 && depth >= 6) items.Add(rng.Pick(Items.PowerItems).AsUnidentified());
+            else if (roll < 90) items.Add(rng.Pick(PotionDrops));
+            else items.Add(Items.ResurrectionDust);
+        }
+        // Forge embers sweeten a deep chest.
+        if (depth >= 4 && rng.Chance(0.5)) items.Add(Items.ForgeEmber);
+        return (gold, items);
+    }
+
+    /// <summary>Picks a warding accessory, with the most potent talismans reserved for the deep.</summary>
+    private static Item RollAccessory(IRandomSource rng, int depth)
+    {
+        var pool = Items.Accessories
+            .Where(a => a.Value <= 600 + depth * 250)
+            .DefaultIfEmpty(Items.RingOfProtection)
+            .ToList();
+        return rng.Pick(pool);
     }
 
     /// <summary>Picks a magic item, favouring lower enchantments (+1 common, +3 rare).</summary>

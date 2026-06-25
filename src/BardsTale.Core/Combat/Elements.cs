@@ -114,6 +114,37 @@ public static class MonsterElements
     public static Element ResistOf(string name) => Table.TryGetValue(name, out var a) ? a.Resist : Element.None;
     public static Element WeakOf(string name) => Table.TryGetValue(name, out var a) ? a.Weak : Element.None;
 
+    /// <summary>
+    /// The element of a monster's damaging spell or breath weapon, keyed by name so the
+    /// roster's <c>MonsterSpell</c> definitions need no editing. Anything unlisted (mind
+    /// blasts, soul bolts, disintegration) counts as raw <see cref="Element.Arcane"/>.
+    /// </summary>
+    private static readonly Dictionary<string, Element> SpellTable = new()
+    {
+        // Fire
+        ["Cinderblast"] = Element.Fire,
+        ["Fire Breath"] = Element.Fire,
+        ["Fire Whip"] = Element.Fire,
+        ["Hellfire"] = Element.Fire,
+        ["Hellstorm"] = Element.Fire,
+        ["Inferno"] = Element.Fire,
+        ["Cataclysm"] = Element.Fire,
+        ["Cataclysm Breath"] = Element.Fire,
+        // Cold
+        ["Frost Breath"] = Element.Cold,
+        ["Blizzard"] = Element.Cold,
+        // Lightning
+        ["Spark"] = Element.Lightning,
+        ["Lightning Breath"] = Element.Lightning,
+        ["Thunderclap"] = Element.Lightning,
+        // Poison / acid / necrotic
+        ["Acid Breath"] = Element.Poison,
+        ["Necrotic Breath"] = Element.Poison,
+    };
+
+    /// <summary>The element of a monster spell by name (Arcane when not specifically themed).</summary>
+    public static Element OfSpell(string name) => SpellTable.TryGetValue(name, out var e) ? e : Element.Arcane;
+
     /// <summary>Renders an element set as a readable list ("Fire, Cold"), or "" if none.</summary>
     public static string Describe(Element elements)
     {

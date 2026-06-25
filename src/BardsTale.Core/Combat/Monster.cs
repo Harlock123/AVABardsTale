@@ -24,7 +24,11 @@ public enum MonsterSpellKind
 /// <paramref name="SummonTemplate"/> is what it calls and <paramref name="Power"/> is how many.
 /// </summary>
 public sealed record MonsterSpell(string Name, MonsterSpellKind Kind, int Power, double Chance,
-    MonsterTemplate? SummonTemplate = null);
+    MonsterTemplate? SummonTemplate = null)
+{
+    /// <summary>The damage element of this spell or breath, used against party-side resistances.</summary>
+    public Element Element => MonsterElements.OfSpell(Name);
+}
 
 /// <summary>A nasty rider some monsters apply on a successful hit.</summary>
 public enum MonsterAbility

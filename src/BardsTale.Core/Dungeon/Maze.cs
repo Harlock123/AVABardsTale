@@ -26,7 +26,9 @@ public enum CellFeature
     Building,
     Teleporter,
     AntiMagic,
-    BossLair
+    BossLair,
+    /// <summary>A treasure chest — may be trapped; a Rogue can disarm it before it's opened.</summary>
+    Chest
 }
 
 /// <summary>One tile of a maze level.</summary>

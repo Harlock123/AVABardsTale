@@ -596,6 +596,102 @@ public class AccessoryChestTests
         Assert.Contains(round.Log, l => l.Contains("warded against fire"));
     }
 
+    // ── Vitality accessories (max HP / SP) ────────────────────────────────────
+
+    [Fact]
+    public void Vitality_gear_raises_the_effective_maximums()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        var baseHp = hero.MaxHitPoints;
+        var baseSp = hero.MaxSpellPoints;
+
+        hero.Ring1 = Items.RingOfVigor;       // +12 HP
+        hero.Amulet = Items.AmuletOfTheMagi;  // +14 SP
+
+        Assert.Equal(baseHp + 12, hero.EffectiveMaxHitPoints);
+        Assert.Equal(baseSp + 14, hero.EffectiveMaxSpellPoints);
+        Assert.Equal(baseHp, hero.MaxHitPoints); // the stored base is untouched
+    }
+
+    [Fact]
+    public void Equipping_vitality_gear_grants_the_extra_hit_points_immediately()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.HitPoints = hero.MaxHitPoints; // start full
+        var baseHp = hero.MaxHitPoints;
+
+        Equipment.Equip(hero, Items.AmuletOfVitality); // +25 max HP
+
+        Assert.Equal(baseHp + 25, hero.EffectiveMaxHitPoints);
+        Assert.Equal(baseHp + 25, hero.HitPoints); // healed into the new headroom
+    }
+
+    [Fact]
+    public void Removing_vitality_gear_clamps_current_hit_points_back_down()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.HitPoints = hero.MaxHitPoints;
+        var baseHp = hero.MaxHitPoints;
+
+        Equipment.Equip(hero, Items.AmuletOfVitality);     // full at base+25
+        Equipment.Equip(hero, Items.AmuletOfWarding);      // swap it out → ceiling back to base
+
+        Assert.Equal(baseHp, hero.EffectiveMaxHitPoints);
+        Assert.Equal(baseHp, hero.HitPoints);              // clamped down
+    }
+
+    [Fact]
+    public void Healing_can_fill_the_vitality_headroom()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Amulet = Items.AmuletOfVitality;
+        hero.HitPoints = 1;
+
+        hero.Heal(10_000);
+        Assert.Equal(hero.MaxHitPoints + 25, hero.HitPoints);
+    }
+
+    [Fact]
+    public void The_lifeguard_set_adds_to_the_hit_point_pool()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        var baseHp = hero.MaxHitPoints;
+        hero.Ring1 = Items.RingOfVigor;       // +12
+        hero.Amulet = Items.AmuletOfVitality; // +25, and completes Lifeguard (+15)
+
+        Assert.Contains(hero.ActiveSets, s => s.Name == "Lifeguard");
+        Assert.Equal(baseHp + 12 + 25 + 15, hero.EffectiveMaxHitPoints);
+    }
+
+    [Fact]
+    public void Vitality_bonuses_survive_save_load_without_double_counting()
+    {
+        var session = new GameSession(seed: 5);
+        session.FillDefaultParty();
+        var hero = session.Party.Members[0];
+        var baseHp = hero.MaxHitPoints;
+        hero.Amulet = Items.AmuletOfVitality;
+        hero.HitPoints = hero.EffectiveMaxHitPoints;
+
+        var loaded = GameSerializer.FromJson(GameSerializer.ToJson(session)).Party.Members[0];
+
+        Assert.Equal(baseHp, loaded.MaxHitPoints);                 // base stored, not the boosted value
+        Assert.Equal(baseHp + 25, loaded.EffectiveMaxHitPoints);   // recomputed from gear — no doubling
+        Assert.Equal(baseHp + 25, loaded.HitPoints);
+    }
+
+    [Fact]
+    public void Vitality_effects_appear_in_the_accessory_text()
+    {
+        Assert.Contains("max HP", Items.AmuletOfVitality.AccessoryText);
+        Assert.Contains("max SP", Items.AmuletOfTheMagi.AccessoryText);
+    }
+
     // ── More sets, a three-piece set, and themed drops ────────────────────────
 
     [Fact]

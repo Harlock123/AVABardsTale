@@ -151,7 +151,7 @@ public sealed class CombatEngine
         }
 
         // ...and any hero with a regenerative accessory mends a little more, noted when it heals.
-        foreach (var m in _party.Members.Where(m => !m.IsDead && m.RegenPerRound > 0 && m.HitPoints < m.MaxHitPoints))
+        foreach (var m in _party.Members.Where(m => !m.IsDead && m.RegenPerRound > 0 && m.HitPoints < m.EffectiveMaxHitPoints))
         {
             var before = m.HitPoints;
             m.Heal(m.RegenPerRound);
@@ -333,7 +333,7 @@ public sealed class CombatEngine
                 round.Log.Add($"{cmd.Actor.Name} uses a {item.Name} on {ally.Name}, restoring {item.Power} HP.");
                 break;
             case ConsumableEffect.RestoreSpellPoints:
-                ally.SpellPoints = Math.Min(ally.MaxSpellPoints, ally.SpellPoints + item.Power);
+                ally.SpellPoints = Math.Min(ally.EffectiveMaxSpellPoints, ally.SpellPoints + item.Power);
                 round.Log.Add($"{cmd.Actor.Name} gives {ally.Name} a {item.Name}, restoring spell points.");
                 break;
             case ConsumableEffect.Cure:
@@ -514,7 +514,7 @@ public sealed class CombatEngine
                 break;
             case SpellEffect.RestorePartySpellPoints:
                 foreach (var m in _party.Members.Where(m => !m.IsDead))
-                    m.SpellPoints = Math.Min(m.MaxSpellPoints, m.SpellPoints + spell.Power);
+                    m.SpellPoints = Math.Min(m.EffectiveMaxSpellPoints, m.SpellPoints + spell.Power);
                 round.Log.Add($"{caster.Name} invokes {spell.Name}; arcane vigour returns to the party.");
                 break;
             case SpellEffect.RestoreLight:

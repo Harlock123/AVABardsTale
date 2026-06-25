@@ -485,9 +485,11 @@ public sealed partial class TownViewModel : ViewModelBase
         if (isRingSlot && item.Slot != ItemSlot.Ring) { Notice = $"{item.Name} is not a ring."; return; }
         if (slotLabel == "Amulet" && item.Slot != ItemSlot.Amulet) { Notice = $"{item.Name} is not an amulet."; return; }
 
+        var (prevHp, prevSp) = (hero.EffectiveMaxHitPoints, hero.EffectiveMaxSpellPoints);
         var displaced = SlotItem(hero, slotLabel);
         _session.Party.Inventory.Remove(item);
         SetSlot(hero, slotLabel, item);
+        hero.RescaleVitals(prevHp, prevSp); // vitality gear adjusts current HP/SP
         if (displaced is not null) _session.Party.Inventory.Add(displaced);
 
         Notice = displaced is not null
@@ -506,7 +508,9 @@ public sealed partial class TownViewModel : ViewModelBase
         if (SelectedHero?.Model is not { } hero) return;
         if (SlotItem(hero, slotLabel) is not { } item) { Notice = $"{slotLabel} is empty."; return; }
 
+        var (prevHp, prevSp) = (hero.EffectiveMaxHitPoints, hero.EffectiveMaxSpellPoints);
         SetSlot(hero, slotLabel, null);
+        hero.RescaleVitals(prevHp, prevSp); // removing vitality gear clamps current HP/SP down
         _session.Party.Inventory.Add(item);
         Notice = $"{hero.Name} removes {item.Name} ({slotLabel}).";
         Sfx.Play(GameSound.Equip);
@@ -536,7 +540,7 @@ public sealed partial class TownViewModel : ViewModelBase
 
     public int HealCost => Discounted(_session.Party.Members
         .Where(m => !m.IsDead)
-        .Sum(m => (m.MaxHitPoints - m.HitPoints) * 2 + (m.HasAilment ? 50 : 0)));
+        .Sum(m => (m.EffectiveMaxHitPoints - m.HitPoints) * 2 + (m.HasAilment ? 50 : 0)));
 
     [RelayCommand]
     private void HealParty()
@@ -559,7 +563,7 @@ public sealed partial class TownViewModel : ViewModelBase
         if (Gold < cost) { Notice = $"Reviving {hero.Name} costs {cost} gold."; return; }
         _session.Party.Gold -= cost;
         hero.Model.Status &= ~StatusEffect.Dead;
-        hero.Model.HitPoints = hero.Model.MaxHitPoints;
+        hero.Model.HitPoints = hero.Model.EffectiveMaxHitPoints;
         Notice = $"{hero.Name} is restored to life for {cost} gold.";
         Sfx.Play(GameSound.Heal);
         RefreshEconomy();

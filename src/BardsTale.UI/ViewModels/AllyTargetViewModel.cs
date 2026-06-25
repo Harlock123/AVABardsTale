@@ -18,6 +18,6 @@ public sealed class AllyTargetViewModel : ViewModelBase
     public bool IsValid { get; }
 
     public string Name => _character.Name;
-    public string Health => $"{_character.HitPoints}/{_character.MaxHitPoints}";
+    public string Health => $"{_character.HitPoints}/{_character.EffectiveMaxHitPoints}";
     public string StatusTag => _character.StatusTag;
 }

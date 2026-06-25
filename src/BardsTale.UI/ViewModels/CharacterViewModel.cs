@@ -21,11 +21,11 @@ public sealed partial class CharacterViewModel : ViewModelBase
     public string ClassLine => $"{Races.Get(Model.Race).Name} {Model.Definition.Name}";
     public int Level => Model.Level;
 
-    public string Health => $"{Model.HitPoints}/{Model.MaxHitPoints}";
-    public string Spell => Model.IsSpellcaster ? $"{Model.SpellPoints}/{Model.MaxSpellPoints}" : "—";
+    public string Health => $"{Model.HitPoints}/{Model.EffectiveMaxHitPoints}";
+    public string Spell => Model.IsSpellcaster ? $"{Model.SpellPoints}/{Model.EffectiveMaxSpellPoints}" : "—";
     public bool IsSpellcaster => Model.IsSpellcaster;
 
-    public double HealthFraction => Model.MaxHitPoints == 0 ? 0 : (double)Model.HitPoints / Model.MaxHitPoints;
+    public double HealthFraction => Model.EffectiveMaxHitPoints == 0 ? 0 : (double)Model.HitPoints / Model.EffectiveMaxHitPoints;
     public bool IsDead => Model.IsDead;
 
     public string StatusText => Model.StatusTag;

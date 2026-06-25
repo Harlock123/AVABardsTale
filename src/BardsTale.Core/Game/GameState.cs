@@ -224,8 +224,8 @@ public sealed class GameState
 
         foreach (var m in Party.Members.Where(m => !m.IsDead))
         {
-            m.HitPoints = Math.Min(m.MaxHitPoints, m.HitPoints + Math.Max(1, m.MaxHitPoints / 2));
-            m.SpellPoints = Math.Min(m.MaxSpellPoints, m.SpellPoints + Math.Max(1, m.MaxSpellPoints / 2));
+            m.HitPoints = Math.Min(m.EffectiveMaxHitPoints, m.HitPoints + Math.Max(1, m.EffectiveMaxHitPoints / 2));
+            m.SpellPoints = Math.Min(m.EffectiveMaxSpellPoints, m.SpellPoints + Math.Max(1, m.EffectiveMaxSpellPoints / 2));
         }
         _stepsSinceEncounter = 0;
 

@@ -17,7 +17,9 @@ public sealed record AccessorySet(
     int RegenBonus = 0,
     StatusEffect ImmuneBonus = StatusEffect.None,
     int HitBonus = 0,
-    int DamageBonus = 0);
+    int DamageBonus = 0,
+    int MaxHpBonus = 0,
+    int MaxSpBonus = 0);
 
 /// <summary>The catalogue of accessory set bonuses and the rules for which are active.</summary>
 public static class AccessorySets
@@ -42,6 +44,9 @@ public static class AccessorySets
         new AccessorySet("Warden's Resolve",
             "Ring of Free Action + Amulet of the Viper — unshakeable against every affliction.",
             new[] { "Ring of Free Action", "Amulet of the Viper" }, ImmuneBonus: StatusEffect.Poisoned),
+        new AccessorySet("Lifeguard",
+            "Ring of Vigor + Amulet of Vitality — a deep well of vitality and steady mending.",
+            new[] { "Ring of Vigor", "Amulet of Vitality" }, MaxHpBonus: 15, RegenBonus: 1),
         // A three-piece set — both rings and the amulet — for those who go all-in on warding.
         new AccessorySet("Elementalist's Regalia",
             "Ring of Fire Ward + Ring of Frost Ward + Amulet of the Viper — completes the elements.",

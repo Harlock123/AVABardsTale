@@ -48,7 +48,9 @@ public sealed record Item(
     int HitBonus = 0,
     int RegenPerRound = 0,
     int LuckBonus = 0,
-    StatusEffect ImmuneStatus = StatusEffect.None)
+    StatusEffect ImmuneStatus = StatusEffect.None,
+    int MaxHitPointBonus = 0,
+    int MaxSpellPointBonus = 0)
 {
     public bool IsWeapon => Slot == ItemSlot.Weapon;
     public bool IsAccessory => Slot is ItemSlot.Ring or ItemSlot.Amulet;
@@ -56,7 +58,8 @@ public sealed record Item(
 
     /// <summary>True when an accessory grants any benefit (armour, ward, or a combat effect).</summary>
     public bool HasAccessoryEffect => IsAccessory && (ArmorBonus > 0 || ResistsElement != Element.None
-        || HitBonus > 0 || DamageBonus > 0 || RegenPerRound > 0 || LuckBonus > 0 || ImmuneStatus != StatusEffect.None);
+        || HitBonus > 0 || DamageBonus > 0 || RegenPerRound > 0 || LuckBonus > 0 || ImmuneStatus != StatusEffect.None
+        || MaxHitPointBonus > 0 || MaxSpellPointBonus > 0);
 
     public bool IsMagic => MagicBonus > 0 || ItemPower is not null || ResistsElement != Element.None
         || HasAccessoryEffect;
@@ -95,6 +98,8 @@ public sealed record Item(
             var parts = new List<string>();
             if (ArmorBonus > 0) parts.Add($"+{ArmorBonus} armor");
             if (ResistsElement != Element.None) parts.Add(ResistText);
+            if (MaxHitPointBonus > 0) parts.Add($"+{MaxHitPointBonus} max HP");
+            if (MaxSpellPointBonus > 0) parts.Add($"+{MaxSpellPointBonus} max SP");
             if (DamageBonus > 0) parts.Add($"+{DamageBonus} dmg");
             if (HitBonus > 0) parts.Add($"+{HitBonus} to-hit");
             if (RegenPerRound > 0) parts.Add($"+{RegenPerRound} regen/round");
@@ -251,6 +256,14 @@ public static class Items
     public static readonly Item AmuletOfValor = new("Amulet of Valor", ItemSlot.Amulet,
         Value: 1300, HitBonus: 2, DamageBonus: 1);
 
+    // --- Vitality accessories: bolster a hero's maximum hit points and spell points ---
+    public static readonly Item RingOfVigor = new("Ring of Vigor", ItemSlot.Ring,
+        Value: 1000, MaxHitPointBonus: 12);
+    public static readonly Item AmuletOfVitality = new("Amulet of Vitality", ItemSlot.Amulet,
+        Value: 1500, MaxHitPointBonus: 25);
+    public static readonly Item AmuletOfTheMagi = new("Amulet of the Magi", ItemSlot.Amulet,
+        Value: 1400, MaxSpellPointBonus: 14);
+
     /// <summary>Worn accessories that can be bought, sold, or turn up as treasure.</summary>
     public static readonly IReadOnlyList<Item> Accessories =
         new[]
@@ -258,7 +271,8 @@ public static class Items
             RingOfProtection, RingOfFireWard, RingOfFrostWard, RingOfStormWard,
             AmuletOfTheViper, AmuletOfWarding, TalismanOfTheAges,
             RingOfRegeneration, RingOfStriking, RingOfAccuracy, RingOfFreeAction,
-            AmuletOfFortune, AmuletOfValor
+            AmuletOfFortune, AmuletOfValor,
+            RingOfVigor, AmuletOfVitality, AmuletOfTheMagi
         };
 
     /// <summary>Every Smithy-forged "+N" accessory — registered so saved enchanted gear resolves on load.</summary>

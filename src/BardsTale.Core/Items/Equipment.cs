@@ -28,6 +28,15 @@ public static class Equipment
     /// <summary>Equips the item into its slot, returning the item that was displaced (if any).</summary>
     public static Item? Equip(Character c, Item item)
     {
+        var prevHp = c.EffectiveMaxHitPoints;
+        var prevSp = c.EffectiveMaxSpellPoints;
+        var displaced = EquipToSlot(c, item);
+        c.RescaleVitals(prevHp, prevSp); // vitality gear adjusts current HP/SP up or down
+        return displaced;
+    }
+
+    private static Item? EquipToSlot(Character c, Item item)
+    {
         switch (item.Slot)
         {
             case ItemSlot.Weapon:

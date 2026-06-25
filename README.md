@@ -479,8 +479,10 @@ Warding** (fire, cold and lightning) and **Talisman of the Ages** (every element
 against several at once. Others grant **combat boons** — a Ring of Striking (+damage),
 Ring of Accuracy (+to-hit), Ring of Regeneration (heals each combat round), Ring of Free
 Action (immunity to paralysis and sleep), Amulet of Fortune (+luck on saves) or Amulet of
-Valor. A plain **Ring of Protection** simply sharpens armour class, and **bonuses from all
-three slots stack**. Each hero's active wards are shown as cyan element glyphs on the
+Valor — or **bolster vitality**: a Ring of Vigor and Amulet of Vitality raise **maximum hit
+points**, and an Amulet of the Magi raises **maximum spell points** (the extra is granted the
+moment you equip it, and healing/resting fills the new headroom). A plain **Ring of
+Protection** simply sharpens armour class, and **bonuses from all three slots stack**. Each hero's active wards are shown as cyan element glyphs on the
 roster (*"Wards: 🔥 ❄ ⚡"*) and on their character panel at Garth's.
 
 **Set bonuses** reward matched pairs (the pieces still count once enchanted): two Rings of
@@ -488,8 +490,9 @@ Protection (**Twin Bulwark**) grant an extra point of armour; a Ring of Storm Wa
 of Warding (**Stormwarden**) adds an arcane ward; a Ring of Regeneration + Amulet of the
 Viper (**Vital Coil**) speeds mending and grants poison immunity; a Ring of Striking + Amulet
 of Valor (**Duelist's Edge**) or two offensive rings (**Berserker's Fury**) sharpen every
-blow; and a Ring of Free Action + Amulet of the Viper (**Warden's Resolve**) leaves a hero
-immune to every affliction. The all-in **three-piece** **Elementalist's Regalia** (Ring of
+blow; a Ring of Free Action + Amulet of the Viper (**Warden's Resolve**) leaves a hero
+immune to every affliction; and a Ring of Vigor + Amulet of Vitality (**Lifeguard**) deepens
+the hit-point pool and mends each round. The all-in **three-piece** **Elementalist's Regalia** (Ring of
 Fire Ward + Ring of Frost Ward + Amulet of the Viper) completes protection against *all five*
 elements. Active sets show in gold on the character panel and combat roster, and when a hero
 is **one piece away** the panel nudges you (*"Almost: Equip a Ring of Storm Ward to complete
@@ -596,7 +599,7 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
   chosen slot, unequip back to the stash). Most are **elemental wards** that halve a
   matching attack's damage (fire, cold, lightning, poison, or several at once); others
   grant **combat effects** — extra damage/to-hit, per-round regeneration, paralysis/sleep
-  immunity (free action), or luck on saves. Bonuses from all three slots **stack**, and
+  immunity (free action), luck on saves, or a **bigger max HP / spell-point pool**. Bonuses from all three slots **stack**, and
   matched pairs trigger **set bonuses** (e.g. twin protection rings, or a ring + amulet of
   the same theme). Monsters wield elemental breath and blasts, so wards matter; monsters
   also have their own **weaknesses (×2) and resistances (÷2)**. Bought/sold/appraised at

@@ -161,6 +161,34 @@ public sealed class Character
     /// <summary>True when equipped gear makes this character immune to the given status.</summary>
     public bool IsImmuneTo(StatusEffect status) => (ImmuneStatuses & status) != 0;
 
+    /// <summary>Bonus maximum hit points from equipped accessories and active sets.</summary>
+    public int BonusMaxHitPoints => Accessories.Sum(a => a.MaxHitPointBonus) + ActiveSets.Sum(s => s.MaxHpBonus);
+
+    /// <summary>Bonus maximum spell points from equipped accessories and active sets.</summary>
+    public int BonusMaxSpellPoints => Accessories.Sum(a => a.MaxSpellPointBonus) + ActiveSets.Sum(s => s.MaxSpBonus);
+
+    /// <summary>The hit-point ceiling once vitality gear is counted (the base max plus gear bonus).</summary>
+    public int EffectiveMaxHitPoints => Math.Max(1, MaxHitPoints + BonusMaxHitPoints);
+
+    /// <summary>The spell-point ceiling once gear is counted.</summary>
+    public int EffectiveMaxSpellPoints => Math.Max(0, MaxSpellPoints + BonusMaxSpellPoints);
+
+    /// <summary>
+    /// Reconciles current HP/SP after an equipment change: gear that raised the ceiling
+    /// grants that much extra vitality outright, and gear that lowered it clamps current
+    /// values back down. Captures the previous effective maxes before the change.
+    /// </summary>
+    public void RescaleVitals(int previousEffectiveMaxHp, int previousEffectiveMaxSp)
+    {
+        var hpGain = EffectiveMaxHitPoints - previousEffectiveMaxHp;
+        if (hpGain > 0 && !IsDead) HitPoints += hpGain;
+        HitPoints = Math.Min(HitPoints, EffectiveMaxHitPoints);
+
+        var spGain = EffectiveMaxSpellPoints - previousEffectiveMaxSp;
+        if (spGain > 0) SpellPoints += spGain;
+        SpellPoints = Math.Min(SpellPoints, EffectiveMaxSpellPoints);
+    }
+
     public int DexterityBonus => (Attributes.Dexterity - 12) / 4;
     public int StrengthBonus => (Attributes.Strength - 12) / 4;
 
@@ -180,8 +208,8 @@ public sealed class Character
     public void FullHeal()
     {
         if (IsDead) return;
-        HitPoints = MaxHitPoints;
-        SpellPoints = MaxSpellPoints;
+        HitPoints = EffectiveMaxHitPoints;
+        SpellPoints = EffectiveMaxSpellPoints;
     }
 
     public void ApplyDamage(int amount)
@@ -198,7 +226,7 @@ public sealed class Character
     public void Heal(int amount)
     {
         if (IsDead) return;
-        HitPoints = Math.Min(MaxHitPoints, HitPoints + amount);
+        HitPoints = Math.Min(EffectiveMaxHitPoints, HitPoints + amount);
     }
 
     private const StatusEffect Ailments = StatusEffect.Poisoned | StatusEffect.Paralyzed | StatusEffect.Asleep;
@@ -290,6 +318,6 @@ public sealed class Character
         : IsParalyzed ? "PARA"
         : IsAsleep ? "SLEEP"
         : IsPoisoned ? "POISON"
-        : HitPoints <= MaxHitPoints / 4 ? "HURT"
+        : HitPoints <= EffectiveMaxHitPoints / 4 ? "HURT"
         : "OK";
 }

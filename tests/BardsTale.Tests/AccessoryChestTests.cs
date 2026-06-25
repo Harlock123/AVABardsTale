@@ -693,6 +693,63 @@ public class AccessoryChestTests
         Assert.True(rested, "expected at least one undisturbed rest");
     }
 
+    // ── Boss set rewards & set callouts ───────────────────────────────────────
+
+    [Fact]
+    public void A_set_guardian_boss_drops_the_whole_set()
+    {
+        // Stone Titan lairs on floor 11 and guards the Twin Bulwark set (two protection rings).
+        var encounter = Bosses.Create(11);
+        Assert.Equal("Stone Titan", encounter.Groups[0].Template.Name);
+
+        var drops = Loot.Roll(encounter, new SystemRandomSource(seed: 4), depth: 11);
+        Assert.Equal(2, drops.Count(i => i.Name == "Ring of Protection"));
+    }
+
+    [Fact]
+    public void The_deep_dragon_boss_drops_the_three_piece_regalia()
+    {
+        var encounter = Bosses.Create(19); // Dragon Tyrant → Elementalist's Regalia
+        var drops = Loot.Roll(encounter, new SystemRandomSource(seed: 4), depth: 19);
+
+        Assert.Contains(drops, i => i.Name == "Ring of Fire Ward");
+        Assert.Contains(drops, i => i.Name == "Ring of Frost Ward");
+        Assert.Contains(drops, i => i.Name == "Amulet of the Viper");
+    }
+
+    [Fact]
+    public void Sets_in_detects_a_complete_set_in_a_haul()
+    {
+        var haul = new List<Item> { Items.RingOfProtection, Items.RingOfProtection, Items.LongSword };
+        Assert.Contains(AccessorySets.SetsIn(haul), s => s.Name == "Twin Bulwark");
+
+        var partial = new List<Item> { Items.RingOfProtection, Items.LongSword };
+        Assert.DoesNotContain(AccessorySets.SetsIn(partial), s => s.Name == "Twin Bulwark");
+    }
+
+    [Fact]
+    public void A_boss_kill_announces_the_recovered_set_by_name()
+    {
+        var game = NewDungeon(7, out _);
+        var log = game.ApplyVictory(Bosses.Create(11)); // Stone Titan → Twin Bulwark
+        Assert.Contains(log, l => l.Contains("Twin Bulwark"));
+    }
+
+    // ── Camp risk mitigation ──────────────────────────────────────────────────
+
+    [Fact]
+    public void A_watchful_rogue_and_bard_lower_the_camp_ambush_risk()
+    {
+        var game = NewDungeon(1, out var party);
+        var withHelpers = game.CampAmbushChance;
+
+        // Down the watchers and the camp grows more dangerous.
+        foreach (var m in party.Members.Where(m => m.Class == BardsTale.Core.Characters.CharacterClass.Rogue || m.CanSing))
+            m.ApplyDamage(9999);
+
+        Assert.True(game.CampAmbushChance > withHelpers);
+    }
+
     [Fact]
     public void A_camp_can_be_ambushed_by_wandering_monsters()
     {

@@ -90,6 +90,24 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     public bool HasLight => _game.HasLight;
     public string LightText => _game.HasLight ? $"Light: {_game.LightRemaining} steps" : "Light: off";
 
+    /// <summary>The Camp button label, showing the current ambush risk so the gamble is informed.</summary>
+    public string CampText => $"⛺ Camp ({_game.CampAmbushChance * 100:0}% risk)";
+
+    /// <summary>Explains how the camp risk is reduced, for the button tooltip.</summary>
+    public string CampTooltip
+    {
+        get
+        {
+            var helpers = new System.Collections.Generic.List<string>();
+            if (_game.Party.Members.Any(m => !m.IsDead && m.Class == BardsTale.Core.Characters.CharacterClass.Rogue))
+                helpers.Add("a Rogue keeps watch");
+            if (_game.Party.Members.Any(m => !m.IsDead && m.CanSing))
+                helpers.Add("a Bard's song soothes the dark");
+            var baseLine = "Rest to recover half the party's HP and spell points — risks a surprise ambush.";
+            return helpers.Count > 0 ? $"{baseLine}\nRisk lowered: {string.Join(", ", helpers)}." : baseLine;
+        }
+    }
+
     [ObservableProperty] private int _partyX;
     [ObservableProperty] private int _partyY;
     [ObservableProperty] private Direction _facing;
@@ -384,6 +402,8 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         OnPropertyChanged(nameof(InventorySummary));
         OnPropertyChanged(nameof(HasLight));
         OnPropertyChanged(nameof(LightText));
+        OnPropertyChanged(nameof(CampText));
+        OnPropertyChanged(nameof(CampTooltip));
         RefreshParty();
     }
 

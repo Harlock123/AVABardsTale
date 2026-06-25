@@ -192,8 +192,20 @@ public sealed class GameState
     /// <summary>The odds a plain chest is really a disguised mimic — rising slowly with depth.</summary>
     private double MimicChance => Math.Min(0.25, 0.08 + 0.01 * Depth);
 
-    /// <summary>The chance that making camp is interrupted by a wandering ambush — riskier the deeper you rest.</summary>
-    private double CampAmbushChance => Math.Min(0.5, 0.15 + 0.02 * Depth);
+    /// <summary>
+    /// The chance that making camp is interrupted by a wandering ambush — riskier the deeper
+    /// you rest, but a watchful Rogue and a Bard's soothing song each make the camp safer.
+    /// </summary>
+    public double CampAmbushChance
+    {
+        get
+        {
+            var chance = 0.15 + 0.02 * Depth;
+            if (Party.Members.Any(m => !m.IsDead && m.Class == CharacterClass.Rogue)) chance -= 0.10;
+            if (Party.Members.Any(m => !m.IsDead && m.CanSing)) chance -= 0.08;
+            return Math.Clamp(chance, 0.05, 0.5);
+        }
+    }
 
     /// <summary>
     /// Makes camp to recover. There's a depth-scaled chance wandering monsters ambush the
@@ -216,7 +228,11 @@ public sealed class GameState
             m.SpellPoints = Math.Min(m.MaxSpellPoints, m.SpellPoints + Math.Max(1, m.MaxSpellPoints / 2));
         }
         _stepsSinceEncounter = 0;
-        log.Add("The party makes camp and rests undisturbed — hit points and spell points recovered.");
+
+        var watcher = Party.Members.FirstOrDefault(m => !m.IsDead && m.Class == CharacterClass.Rogue);
+        if (watcher is not null)
+            log.Add($"{watcher.Name} keeps watch as the party makes camp.");
+        log.Add("The party rests undisturbed — hit points and spell points recovered.");
         return new CampResult(true, log, null);
     }
 
@@ -275,6 +291,8 @@ public sealed class GameState
             Party.Inventory.Add(item);
             log.Add($"Found: {item.DisplayName}.");
         }
+        foreach (var set in AccessorySets.SetsIn(items))
+            log.Add($"✦ A matched set — the {set.Name}! {set.Description}");
 
         CurrentCell.Feature = CellFeature.None; // the chest is now empty
         return new ChestResult(log, items, trapSprang);
@@ -359,11 +377,14 @@ public sealed class GameState
                 log.Add($"{member.Name} has learned enough to advance — visit the Review Board.");
         }
 
-        foreach (var item in Loot.Roll(encounter, _rng, Depth))
+        var loot = Loot.Roll(encounter, _rng, Depth);
+        foreach (var item in loot)
         {
             Party.Inventory.Add(item);
             log.Add($"Found: {item.DisplayName}.");
         }
+        foreach (var set in AccessorySets.SetsIn(loot))
+            log.Add($"✦ You've recovered the {set.Name} set — {set.Description}");
         return log;
     }
 

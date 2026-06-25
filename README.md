@@ -24,7 +24,7 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 | `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime, as an installable PWA with IndexedDB saves. (Kept out of the default solution; see below.) |
 | `src/BardsTale.Android` | Thin Android head (tablet, landscape) — a launcher `Activity` + an `AudioTrack` sound backend, wrapping `MainView` via the single-view lifetime. |
 | `src/BardsTale.iOS` | Thin iOS head (iPad, landscape) — an `AvaloniaAppDelegate` entry point + an `AVAudioPlayer` sound backend. |
-| `tests/BardsTale.Tests` | xUnit suite (**183 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses), item powers & forging, town services, save/load round-trips, and per-depth map persistence. |
+| `tests/BardsTale.Tests` | xUnit suite (**255 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, town services, save/load round-trips, and per-depth map persistence. |
 
 The split follows Avalonia's standard cross-platform layout: a shared UI library plus
 one thin "head" project per platform. Every head reuses `BardsTale.UI` unchanged —
@@ -246,7 +246,8 @@ dotnet build src/BardsTale.Desktop
   it exactly as you left it.
 - **Camp** — make camp anywhere in the dungeon to recover half the party's hit points
   and spell points, at the risk of a **wandering ambush** (the chance rises with depth)
-  that interrupts the rest and catches the party by surprise.
+  that interrupts the rest and catches the party by surprise. The **Camp button shows the
+  current risk %**, and a **Rogue keeping watch** or a **Bard's soothing song** each lower it.
 - **Exit to Town** — from the entrance stairway, return to Skara Brae.
 - **Enter / Return** — enter the building you're standing before, or use the stairway
   you're on. **Esc** backs out of a building, panel or quest offer. **Q** assembles a
@@ -459,7 +460,10 @@ immune to every affliction. The all-in **three-piece** **Elementalist's Regalia*
 Fire Ward + Ring of Frost Ward + Amulet of the Viper) completes protection against *all five*
 elements. Active sets show in gold on the character panel and combat roster, and when a hero
 is **one piece away** the panel nudges you (*"Almost: Equip a Ring of Storm Ward to complete
-Stormwarden."*). **Ornate chests** sometimes yield a whole **matched set** as a themed haul.
+Stormwarden."*). **Ornate chests** sometimes yield a whole **matched set** as a themed haul,
+and a handful of **lair bosses guard a specific set as a guaranteed reward** (the Dragon
+Tyrant on floor 19 drops the full three-piece Elementalist's Regalia). Recovering a complete
+set is **called out by name** in the log (*"✦ You've recovered the Twin Bulwark set…"*).
 
 Accessory effects are surfaced in the **combat log** as they fire: regeneration ticks
 (*"Brynn regenerates 2 HP."*), elemental wards and luck softening a blast (*"… — luck softens

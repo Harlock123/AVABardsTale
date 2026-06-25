@@ -44,6 +44,11 @@ public static class Loot
             drops.Add(RollMagic(rng));
             for (var i = 0; i < 1 + depth / 5; i++) drops.Add(Items.ForgeEmber);
             if (depth >= 5 && rng.Chance(0.5)) drops.Add(rng.Pick(Items.PowerItems).AsUnidentified());
+
+            // A handful of lair bosses guard a complete accessory set as a guaranteed reward.
+            var bossName = encounter.Groups[0].Template.Name;
+            if (AccessorySets.RewardForBoss(bossName) is { } set)
+                drops.AddRange(AccessorySets.PiecesOf(set));
         }
 
         return drops;

@@ -75,6 +75,34 @@ public static class AccessorySets
         }
     }
 
+    // Certain lair bosses guard a complete set as a guaranteed reward.
+    private static readonly Dictionary<string, string> BossRewards = new()
+    {
+        ["Stone Titan"] = "Twin Bulwark",
+        ["Vampire Lord"] = "Vital Coil",
+        ["Beholder Tyrant"] = "Stormwarden",
+        ["Death Tyrant"] = "Warden's Resolve",
+        ["Pit Lord"] = "Berserker's Fury",
+        ["Dragon Tyrant"] = "Elementalist's Regalia",
+    };
+
+    /// <summary>The set a given boss is guaranteed to drop, or null if it guards no set.</summary>
+    public static AccessorySet? RewardForBoss(string bossName) =>
+        BossRewards.TryGetValue(bossName, out var setName) ? All.First(s => s.Name == setName) : null;
+
+    /// <summary>The (identified) item pieces that make up a set — for boss/themed drops.</summary>
+    public static IReadOnlyList<Item> PiecesOf(AccessorySet set) =>
+        set.Pieces.Select(p => Items.Find(p)!).ToList();
+
+    /// <summary>Every set fully present (by base name) in a haul — for "you found the X set!" callouts.</summary>
+    public static IEnumerable<AccessorySet> SetsIn(IEnumerable<Item> items)
+    {
+        var names = items.Where(i => i.IsAccessory).Select(i => Items.BaseName(i.Name)).ToList();
+        foreach (var set in All)
+            if (Missing(names, set.Pieces).Count == 0)
+                yield return set;
+    }
+
     // The set pieces not yet matched by a distinct worn slot (multiset difference).
     private static List<string> Missing(List<string> worn, IReadOnlyList<string> required)
     {

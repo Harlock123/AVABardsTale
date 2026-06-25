@@ -305,6 +305,8 @@
                                                            FontFamily="Consolas,monospace" TextWrapping="Wrap"/>
                                                 <TextBlock Text="{Binding Notes}" IsVisible="{Binding HasNotes}" FontSize="12"
                                                            Foreground="#D69FC4" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding Affinities}" IsVisible="{Binding HasAffinities}"
+                                                           FontSize="12" Foreground="#6FD0E8" TextWrapping="Wrap"/>
                                                 <TextBlock Text="{Binding Worth}" IsVisible="{Binding IsDiscovered}"
                                                            FontSize="11" Foreground="#D8C58A"/>
                                                 <TextBlock Text="{Binding TallyLine}" IsVisible="{Binding IsDiscovered}"

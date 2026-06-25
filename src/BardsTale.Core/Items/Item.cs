@@ -1,4 +1,5 @@
 using BardsTale.Core.Characters;
+using BardsTale.Core.Combat;
 using BardsTale.Core.Magic;
 
 namespace BardsTale.Core.Items;
@@ -159,13 +160,13 @@ public static class Items
     // --- Powered items: a wielded weapon (light enough for casters) with a once-per-fight power ---
     public static readonly Item WandOfFlames = new("Wand of Flames", ItemSlot.Weapon, 1, 4, 0, 0, 600, MagicBonus: 1,
         ItemPower: new Spell("PWR_FLAME", "FLAM", "Flame Burst", MagicSchool.Magician, 0, 0,
-            SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 18, "A gout of fire erupts from the wand."));
+            SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 18, "A gout of fire erupts from the wand.", Element.Fire));
     public static readonly Item WandOfFrost = new("Wand of Frost", ItemSlot.Weapon, 1, 4, 0, 0, 900, MagicBonus: 1,
         ItemPower: new Spell("PWR_FROST", "FRST", "Frost Lance", MagicSchool.Magician, 0, 0,
-            SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 24, "A lance of ice skewers a foe."));
+            SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 24, "A lance of ice skewers a foe.", Element.Cold));
     public static readonly Item StaffOfStorms = new("Staff of Storms", ItemSlot.Weapon, 1, 6, 0, 0, 1400, MagicBonus: 1,
         ItemPower: new Spell("PWR_STORM", "STRM", "Thunderstrike", MagicSchool.Wizard, 0, 0,
-            SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 13, "Lightning forks across every foe."));
+            SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 13, "Lightning forks across every foe.", Element.Lightning));
     public static readonly Item StaffOfRuin = new("Staff of Ruin", ItemSlot.Weapon, 1, 6, 0, 0, 2200, MagicBonus: 2,
         ItemPower: new Spell("PWR_RUIN", "RUIN", "Ruinous Bolt", MagicSchool.Wizard, 0, 0,
             SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 32, "A bolt of annihilating force."));

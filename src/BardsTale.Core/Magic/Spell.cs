@@ -1,4 +1,5 @@
 using BardsTale.Core.Characters;
+using BardsTale.Core.Combat;
 
 namespace BardsTale.Core.Magic;
 
@@ -50,7 +51,8 @@ public sealed record Spell(
     SpellEffect Effect,
     SpellTarget Target,
     int Power,
-    string Description)
+    string Description,
+    Element Element = Element.Arcane)
 {
     public bool TargetsEnemies => Target is SpellTarget.SingleEnemy or SpellTarget.AllEnemies;
     public bool TargetsAllies => Target is SpellTarget.SingleAlly or SpellTarget.Party;
@@ -103,15 +105,15 @@ public static class Spells
         new Spell("MAFL", "MAFL", "Mage Flame", MagicSchool.Magician, 1, 1, SpellEffect.RestoreLight, SpellTarget.None, 0,
             "Conjures a magical light to pierce the gloom."),
         new Spell("ARFI", "ARFI", "Arc Fire", MagicSchool.Magician, 1, 2, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 8,
-            "Hurls a bolt of fire at a single foe."),
+            "Hurls a bolt of fire at a single foe.", Element.Fire),
         new Spell("SCSI", "SCSI", "Scrye Sight", MagicSchool.Magician, 1, 2, SpellEffect.Identify, SpellTarget.None, 0,
             "Reveals the true nature of an unidentified item."),
         new Spell("MAFO", "MAFO", "Mana Font", MagicSchool.Magician, 3, 3, SpellEffect.RestorePartySpellPoints, SpellTarget.Party, 10,
             "Channels arcane vigour, restoring spell points to the whole party."),
         new Spell("FROS", "FROS", "Frost Blast", MagicSchool.Magician, 2, 3, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 13,
-            "A lance of cold transfixes an enemy."),
+            "A lance of cold transfixes an enemy.", Element.Cold),
         new Spell("FIHO", "FIHO", "Fire Horn", MagicSchool.Magician, 3, 5, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 8,
-            "Looses a blast of flame across an enemy group."),
+            "Looses a blast of flame across an enemy group.", Element.Fire),
 
         // --- Sorcerer: force & mind ---
         new Spell("FOFO", "FOFO", "Force Focus", MagicSchool.Sorcerer, 1, 3, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 12,
@@ -131,7 +133,7 @@ public static class Spells
         new Spell("MABL", "MABL", "Mage's Bolt", MagicSchool.Wizard, 1, 3, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 14,
             "A searing bolt of arcane energy."),
         new Spell("CONF", "CONF", "Conflagration", MagicSchool.Wizard, 1, 6, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 7,
-            "Engulfs an entire enemy group in flame."),
+            "Engulfs an entire enemy group in flame.", Element.Fire),
         new Spell("REVI", "REVI", "Revival", MagicSchool.Wizard, 2, 7, SpellEffect.Revive, SpellTarget.SingleAlly, 1,
             "Wrenches a fallen ally back to life."),
         new Spell("DETH", "DETH", "Death Strike", MagicSchool.Wizard, 3, 9, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 30,

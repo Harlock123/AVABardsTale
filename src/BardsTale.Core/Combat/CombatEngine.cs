@@ -340,6 +340,23 @@ public sealed class CombatEngine
         }
     }
 
+    /// <summary>Scales raw damage by a monster's elemental affinity: ×2 if weak, ÷2 if resistant.</summary>
+    private static int ScaleByElement(string monsterName, int dmg, Element element, out string note)
+    {
+        if (element != Element.None && (MonsterElements.WeakOf(monsterName) & element) != 0)
+        {
+            note = " — weak, double damage!";
+            return dmg * 2;
+        }
+        if (element != Element.None && (MonsterElements.ResistOf(monsterName) & element) != 0)
+        {
+            note = " — resisted";
+            return Math.Max(1, dmg / 2);
+        }
+        note = "";
+        return dmg;
+    }
+
     private void ResolvePartyAttack(CombatCommand cmd, CombatRound round)
     {
         var group = GetTargetGroup(cmd.TargetGroup);
@@ -358,10 +375,11 @@ public sealed class CombatEngine
 
             if (RollToHit(attackBonus, target.ArmorClass))
             {
-                var dmg = Math.Max(1, _rng.Roll(weapon.DamageDice, weapon.DamageSides,
+                var raw = Math.Max(1, _rng.Roll(weapon.DamageDice, weapon.DamageSides,
                     weapon.DamageBonus + attacker.StrengthBonus + _partyAttackBonus));
+                var dmg = ScaleByElement(target.Name, raw, Element.Physical, out var note);
                 target.HitPoints -= dmg;
-                round.Log.Add($"{attacker.Name} hits {target.Name} for {dmg}.");
+                round.Log.Add($"{attacker.Name} hits {target.Name} for {dmg}{note}.");
                 if (target.IsDead)
                     round.Log.Add($"{target.Name} is slain!");
             }
@@ -390,9 +408,9 @@ public sealed class CombatEngine
                 var group = GetTargetGroup(cmd.TargetGroup);
                 var target = group?.FirstAlive();
                 if (target is null) break;
-                var dmg = _rng.Roll(1, spell.Power, spell.Power / 2);
+                var dmg = ScaleByElement(target.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out var note);
                 target.HitPoints -= dmg;
-                round.Log.Add($"{caster.Name} casts {spell.Name}, blasting {target.Name} for {dmg}.");
+                round.Log.Add($"{caster.Name} casts {spell.Name}, blasting {target.Name} for {dmg}{note}.");
                 if (target.IsDead) round.Log.Add($"{target.Name} is slain!");
                 break;
             }
@@ -401,11 +419,11 @@ public sealed class CombatEngine
                 var group = GetTargetGroup(cmd.TargetGroup);
                 var target = group?.FirstAlive();
                 if (target is null) break;
-                var dmg = _rng.Roll(1, spell.Power, spell.Power / 2);
+                var dmg = ScaleByElement(target.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out var note);
                 target.HitPoints -= dmg;
                 var healed = Math.Max(1, dmg / 2);
                 caster.Heal(healed);
-                round.Log.Add($"{caster.Name} casts {spell.Name}, draining {dmg} from {target.Name} and healing {healed}.");
+                round.Log.Add($"{caster.Name} casts {spell.Name}, draining {dmg} from {target.Name} and healing {healed}{note}.");
                 if (target.IsDead) round.Log.Add($"{target.Name} is slain!");
                 break;
             }
@@ -415,7 +433,7 @@ public sealed class CombatEngine
                 foreach (var group in _encounter.LivingGroups)
                     foreach (var m in group.Monsters.Where(m => !m.IsDead))
                     {
-                        var dmg = _rng.Roll(1, spell.Power, spell.Power / 2);
+                        var dmg = ScaleByElement(m.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out _);
                         m.HitPoints -= dmg;
                         if (m.IsDead) round.Log.Add($"{m.Name} is slain!");
                     }

@@ -55,6 +55,28 @@ public sealed class BestiaryEntryViewModel : ViewModelBase
     public string Notes => IsDiscovered ? BuildNotes() : "";
     public bool HasNotes => Notes.Length > 0;
 
+    /// <summary>Elemental weaknesses and resistances, learned once the monster is discovered.</summary>
+    public string Affinities
+    {
+        get
+        {
+            if (!IsDiscovered) return "";
+            var weak = MonsterElements.Describe(MonsterElements.WeakOf(_t.Name));
+            var resist = MonsterElements.Describe(MonsterElements.ResistOf(_t.Name));
+            var w = weak.Length > 0 ? $"Weak to {weak}" : "";
+            var r = resist.Length > 0 ? $"Resists {resist}" : "";
+            return (w, r) switch
+            {
+                ("", "") => "",
+                ("", _) => r,
+                (_, "") => w,
+                _ => $"{w}  ·  {r}"
+            };
+        }
+    }
+
+    public bool HasAffinities => Affinities.Length > 0;
+
     public string TallyLine => _entry is null
         ? ""
         : $"Slain: {_entry.Slain}    ·    First met on level {_entry.FirstSeenDepth}";

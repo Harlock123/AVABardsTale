@@ -244,6 +244,9 @@ dotnet build src/BardsTale.Desktop
 - **Ascend** — from an upward stairway below the entrance, climb back to the level
   above. Each level keeps its own layout and explored map, so revisiting one finds
   it exactly as you left it.
+- **Camp** — make camp anywhere in the dungeon to recover half the party's hit points
+  and spell points, at the risk of a **wandering ambush** (the chance rises with depth)
+  that interrupts the rest and catches the party by surprise.
 - **Exit to Town** — from the entrance stairway, return to Skara Brae.
 - **Enter / Return** — enter the building you're standing before, or use the stairway
   you're on. **Esc** backs out of a building, panel or quest offer. **Q** assembles a
@@ -449,10 +452,14 @@ roster (*"Wards: 🔥 ❄ ⚡"*) and on their character panel at Garth's.
 **Set bonuses** reward matched pairs (the pieces still count once enchanted): two Rings of
 Protection (**Twin Bulwark**) grant an extra point of armour; a Ring of Storm Ward + Amulet
 of Warding (**Stormwarden**) adds an arcane ward; a Ring of Regeneration + Amulet of the
-Viper (**Vital Coil**) speeds mending and grants poison immunity; and a Ring of Striking +
-Amulet of Valor (**Duelist's Edge**) sharpens every blow. Active sets show in gold on the
-character panel and on the combat roster, and when a hero is **one piece away** from a set
-the panel nudges you (*"Almost: Equip a Ring of Storm Ward to complete Stormwarden."*).
+Viper (**Vital Coil**) speeds mending and grants poison immunity; a Ring of Striking + Amulet
+of Valor (**Duelist's Edge**) or two offensive rings (**Berserker's Fury**) sharpen every
+blow; and a Ring of Free Action + Amulet of the Viper (**Warden's Resolve**) leaves a hero
+immune to every affliction. The all-in **three-piece** **Elementalist's Regalia** (Ring of
+Fire Ward + Ring of Frost Ward + Amulet of the Viper) completes protection against *all five*
+elements. Active sets show in gold on the character panel and combat roster, and when a hero
+is **one piece away** the panel nudges you (*"Almost: Equip a Ring of Storm Ward to complete
+Stormwarden."*). **Ornate chests** sometimes yield a whole **matched set** as a themed haul.
 
 Accessory effects are surfaced in the **combat log** as they fire: regeneration ticks
 (*"Brynn regenerates 2 HP."*), elemental wards and luck softening a blast (*"… — luck softens
@@ -507,6 +514,8 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
   you across the level), **darkness** zones (the view blacks out and can't be
   mapped — until you conjure **light**), **traps** (spring for damage), and
   **anti-magic** zones (spells and songs fizzle for both sides). All survive save/load.
+- **Camping** — rest anywhere in the dungeon to recover half the party's HP and spell
+  points, gambling against a depth-scaled chance of a surprise wandering ambush.
 - A **fixed boss lair** on each level (guarding the descent) — a tough named boss
   flanked by minions, cleared permanently once beaten; the boss changes by depth.
   Every boss is **guaranteed to drop a magic item**.

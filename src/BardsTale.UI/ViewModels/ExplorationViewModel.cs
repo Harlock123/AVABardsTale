@@ -149,6 +149,27 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanReturnToTown))]
     private void ReturnToTown() => ReturnToTownRequested?.Invoke();
 
+    /// <summary>Makes camp to recover HP/SP — at the risk of a wandering ambush that interrupts the rest.</summary>
+    [RelayCommand(CanExecute = nameof(CanExplore))]
+    private void Camp()
+    {
+        var result = _game.Camp();
+        foreach (var line in result.Log)
+            AddLog(line);
+
+        if (result.Ambush is not null)
+        {
+            Sfx.Play(GameSound.Attack);
+            StartCombat(result.Ambush, SurpriseState.PartySurprised);
+        }
+        else
+        {
+            Sfx.Play(GameSound.Heal);
+        }
+        UpdateExploreState();
+        SyncWorld();
+    }
+
     /// <summary>Opens the chest underfoot — the Rogue tries the trap, then the party claims the spoils.</summary>
     [RelayCommand]
     private void OpenChest()
@@ -350,6 +371,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         AscendCommand.NotifyCanExecuteChanged();
         ReturnToTownCommand.NotifyCanExecuteChanged();
         CastLightCommand.NotifyCanExecuteChanged();
+        CampCommand.NotifyCanExecuteChanged();
     }
 
     private void SyncWorld()

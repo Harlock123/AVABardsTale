@@ -328,12 +328,16 @@ public class AccessoryChestTests
         var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
         var hero = party.Members[0];
         var baseLuck = hero.Attributes.Luck;
-        hero.Ring1 = Items.RingOfStriking;     // +2 damage
-        hero.Ring2 = Items.RingOfAccuracy;     // +2 to-hit
-        hero.Amulet = Items.AmuletOfFortune;   // +4 luck
 
+        // Each effect checked in isolation, so no set bonus muddies the numbers.
+        hero.Ring1 = Items.RingOfStriking;     // +2 damage
         Assert.Equal(2, hero.GearDamageBonus);
+
+        hero.Ring1 = Items.RingOfAccuracy;     // +2 to-hit
         Assert.Equal(2, hero.GearHitBonus);
+
+        hero.Ring1 = null;
+        hero.Amulet = Items.AmuletOfFortune;   // +4 luck
         Assert.Equal(baseLuck + 4, hero.EffectiveLuck);
 
         hero.Amulet = null;
@@ -590,6 +594,120 @@ public class AccessoryChestTests
 
         var round = engine.ExecuteRound(commands);
         Assert.Contains(round.Log, l => l.Contains("warded against fire"));
+    }
+
+    // ── More sets, a three-piece set, and themed drops ────────────────────────
+
+    [Fact]
+    public void Berserkers_fury_stacks_hit_and_damage_from_two_rings()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.RingOfStriking;   // +2 dmg
+        hero.Ring2 = Items.RingOfAccuracy;   // +2 hit
+
+        Assert.Contains(hero.ActiveSets, s => s.Name == "Berserker's Fury");
+        Assert.Equal(3, hero.GearDamageBonus); // 2 + set's +1
+        Assert.Equal(3, hero.GearHitBonus);    // 2 + set's +1
+    }
+
+    [Fact]
+    public void Wardens_resolve_grants_full_status_immunity()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.RingOfFreeAction;  // paralysis + sleep
+        hero.Amulet = Items.AmuletOfTheViper; // poison ward; set adds poison immunity
+
+        Assert.Contains(hero.ActiveSets, s => s.Name == "Warden's Resolve");
+        Assert.True(hero.IsImmuneTo(StatusEffect.Paralyzed));
+        Assert.True(hero.IsImmuneTo(StatusEffect.Asleep));
+        Assert.True(hero.IsImmuneTo(StatusEffect.Poisoned));
+    }
+
+    [Fact]
+    public void The_three_piece_regalia_wards_every_element()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        var bareAc = hero.ArmorClass;
+        hero.Ring1 = Items.RingOfFireWard;    // fire
+        hero.Ring2 = Items.RingOfFrostWard;   // cold
+        hero.Amulet = Items.AmuletOfTheViper; // poison; set completes lightning + arcane
+
+        Assert.Contains(hero.ActiveSets, s => s.Name == "Elementalist's Regalia");
+        foreach (var element in new[] { Element.Fire, Element.Cold, Element.Lightning, Element.Poison, Element.Arcane })
+            Assert.True(hero.Resists(element), $"should ward {element}");
+        Assert.Equal(bareAc - 1, hero.ArmorClass); // the regalia's +1 armour
+    }
+
+    [Fact]
+    public void Ornate_chests_sometimes_drop_a_matched_set()
+    {
+        var found = false;
+        for (var seed = 0; seed < 80 && !found; seed++)
+        {
+            var (_, items) = Loot.RollChest(new SystemRandomSource(seed), depth: 6, ornate: true);
+            var worn = items.Where(i => i.IsAccessory).Select(i => Items.BaseName(i.Name)).ToList();
+            if (AccessorySets.All.Any(set => Covers(worn, set.Pieces)))
+                found = true;
+        }
+        Assert.True(found, "expected at least one ornate chest to drop a complete matched set");
+    }
+
+    // Multiset cover: every required piece matched by a distinct item in the haul.
+    private static bool Covers(List<string> worn, System.Collections.Generic.IReadOnlyList<string> required)
+    {
+        var pool = new List<string>(worn);
+        foreach (var piece in required)
+            if (!pool.Remove(piece)) return false;
+        return true;
+    }
+
+    // ── Camping in the dungeon ────────────────────────────────────────────────
+
+    private static GameState NewDungeon(int seed, out Party party)
+    {
+        var rng = new SystemRandomSource(seed);
+        party = NewGame.CreateDefaultParty(rng);
+        var maze = new MazeBuilder(rng).Build("Camp", 9, 9);
+        return new GameState(party, maze, rng);
+    }
+
+    [Fact]
+    public void Resting_at_camp_recovers_hit_and_spell_points()
+    {
+        var rested = false;
+        for (var seed = 0; seed < 80 && !rested; seed++)
+        {
+            var game = NewDungeon(seed, out var party);
+            foreach (var m in party.Members) { m.MaxHitPoints = 100; m.HitPoints = 10; }
+            var result = game.Camp();
+            if (result.Rested)
+            {
+                rested = true;
+                Assert.Null(result.Ambush);
+                Assert.True(party.Members[0].HitPoints > 10);
+            }
+        }
+        Assert.True(rested, "expected at least one undisturbed rest");
+    }
+
+    [Fact]
+    public void A_camp_can_be_ambushed_by_wandering_monsters()
+    {
+        var ambushed = false;
+        for (var seed = 0; seed < 80 && !ambushed; seed++)
+        {
+            var game = NewDungeon(seed, out _);
+            var result = game.Camp();
+            if (!result.Rested)
+            {
+                ambushed = true;
+                Assert.NotNull(result.Ambush);
+            }
+        }
+        Assert.True(ambushed, "expected at least one ambushed camp");
     }
 
     [Fact]

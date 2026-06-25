@@ -34,6 +34,9 @@ public sealed record MoveResult(MoveResultKind Kind, string Description, Encount
 public sealed record ChestResult(IReadOnlyList<string> Log, IReadOnlyList<Item> Loot, bool TrapSprang,
     Encounter? Mimic = null);
 
+/// <summary>The outcome of making camp: whether the party rested, narration, and any ambush that interrupted it.</summary>
+public sealed record CampResult(bool Rested, IReadOnlyList<string> Log, Encounter? Ambush);
+
 /// <summary>
 /// The live game world: the party exploring the current maze level. Owns movement,
 /// wandering-monster checks and post-combat rewards.
@@ -188,6 +191,34 @@ public sealed class GameState
 
     /// <summary>The odds a plain chest is really a disguised mimic — rising slowly with depth.</summary>
     private double MimicChance => Math.Min(0.25, 0.08 + 0.01 * Depth);
+
+    /// <summary>The chance that making camp is interrupted by a wandering ambush — riskier the deeper you rest.</summary>
+    private double CampAmbushChance => Math.Min(0.5, 0.15 + 0.02 * Depth);
+
+    /// <summary>
+    /// Makes camp to recover. There's a depth-scaled chance wandering monsters ambush the
+    /// resting party (interrupting the rest with a fight); otherwise every living hero recovers
+    /// half their maximum hit points and spell points.
+    /// </summary>
+    public CampResult Camp()
+    {
+        var log = new List<string>();
+        if (_rng.Chance(CampAmbushChance))
+        {
+            _stepsSinceEncounter = 0;
+            log.Add("You bed down to rest — but wandering monsters fall upon the camp!");
+            return new CampResult(false, log, _encounters.CreateRandom(Depth));
+        }
+
+        foreach (var m in Party.Members.Where(m => !m.IsDead))
+        {
+            m.HitPoints = Math.Min(m.MaxHitPoints, m.HitPoints + Math.Max(1, m.MaxHitPoints / 2));
+            m.SpellPoints = Math.Min(m.MaxSpellPoints, m.SpellPoints + Math.Max(1, m.MaxSpellPoints / 2));
+        }
+        _stepsSinceEncounter = 0;
+        log.Add("The party makes camp and rests undisturbed — hit points and spell points recovered.");
+        return new CampResult(true, log, null);
+    }
 
     /// <summary>
     /// Opens the chest underfoot. A plain chest may instead prove to be a mimic and lunge

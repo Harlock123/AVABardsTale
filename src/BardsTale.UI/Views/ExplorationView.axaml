@@ -139,6 +139,10 @@
                 <TextBlock Text="{Binding InventorySummary}" Foreground="#D8C58A" FontSize="11"
                            TextWrapping="Wrap" Margin="2,0,2,6"/>
                 <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
+                    <Button Grid.Row="0" Grid.Column="0" Content="⛺ Camp"
+                            Command="{Binding CampCommand}" HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center" Margin="2"
+                            ToolTip.Tip="Rest to recover HP/SP — risks an ambush"/>
                     <Button Grid.Row="0" Grid.Column="1" Content="▲ Fwd"
                             Command="{Binding MoveForwardCommand}" HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center" Margin="2"/>

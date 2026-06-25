@@ -36,6 +36,17 @@ public static class AccessorySets
         new AccessorySet("Duelist's Edge",
             "Ring of Striking + Amulet of Valor — a sharper, surer strike.",
             new[] { "Ring of Striking", "Amulet of Valor" }, HitBonus: 1, DamageBonus: 1),
+        new AccessorySet("Berserker's Fury",
+            "Ring of Striking + Ring of Accuracy — a relentless, accurate offence.",
+            new[] { "Ring of Striking", "Ring of Accuracy" }, HitBonus: 1, DamageBonus: 1),
+        new AccessorySet("Warden's Resolve",
+            "Ring of Free Action + Amulet of the Viper — unshakeable against every affliction.",
+            new[] { "Ring of Free Action", "Amulet of the Viper" }, ImmuneBonus: StatusEffect.Poisoned),
+        // A three-piece set — both rings and the amulet — for those who go all-in on warding.
+        new AccessorySet("Elementalist's Regalia",
+            "Ring of Fire Ward + Ring of Frost Ward + Amulet of the Viper — completes the elements.",
+            new[] { "Ring of Fire Ward", "Ring of Frost Ward", "Amulet of the Viper" },
+            ArmorBonus: 1, WardBonus: Element.Lightning | Element.Arcane),
     };
 
     /// <summary>The sets whose every piece the character currently wears (base names, "+N" enchants count).</summary>

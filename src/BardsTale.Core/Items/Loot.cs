@@ -59,8 +59,13 @@ public static class Loot
         if (ornate) gold = gold * 3 / 2 + depth * 25; // a gilded chest holds a fatter purse
         var items = new List<Item>();
 
-        // An ornate chest always yields a warding accessory; plain ones may not.
-        if (ornate) items.Add(RollAccessory(rng, depth).AsUnidentified());
+        // An ornate chest always yields an accessory: sometimes a whole matched set
+        // (a themed drop the party can equip together), otherwise a single warding piece.
+        if (ornate)
+        {
+            if (rng.Chance(0.4)) items.AddRange(SetDrop(rng));
+            else items.Add(RollAccessory(rng, depth).AsUnidentified());
+        }
 
         // A chest always holds at least one prize; deeper and ornate chests hold more.
         var prizes = 1 + (rng.Chance(0.45) ? 1 : 0) + (depth >= 8 && rng.Chance(0.35) ? 1 : 0) + (ornate ? 1 : 0);
@@ -76,6 +81,13 @@ public static class Loot
         // Forge embers sweeten a deep chest.
         if (depth >= 4 && rng.Chance(ornate ? 0.8 : 0.5)) items.Add(Items.ForgeEmber);
         return (gold, items);
+    }
+
+    /// <summary>The matched pieces of a random accessory set — a themed haul, identified so the set reads at a glance.</summary>
+    private static IEnumerable<Item> SetDrop(IRandomSource rng)
+    {
+        var set = rng.Pick(AccessorySets.All);
+        return set.Pieces.Select(p => Items.Find(p)!);
     }
 
     /// <summary>Picks a warding accessory, with the most potent talismans reserved for the deep.</summary>

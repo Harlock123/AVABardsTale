@@ -35,6 +35,7 @@ public static class GameSerializer
             Party = new PartySave
             {
                 Gold = p.Gold,
+                BankedGold = p.BankedGold,
                 TownX = session.TownPosition.X,
                 TownY = session.TownPosition.Y,
                 TownFacing = (int)session.TownFacing,
@@ -194,6 +195,7 @@ public static class GameSerializer
         var p = session.Party;
 
         p.Gold = data.Party.Gold;
+        p.BankedGold = data.Party.BankedGold;
         session.TownPosition = new Position(data.Party.TownX, data.Party.TownY);
         session.TownFacing = (Direction)data.Party.TownFacing;
         p.Position = new Position(data.Party.DungeonX, data.Party.DungeonY);

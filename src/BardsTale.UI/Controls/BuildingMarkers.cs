@@ -26,6 +26,7 @@ public static class BuildingMarkers
         new BuildingMarker(TownBuilding.Inn,             "Inn",       "I", Rgb(0x3F, 0xA4, 0x68), Brushes.White),
         new BuildingMarker(TownBuilding.QuestBoard,      "Quests",    "!", Rgb(0x2E, 0xA0, 0x9E), Brushes.White),
         new BuildingMarker(TownBuilding.Smithy,          "Smithy",    "⚒", Rgb(0x9C, 0x4A, 0x30), Brushes.White),
+        new BuildingMarker(TownBuilding.Bank,            "Bank",      "B", Rgb(0xC9, 0xA8, 0x3A), Rgb(0x1A, 0x16, 0x26)),
         new BuildingMarker(TownBuilding.DungeonEntrance, "Catacombs", "▼", Rgb(0x9E, 0x2C, 0x2C), Brushes.White),
     };
 

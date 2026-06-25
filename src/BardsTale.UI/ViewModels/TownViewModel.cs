@@ -150,9 +150,13 @@ public sealed partial class TownViewModel : ViewModelBase
     public bool IsInn => ActiveBuilding == TownBuilding.Inn;
     public bool IsQuestBoard => ActiveBuilding == TownBuilding.QuestBoard;
     public bool IsSmithy => ActiveBuilding == TownBuilding.Smithy;
+    public bool IsBank => ActiveBuilding == TownBuilding.Bank;
 
     public int ForgeEmbers => _session.Party.Inventory.Count(i => i.Slot == ItemSlot.Material);
     public string ForgeEmbersText => $"Forge Embers: {ForgeEmbers}";
+
+    public int BankedGold => _session.Party.BankedGold;
+    public string BankedGoldText => $"In the vault: {BankedGold} gold";
 
     private Position CurrentPosition => new(PartyX, PartyY);
     private BuildingEntrance? BuildingHere => _town.BuildingAt(CurrentPosition);
@@ -170,6 +174,7 @@ public sealed partial class TownViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsInn));
         OnPropertyChanged(nameof(IsQuestBoard));
         OnPropertyChanged(nameof(IsSmithy));
+        OnPropertyChanged(nameof(IsBank));
         OnPropertyChanged(nameof(CanEnter));
         NotifyMovementCanExecute();
     }
@@ -324,6 +329,22 @@ public sealed partial class TownViewModel : ViewModelBase
             Notice = $"{hero.Name} equips {item.Name}.";
         }
         Sfx.Play(GameSound.Buy);
+        RefreshEconomy();
+    }
+
+    /// <summary>Sells the selected stashed item to Garth for half its value.</summary>
+    [RelayCommand]
+    private void SellStashItem()
+    {
+        var stashed = SelectedStashItem;
+        if (stashed is null) { Notice = "Select a stashed item to sell."; return; }
+
+        var price = Math.Max(1, stashed.Item.Value / 2);
+        _session.Party.Inventory.Remove(stashed.Item);
+        _session.Party.Gold += price;
+        Notice = $"Sold {stashed.Item.DisplayName} for {price} gold.";
+        Sfx.Play(GameSound.Sell);
+        RebuildStash();
         RefreshEconomy();
     }
 
@@ -656,6 +677,49 @@ public sealed partial class TownViewModel : ViewModelBase
     {
         foreach (var ember in _session.Party.Inventory.Where(i => i.Slot == ItemSlot.Material).Take(count).ToList())
             _session.Party.Inventory.Remove(ember);
+    }
+
+    // --- The Bank ---
+
+    [ObservableProperty] private decimal _bankAmount;
+
+    [RelayCommand]
+    private void Deposit()
+    {
+        var amount = Math.Min(Gold, (int)Math.Max(0, BankAmount));
+        if (amount <= 0) { Notice = "Enter an amount to deposit — you can't bank more than you carry."; return; }
+        _session.Party.Gold -= amount;
+        _session.Party.BankedGold += amount;
+        Notice = $"Deposited {amount} gold — safe from thieves now.";
+        Sfx.Play(GameSound.Coin);
+        BankAmount = 0;
+        RefreshBank();
+    }
+
+    [RelayCommand]
+    private void Withdraw()
+    {
+        var amount = Math.Min(BankedGold, (int)Math.Max(0, BankAmount));
+        if (amount <= 0) { Notice = "Enter an amount to withdraw."; return; }
+        _session.Party.BankedGold -= amount;
+        _session.Party.Gold += amount;
+        Notice = $"Withdrew {amount} gold.";
+        Sfx.Play(GameSound.Coin);
+        BankAmount = 0;
+        RefreshBank();
+    }
+
+    [RelayCommand]
+    private void DepositAll() { BankAmount = Gold; Deposit(); }
+
+    [RelayCommand]
+    private void WithdrawAll() { BankAmount = BankedGold; Withdraw(); }
+
+    private void RefreshBank()
+    {
+        OnPropertyChanged(nameof(BankedGold));
+        OnPropertyChanged(nameof(BankedGoldText));
+        RefreshEconomy();
     }
 
     // --- Side quests ---

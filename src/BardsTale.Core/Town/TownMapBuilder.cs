@@ -36,6 +36,7 @@ public static class TownMapBuilder
         town.AddBuilding(TownBuilding.DungeonEntrance, "Catacomb Stair", new Position(10, 10));
         town.AddBuilding(TownBuilding.QuestBoard, "The Notice Board", new Position(0, 0));
         town.AddBuilding(TownBuilding.Smithy, "The Forge", new Position(0, 10));
+        town.AddBuilding(TownBuilding.Bank, "Skara Brae Bank", new Position(10, 0));
 
         return town;
     }

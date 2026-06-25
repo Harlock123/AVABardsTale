@@ -17,7 +17,12 @@ public sealed class Party
 
     public Position Position { get; set; }
     public Direction Facing { get; set; } = Direction.North;
+
+    /// <summary>The spendable purse — what cutpurses can steal from.</summary>
     public int Gold { get; set; }
+
+    /// <summary>Gold deposited at the Bank: out of the purse, and safe from theft.</summary>
+    public int BankedGold { get; set; }
 
     /// <summary>Shared loot stash: consumables and unequipped gear the party carries.</summary>
     public List<Item> Inventory { get; } = new();

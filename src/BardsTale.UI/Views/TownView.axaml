@@ -219,6 +219,8 @@
                                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                                     <Button Content="Equip from stash" Command="{Binding EquipFromStashCommand}"
                                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                    <Button Content="Sell selected (½ value)" Command="{Binding SellStashItemCommand}"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
 
@@ -413,6 +415,35 @@
                                     </ItemsControl>
                                 </ScrollViewer>
                             </DockPanel>
+
+                            <!-- Skara Brae Bank -->
+                            <StackPanel IsVisible="{Binding IsBank}" Spacing="10">
+                                <TextBlock TextWrapping="Wrap" Foreground="#C7CBDA"
+                                           Text="Deposit your gold for safekeeping — coin in the vault can't be filched by cutpurses in the catacombs. Withdraw it when you need to spend."/>
+                                <Grid ColumnDefinitions="*,*">
+                                    <TextBlock Grid.Column="0" Foreground="#E8C56B" FontWeight="Bold">
+                                        <Run Text="Purse: "/><Run Text="{Binding GoldText}"/>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="1" Text="{Binding BankedGoldText}" Foreground="#9BE89B"
+                                               FontWeight="Bold"/>
+                                </Grid>
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Grid.Column="0" Text="Amount" VerticalAlignment="Center"
+                                               Foreground="#C7CBDA" Margin="0,0,8,0"/>
+                                    <NumericUpDown Grid.Column="1" Minimum="0" Increment="100" FormatString="0"
+                                                   Value="{Binding BankAmount, Mode=TwoWay}"/>
+                                </Grid>
+                                <UniformGrid Columns="2">
+                                    <Button Content="Deposit" Command="{Binding DepositCommand}" Margin="0,0,4,6"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                    <Button Content="Withdraw" Command="{Binding WithdrawCommand}" Margin="4,0,0,6"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                    <Button Content="Deposit all" Command="{Binding DepositAllCommand}" Margin="0,0,4,0"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                    <Button Content="Withdraw all" Command="{Binding WithdrawAllCommand}" Margin="4,0,0,0"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                </UniformGrid>
+                            </StackPanel>
                         </Panel>
                     </DockPanel>
                 </Border>

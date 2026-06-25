@@ -66,6 +66,7 @@ public sealed class RunStatsSave
 public sealed class PartySave
 {
     public int Gold { get; set; }
+    public int BankedGold { get; set; }
     public int TownX { get; set; }
     public int TownY { get; set; }
     public int TownFacing { get; set; }

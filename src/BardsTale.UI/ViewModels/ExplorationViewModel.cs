@@ -307,6 +307,9 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         }
     }
 
+    /// <summary>Used by the screenshot runner to stage a battle scene deterministically.</summary>
+    internal void StartCombatForScreenshot(Encounter encounter) => StartCombat(encounter);
+
     private void StartCombat(Encounter encounter, SurpriseState? surprise = null)
     {
         _codex.Discover(encounter, _game.Depth); // the party learns a foe by facing it, win or flee

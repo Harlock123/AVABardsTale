@@ -14,6 +14,39 @@ boss on every floor**, and finally destroy **Mangar the Mad** to free the town a
 the credits. Town services, a fillable **bestiary**, a **quest journal**, procedural
 **music & sound effects**, and a full save/load system round out the loop.
 
+## Screenshots
+
+| Town square | Garth's Equipment Shoppe | The catacombs |
+| --- | --- | --- |
+| ![Town square](SCREENSHOTS/town-hub.png) | ![Garth's Equipment Shoppe](SCREENSHOTS/shop.png) | ![The catacombs](SCREENSHOTS/catacombs.png) |
+
+| Combat | The Smithy | The bestiary |
+| --- | --- | --- |
+| ![Combat](SCREENSHOTS/combat.png) | ![The Smithy](SCREENSHOTS/smithy.png) | ![The bestiary](SCREENSHOTS/bestiary.png) |
+
+<details>
+<summary>More of Skara Brae's buildings</summary>
+
+| Adventurers Guild | Temple of Healing | Review Board |
+| --- | --- | --- |
+| ![Guild](SCREENSHOTS/guild.png) | ![Temple](SCREENSHOTS/temple.png) | ![Review Board](SCREENSHOTS/review-board.png) |
+
+| Tavern | Garrick's Inn | Notice Board |
+| --- | --- | --- |
+| ![Tavern](SCREENSHOTS/tavern.png) | ![Inn](SCREENSHOTS/inn.png) | ![Notice Board](SCREENSHOTS/quest-board.png) |
+
+| The Bank |
+| --- |
+| ![Bank](SCREENSHOTS/bank.png) |
+
+</details>
+
+> These images are generated automatically. Run `scripts/screenshots.sh` (or
+> `BT_SHOT=1 BT_SHOT_DIR=$PWD/SCREENSHOTS dotnet run --project src/BardsTale.Desktop`) to
+> regenerate them — the desktop app drives itself through every screen and renders each to a
+> PNG via Avalonia's `RenderTargetBitmap` (real fonts, theme and layout; no window-grabbing).
+> A desktop session is required. (PNG is used rather than PCX, as GitHub renders PNG inline.)
+
 ## Solution layout
 
 | Project | Purpose |

@@ -61,7 +61,15 @@ public partial class App : Application
         {
             // Desktop heads (Windows / macOS / Linux) host a top-level Window.
             case IClassicDesktopStyleApplicationLifetime desktop:
-                desktop.MainWindow = new MainWindow { DataContext = viewModel };
+                var window = new MainWindow { DataContext = viewModel };
+                desktop.MainWindow = window;
+                // Screenshot mode: drive every screen and render each to a PNG, then exit.
+                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("BT_SHOT")))
+                    window.Opened += async (_, _) =>
+                    {
+                        try { await ScreenshotRunner.RunAsync(viewModel, window); }
+                        finally { desktop.Shutdown(0); }
+                    };
                 break;
             // Single-view heads (Browser / mobile) host a root control instead of a Window.
             case ISingleViewApplicationLifetime singleView:

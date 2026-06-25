@@ -211,6 +211,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    // --- Hooks used by the screenshot runner to drive navigation (see ScreenshotRunner) ---
+    internal GameSession Session => _session;
+    internal void ShowTownScreen() => ShowTown();
+    internal void EnterDungeonScreen() => OnEnterDungeon();
+
     private void ShowTown()
     {
         var town = new TownViewModel(_session);

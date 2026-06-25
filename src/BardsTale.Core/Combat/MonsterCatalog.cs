@@ -19,12 +19,8 @@ public static class MonsterCatalog
             if (seen.Add(t.Name)) list.Add(t);
         }
 
-        foreach (var t in Bestiary.Common) Add(t);
-        foreach (var t in Bestiary.Tough) Add(t);
-        Add(Bosses.SkeletonLord);
-        Add(Bosses.CovenMatron);
-        Add(Bosses.CryptTyrant);
-        Add(Bosses.Mangar);
+        foreach (var t in Bestiary.AllWandering) Add(t);
+        foreach (var boss in Bosses.All) Add(boss);
         return list;
     }
 

@@ -52,6 +52,40 @@ public class BestiaryTests
     }
 
     [Fact]
+    public void The_roster_spans_over_a_hundred_monsters_across_ten_tiers()
+    {
+        Assert.InRange(MonsterCatalog.Count, 112, 132);
+
+        foreach (var tier in new[]
+                 {
+                     Bestiary.Tier1, Bestiary.Tier2, Bestiary.Tier3, Bestiary.Tier4, Bestiary.Tier5,
+                     Bestiary.Tier6, Bestiary.Tier7, Bestiary.Tier8, Bestiary.Tier9, Bestiary.Tier10
+                 })
+            Assert.NotEmpty(tier);
+
+        var names = MonsterCatalog.All.Select(t => t.Name).ToHashSet();
+        foreach (var beast in new[]
+                     {
+                         "Goblin", "Orc", "Troll", "Werewolf", "Vampire", "Lich", "Beholder", "Mind Flayer",
+                         "Ancient Red Dragon", "Tarrasque", "Demon Prince", "Balor", "Minotaur", "Basilisk"
+                     })
+            Assert.Contains(beast, names);
+
+        Assert.Equal(names.Count, MonsterCatalog.Count); // no duplicate names anywhere
+    }
+
+    [Fact]
+    public void Encounter_pools_get_tougher_with_depth()
+    {
+        var floor1 = Bestiary.PoolForDepth(1).Average(t => t.MaxHitPoints);
+        var floor10 = Bestiary.PoolForDepth(10).Average(t => t.MaxHitPoints);
+        var floor20 = Bestiary.PoolForDepth(20).Average(t => t.MaxHitPoints);
+
+        Assert.True(floor1 < floor10, "floor 10 should be tougher than floor 1");
+        Assert.True(floor10 < floor20, "floor 20 should be tougher than floor 10");
+    }
+
+    [Fact]
     public void The_codex_survives_a_save_load_round_trip()
     {
         var session = new GameSession(seed: 9);

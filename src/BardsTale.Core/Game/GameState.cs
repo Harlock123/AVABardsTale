@@ -190,9 +190,16 @@ public sealed class GameState
         if (!_rng.Chance(Math.Min(chance, 0.45))) return false;
 
         _stepsSinceEncounter = 0;
-        encounter = _encounters.CreateRandom(dangerous: Depth >= 2);
+        encounter = _encounters.CreateRandom(Depth);
         return true;
     }
+
+    /// <summary>
+    /// The depth's experience multiplier. Level-up cost doubles each level
+    /// (1000 · 2^(level-1)), so XP rewards grow geometrically with depth — about +25%
+    /// per floor — to keep the party's level climbing in step with the 20-floor descent.
+    /// </summary>
+    public double DepthXpScale => Math.Pow(1.25, Math.Min(Depth, Bosses.FinalDepth) - 1);
 
     /// <summary>
     /// Award experience and gold to the survivors after a won fight. Level-ups are
@@ -204,7 +211,9 @@ public sealed class GameState
         var living = Party.Members.Where(m => !m.IsDead).ToList();
         if (living.Count == 0) return log;
 
-        var xpEach = encounter.TotalExperience / living.Count;
+        // Both wandering fights and boss lairs flow through here, so scaling once covers both.
+        var scaledXp = (long)(encounter.TotalExperience * DepthXpScale);
+        var xpEach = scaledXp / living.Count;
         Party.Gold += encounter.TotalGold;
 
         foreach (var member in living)

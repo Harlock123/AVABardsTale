@@ -69,10 +69,10 @@ public sealed class EncounterFactory
 
     public EncounterFactory(IRandomSource rng) => _rng = rng;
 
-    public Encounter CreateRandom(bool dangerous = false)
+    public Encounter CreateRandom(int depth)
     {
-        var pool = dangerous ? Bestiary.Tough : Bestiary.Common;
-        var groupCount = _rng.Next(1, dangerous ? 3 : 4);
+        var pool = Bestiary.PoolForDepth(depth);
+        var groupCount = _rng.Next(1, depth >= 3 ? 3 : 4);
         var groups = new List<MonsterGroup>();
         for (var i = 0; i < groupCount; i++)
         {

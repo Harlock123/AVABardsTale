@@ -44,6 +44,13 @@ public sealed class GameSession
     /// <summary>The bestiary — which monsters the party has faced and how many they've slain.</summary>
     public MonsterCodex Codex { get; } = new();
 
+    /// <summary>Achievements unlocked and the renown (and town discount) they earn.</summary>
+    public RenownLog Renown { get; } = new();
+
+    /// <summary>Unlocks any newly-earned achievements from the current run, returning the new ones.</summary>
+    public IReadOnlyList<Achievement> SyncAchievements()
+        => Renown.Sync(Stats, Codex.DiscoveredCount, Quests.Completed.Count);
+
     /// <summary>The walkable Skara Brae overworld, plus the party's persisted position in it.</summary>
     public TownMap Town { get; }
     public Position TownPosition { get; set; }

@@ -29,5 +29,5 @@ public sealed partial class AppSettings : ObservableObject
     [ObservableProperty] private bool _musicEnabled = true;
 
     /// <summary>Background-music volume (0–1).</summary>
-    [ObservableProperty] private double _musicVolume = 0.45;
+    [ObservableProperty] private double _musicVolume = 0.20;
 }

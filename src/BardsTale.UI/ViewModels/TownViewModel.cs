@@ -43,6 +43,7 @@ public sealed partial class TownViewModel : ViewModelBase
         Upgrades = new ObservableCollection<GearUpgradeViewModel>();
         RebuildParty();
         SyncWorld();
+        CheckAchievements(); // retroactively unlock anything already earned (e.g. on load)
     }
 
     /// <summary>The quests currently pinned to the town notice board.</summary>
@@ -64,6 +65,24 @@ public sealed partial class TownViewModel : ViewModelBase
 
     /// <summary>Raised when the party descends from the catacomb stair into the dungeon.</summary>
     public event Action? EnterDungeonRequested;
+
+    /// <summary>Raised when renown changes (an achievement was unlocked), so the shell can refresh.</summary>
+    public event Action? RenownChanged;
+
+    /// <summary>Applies the renown discount to a town gold cost.</summary>
+    private int Discounted(int cost) => (int)Math.Round(cost * (1 - _session.Renown.Discount));
+
+    private void CheckAchievements()
+    {
+        var newly = _session.SyncAchievements();
+        if (newly.Count == 0) return;
+        Notice = "🏆 Achievement unlocked: " + string.Join(", ", newly.Select(a => a.Name)) + "!";
+        RenownChanged?.Invoke();
+        RefreshEconomy();
+        OnPropertyChanged(nameof(ChangeClassCost));
+        OnPropertyChanged(nameof(ChangeClassInfo));
+        if (IsSmithy) RebuildUpgrades();
+    }
 
     // --- Overworld rendering / movement ---
     public Maze Maze => _town.Streets;
@@ -409,9 +428,9 @@ public sealed partial class TownViewModel : ViewModelBase
 
     // --- Temple ---
 
-    public int HealCost => _session.Party.Members
+    public int HealCost => Discounted(_session.Party.Members
         .Where(m => !m.IsDead)
-        .Sum(m => (m.MaxHitPoints - m.HitPoints) * 2 + (m.HasAilment ? 50 : 0));
+        .Sum(m => (m.MaxHitPoints - m.HitPoints) * 2 + (m.HasAilment ? 50 : 0)));
 
     [RelayCommand]
     private void HealParty()
@@ -469,7 +488,7 @@ public sealed partial class TownViewModel : ViewModelBase
     // --- Garrick's Inn ---
 
     /// <summary>A night's lodging — a flat fee per living member that fully restores HP and SP.</summary>
-    public int RestCost => 15 * Math.Max(1, _session.Party.LivingCount);
+    public int RestCost => Discounted(15 * Math.Max(1, _session.Party.LivingCount));
 
     [RelayCommand]
     private void Rest()
@@ -536,7 +555,7 @@ public sealed partial class TownViewModel : ViewModelBase
 
     [ObservableProperty] private ClassDefinition? _selectedNewClass;
 
-    public int ChangeClassCost => 200 * (SelectedHero?.Model.Level ?? 1);
+    public int ChangeClassCost => Discounted(200 * (SelectedHero?.Model.Level ?? 1));
 
     public string ChangeClassInfo
     {
@@ -630,7 +649,7 @@ public sealed partial class TownViewModel : ViewModelBase
         if (item is null || item == ItemDb.Fists) return;
         var upgrade = ItemDb.UpgradeOf(item);
         var (gold, embers) = upgrade is null ? (0, 0) : ItemDb.UpgradeCost(item);
-        Upgrades.Add(new GearUpgradeViewModel(owner, slot, item, upgrade, gold, embers));
+        Upgrades.Add(new GearUpgradeViewModel(owner, slot, item, upgrade, Discounted(gold), embers));
     }
 
     private void RemoveEmbers(int count)
@@ -717,6 +736,7 @@ public sealed partial class TownViewModel : ViewModelBase
         Sfx.Play(GameSound.LevelUp);
         Sfx.Play(GameSound.Coin);
         RebuildParty(); // banked XP may unlock a level-up; refresh roster + economy
+        CheckAchievements(); // completing quests can unlock achievements
     }
 
     // --- Town spell menu ---

@@ -26,7 +26,7 @@ public static class SettingsService
             into.SoundVolume = dto.SoundVolume is >= 0 and <= 1 ? dto.SoundVolume : 0.7;
             into.Muted = dto.Muted;
             into.MusicEnabled = dto.MusicEnabled ?? true;
-            into.MusicVolume = dto.MusicVolume is >= 0 and <= 1 ? dto.MusicVolume.Value : 0.45;
+            into.MusicVolume = dto.MusicVolume is >= 0 and <= 1 ? dto.MusicVolume.Value : 0.20;
         }
         catch
         {

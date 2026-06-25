@@ -11,6 +11,9 @@ public sealed class SaveData
     public RunStatsSave Stats { get; set; } = new();
     public QuestLogSave Quests { get; set; } = new();
     public CodexSave Codex { get; set; } = new();
+
+    /// <summary>Unlocked achievement ids (renown is derived from these).</summary>
+    public List<string> Renown { get; set; } = new();
 }
 
 /// <summary>The bestiary: which monsters have been faced, and how many slain.</summary>
@@ -57,6 +60,7 @@ public sealed class RunStatsSave
     public int MonstersSlain { get; set; }
     public int GoldEarned { get; set; }
     public int DeepestDepth { get; set; } = 1;
+    public bool Victory { get; set; }
 }
 
 public sealed class PartySave

@@ -18,16 +18,17 @@
             <ScaleTransform ScaleX="{Binding Settings.UiScale}" ScaleY="{Binding Settings.UiScale}"/>
         </LayoutTransformControl.LayoutTransform>
     <Grid Margin="12" RowDefinitions="Auto,*">
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="2,0,0,10">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto,Auto" Margin="2,0,0,10">
             <TextBlock Grid.Column="0" Text="THE BARD'S TALE" FontSize="22" FontWeight="Bold"
                        Foreground="#E8C56B" VerticalAlignment="Center"/>
             <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Foreground="#A9D0B0"
                        VerticalAlignment="Center" Margin="16,0" FontFamily="Consolas,monospace"/>
-            <Button Grid.Column="2" Content="📜 Quests (J)" Command="{Binding ShowQuestLogCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="3" Content="📖 Bestiary (B)" Command="{Binding ShowBestiaryCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="4" Content="⚙ Settings" Command="{Binding ShowSettingsCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="5" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="6" Content="Load" Command="{Binding ShowLoadSlotsCommand}"/>
+            <Button Grid.Column="2" Content="{Binding RenownBadge}" Command="{Binding ShowAchievementsCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="3" Content="📜 Quests (J)" Command="{Binding ShowQuestLogCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="4" Content="📖 Bestiary (B)" Command="{Binding ShowBestiaryCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="5" Content="⚙ Settings" Command="{Binding ShowSettingsCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="6" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="7" Content="Load" Command="{Binding ShowLoadSlotsCommand}"/>
         </Grid>
 
         <Panel Grid.Row="1">
@@ -309,6 +310,44 @@
                                                 <TextBlock Text="{Binding TallyLine}" IsVisible="{Binding IsDiscovered}"
                                                            FontSize="11" Foreground="#8FB7FF"/>
                                             </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Border>
+
+            <!-- Achievements & renown -->
+            <Border IsVisible="{Binding IsAchievementsOpen}" Background="#E60B0D14">
+                <Border Width="600" MaxHeight="680" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="#161A24" BorderBrush="#3A3F52" BorderThickness="2" CornerRadius="6" Padding="20">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                            <TextBlock Grid.Column="0" Text="🏆 Achievements" FontSize="20" FontWeight="Bold"
+                                       Foreground="#E8C56B" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Close" Command="{Binding CloseAchievementsCommand}"/>
+                        </Grid>
+                        <TextBlock DockPanel.Dock="Top" Text="{Binding Achievements.Heading}" FontSize="12"
+                                   Foreground="#9BE89B" Margin="0,0,0,12"/>
+                        <TextBlock DockPanel.Dock="Bottom" Margin="0,12,0,0" FontSize="11" Foreground="#7E879B"
+                                   Text="Renown earns goodwill — a discount on the temple, inn, smith and trainer that grows as you achieve more."/>
+                        <ScrollViewer>
+                            <ItemsControl ItemsSource="{Binding Achievements.Entries}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:AchievementEntryViewModel">
+                                        <Border Margin="0,0,0,7" Padding="12,9" CornerRadius="4" Background="#222634"
+                                                Opacity="{Binding Opacity}">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <StackPanel Grid.Column="0" Spacing="2">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"
+                                                               Foreground="{Binding NameBrush}"/>
+                                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#9AA0B5"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Text="{Binding RenownText}" FontWeight="Bold"
+                                                           VerticalAlignment="Center" Foreground="{Binding RenownBrush}"/>
+                                            </Grid>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

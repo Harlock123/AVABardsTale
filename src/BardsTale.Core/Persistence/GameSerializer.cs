@@ -55,8 +55,11 @@ public static class GameSerializer
             BattlesWon = session.Stats.BattlesWon,
             MonstersSlain = session.Stats.MonstersSlain,
             GoldEarned = session.Stats.GoldEarned,
-            DeepestDepth = session.Stats.DeepestDepth
+            DeepestDepth = session.Stats.DeepestDepth,
+            Victory = session.Stats.Victory
         };
+
+        data.Renown = session.Renown.UnlockedIds.ToList();
 
         data.Quests = new QuestLogSave
         {
@@ -207,6 +210,10 @@ public static class GameSerializer
         session.Stats.MonstersSlain = data.Stats.MonstersSlain;
         session.Stats.GoldEarned = data.Stats.GoldEarned;
         session.Stats.DeepestDepth = data.Stats.DeepestDepth;
+        session.Stats.Victory = data.Stats.Victory;
+
+        foreach (var id in data.Renown)
+            session.Renown.Restore(id);
 
         foreach (var quest in data.Quests.Active)
             session.Quests.RestoreActive(FromQuestSave(quest));

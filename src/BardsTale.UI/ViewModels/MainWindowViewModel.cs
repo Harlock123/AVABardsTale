@@ -59,6 +59,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private QuestLogViewModel? _questLog;
     [ObservableProperty] private bool _isBestiaryOpen;
     [ObservableProperty] private BestiaryViewModel? _bestiary;
+    [ObservableProperty] private bool _isAchievementsOpen;
+    [ObservableProperty] private AchievementsViewModel? _achievements;
+
+    /// <summary>Top-bar renown badge.</summary>
+    public string RenownBadge => $"🏆 {_session.Renown.Renown}";
+
+    private void RefreshRenown() => OnPropertyChanged(nameof(RenownBadge));
 
     public ObservableCollection<SaveSlotViewModel> Slots { get; }
 
@@ -150,6 +157,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         else ShowBestiary();
     }
 
+    /// <summary>Opens the achievements & renown overlay (rebuilt from current standing).</summary>
+    [RelayCommand]
+    private void ShowAchievements()
+    {
+        Achievements = new AchievementsViewModel(_session.Renown);
+        IsAchievementsOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseAchievements() => IsAchievementsOpen = false;
+
     [RelayCommand]
     private async Task SaveToSlot(SaveSlotViewModel? slot)
     {
@@ -197,18 +215,22 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         var town = new TownViewModel(_session);
         town.EnterDungeonRequested += OnEnterDungeon;
+        town.RenownChanged += RefreshRenown;
         CurrentView = town;
         Music.Play(GameMusic.Town);
+        RefreshRenown();
     }
 
     private void OnEnterDungeon()
     {
         var game = _session.EnterDungeon();
-        var exploration = new ExplorationViewModel(game, _session.Stats, _session.Quests, _session.Codex);
+        var exploration = new ExplorationViewModel(game, _session.Stats, _session.Quests, _session.Codex, _session.Renown);
         exploration.ReturnToTownRequested += ReturnFromDungeon;
         exploration.GameWonRequested += OnGameWon;
+        exploration.RenownChanged += RefreshRenown;
         CurrentView = exploration;
         Music.Play(GameMusic.Dungeon);
+        RefreshRenown();
     }
 
     public ObservableCollection<string> VictoryParty { get; } = new();
@@ -223,11 +245,16 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             VictoryParty.Add($"{m.Name} — {BardsTale.Core.Characters.Races.Get(m.Race).Name} "
                 + $"{m.Definition.Name}, level {m.Level}{(m.IsDead ? " (fallen)" : "")}");
 
+        stats.Victory = true;
+        _session.SyncAchievements();
+        RefreshRenown();
+
         VictoryStats.Clear();
         VictoryStats.Add($"Battles won: {stats.BattlesWon}");
         VictoryStats.Add($"Monsters slain: {stats.MonstersSlain}");
         VictoryStats.Add($"Gold plundered: {stats.GoldEarned}");
         VictoryStats.Add($"Deepest level reached: {stats.DeepestDepth}");
+        VictoryStats.Add($"Renown earned: {_session.Renown.Renown}");
 
         IsGameWon = true;
         StatusMessage = "Victory! Skara Brae is freed.";

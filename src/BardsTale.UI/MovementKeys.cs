@@ -25,6 +25,11 @@ public static class MovementKeys
                 vm.CloseBestiaryCommand.Execute(null);
                 e.Handled = true;
             }
+            else if (vm.IsAchievementsOpen)
+            {
+                vm.CloseAchievementsCommand.Execute(null);
+                e.Handled = true;
+            }
             else if (vm.Town is { IsQuestOfferOpen: true } offer)
             {
                 offer.DeclineQuestOfferCommand.Execute(null);

@@ -26,14 +26,16 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     private readonly RunStats _stats;
     private readonly QuestLog _quests;
     private readonly MonsterCodex _codex;
+    private readonly RenownLog _renown;
 
     public ExplorationViewModel(GameState game, RunStats? stats = null, QuestLog? quests = null,
-        MonsterCodex? codex = null)
+        MonsterCodex? codex = null, RenownLog? renown = null)
     {
         _game = game;
         _stats = stats ?? new RunStats();
         _quests = quests ?? new QuestLog();
         _codex = codex ?? new MonsterCodex();
+        _renown = renown ?? new RenownLog();
         Party = new ObservableCollection<CharacterViewModel>();
         Log = new ObservableCollection<string>();
         foreach (var m in _game.Party.Members)
@@ -52,6 +54,18 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     /// <summary>Raised when the party defeats Mangar and wins the game.</summary>
     public event Action? GameWonRequested;
+
+    /// <summary>Raised when renown changes (an achievement was unlocked), so the shell can refresh.</summary>
+    public event Action? RenownChanged;
+
+    private void CheckAchievements()
+    {
+        var newly = _renown.Sync(_stats, _codex.DiscoveredCount, _quests.Completed.Count);
+        if (newly.Count == 0) return;
+        foreach (var a in newly)
+            AddLog($"🏆 Achievement: {a.Name} (+{a.Renown} renown)");
+        RenownChanged?.Invoke();
+    }
 
     public Maze Maze => _game.Maze;
 
@@ -112,6 +126,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     {
         Handle(_game.Descend());
         _stats.DeepestDepth = Math.Max(_stats.DeepestDepth, _game.Depth);
+        CheckAchievements();
         OnPropertyChanged(nameof(Maze));
         Sfx.Play(GameSound.StairsDown);
     }
@@ -231,6 +246,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                     AddLog(line);
                 foreach (var line in _quests.RecordVictory(encounter))
                     AddLog(line);
+                CheckAchievements();
                 if (encounter.IsFinalBoss)
                 {
                     _game.ClearBoss();

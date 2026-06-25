@@ -1,3 +1,6 @@
+using BardsTale.Core.Characters;
+using BardsTale.Core.Magic;
+
 namespace BardsTale.Core.Items;
 
 public enum ItemSlot
@@ -6,7 +9,9 @@ public enum ItemSlot
     Weapon,
     Armor,
     Shield,
-    Consumable
+    Consumable,
+    /// <summary>A crafting material (e.g. forge embers) — carried, never equipped or quaffed.</summary>
+    Material
 }
 
 /// <summary>What a consumable does when used (always on a single ally).</summary>
@@ -31,11 +36,15 @@ public sealed record Item(
     ConsumableEffect Consumable = ConsumableEffect.None,
     int Power = 0,
     int MagicBonus = 0,
-    bool Identified = true)
+    bool Identified = true,
+    Spell? ItemPower = null)
 {
     public bool IsWeapon => Slot == ItemSlot.Weapon;
     public bool IsConsumable => Slot == ItemSlot.Consumable;
-    public bool IsMagic => MagicBonus > 0;
+    public bool IsMagic => MagicBonus > 0 || ItemPower is not null;
+
+    /// <summary>A wielded item with a once-per-fight magical power (a wand, staff or rod).</summary>
+    public bool HasPower => ItemPower is not null;
 
     /// <summary>What the party sees: the true name once identified, a vague label until then.</summary>
     public string DisplayName => Identified ? Name : $"Unidentified {Category}";
@@ -121,17 +130,63 @@ public static class Items
     public static readonly IReadOnlyList<Item> MagicItems =
         (from b in EnchantableBases from n in new[] { 1, 2, 3 } select Enchant(b, n)).ToList();
 
+    /// <summary>The next "+N" version of an enchantable item, or null if it can't be upgraded (capped at +3).</summary>
+    public static Item? UpgradeOf(Item item)
+    {
+        var baseName = item.Name;
+        var plus = baseName.LastIndexOf(" +", System.StringComparison.Ordinal);
+        if (plus >= 0) baseName = baseName[..plus];
+        var baseItem = EnchantableBases.FirstOrDefault(b => b.Name == baseName);
+        if (baseItem is null) return null;
+        var next = item.MagicBonus + 1;
+        return next <= 3 ? Enchant(baseItem, next) : null;
+    }
+
+    /// <summary>What the Smithy charges to forge the next enchantment onto an item: gold and forge embers.</summary>
+    public static (int Gold, int Embers) UpgradeCost(Item item)
+    {
+        var target = item.MagicBonus + 1; // 1, 2 or 3
+        return (Gold: 150 * target * target, Embers: target);
+    }
+
     /// <summary>Mangar's signature staff — the legendary reward for slaying the Mad Wizard.</summary>
     public static readonly Item MangarsStaff =
         new("Mangar's Staff", ItemSlot.Weapon, DamageDice: 2, DamageSides: 8, DamageBonus: 5, Value: 5000, MagicBonus: 5);
+
+    // --- Crafting material: drops in the deep, spent at the Smithy ---
+    public static readonly Item ForgeEmber = new("Forge Ember", ItemSlot.Material, Value: 60);
+
+    // --- Powered items: a wielded weapon (light enough for casters) with a once-per-fight power ---
+    public static readonly Item WandOfFlames = new("Wand of Flames", ItemSlot.Weapon, 1, 4, 0, 0, 600, MagicBonus: 1,
+        ItemPower: new Spell("PWR_FLAME", "FLAM", "Flame Burst", MagicSchool.Magician, 0, 0,
+            SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 18, "A gout of fire erupts from the wand."));
+    public static readonly Item WandOfFrost = new("Wand of Frost", ItemSlot.Weapon, 1, 4, 0, 0, 900, MagicBonus: 1,
+        ItemPower: new Spell("PWR_FROST", "FRST", "Frost Lance", MagicSchool.Magician, 0, 0,
+            SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 24, "A lance of ice skewers a foe."));
+    public static readonly Item StaffOfStorms = new("Staff of Storms", ItemSlot.Weapon, 1, 6, 0, 0, 1400, MagicBonus: 1,
+        ItemPower: new Spell("PWR_STORM", "STRM", "Thunderstrike", MagicSchool.Wizard, 0, 0,
+            SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 13, "Lightning forks across every foe."));
+    public static readonly Item StaffOfRuin = new("Staff of Ruin", ItemSlot.Weapon, 1, 6, 0, 0, 2200, MagicBonus: 2,
+        ItemPower: new Spell("PWR_RUIN", "RUIN", "Ruinous Bolt", MagicSchool.Wizard, 0, 0,
+            SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 32, "A bolt of annihilating force."));
+    public static readonly Item RodOfMending = new("Rod of Mending", ItemSlot.Weapon, 1, 4, 0, 0, 1100, MagicBonus: 1,
+        ItemPower: new Spell("PWR_MEND", "MEND", "Renewal", MagicSchool.Conjurer, 0, 0,
+            SpellEffect.HealParty, SpellTarget.Party, 16, "A wave of restoring light mends the party."));
+    public static readonly Item ScepterOfGrace = new("Scepter of Grace", ItemSlot.Weapon, 1, 6, 0, 0, 900, MagicBonus: 1,
+        ItemPower: new Spell("PWR_GRACE", "GRAC", "Mending Touch", MagicSchool.Conjurer, 0, 0,
+            SpellEffect.HealAlly, SpellTarget.SingleAlly, 22, "Channels healing into one companion."));
+
+    /// <summary>Powered items that can drop as treasure on the deeper floors.</summary>
+    public static readonly IReadOnlyList<Item> PowerItems =
+        new[] { WandOfFlames, WandOfFrost, StaffOfStorms, StaffOfRuin, RodOfMending, ScepterOfGrace };
 
     /// <summary>Every known item, keyed by name — used to resolve items when loading a save.</summary>
     public static readonly IReadOnlyDictionary<string, Item> ByName = new[]
     {
         Fists, Dagger, ShortSword, LongSword, BattleAxe, Staff,
         Robes, LeatherArmor, ChainMail, PlateMail, SmallShield,
-        HealingPotion, ManaDraught, Antidote, ResurrectionDust, MangarsStaff
-    }.Concat(MagicItems).ToDictionary(i => i.Name);
+        HealingPotion, ManaDraught, Antidote, ResurrectionDust, MangarsStaff, ForgeEmber
+    }.Concat(MagicItems).Concat(PowerItems).ToDictionary(i => i.Name);
 
     public static Item? Find(string? name)
         => name is not null && ByName.TryGetValue(name, out var item) ? item : null;

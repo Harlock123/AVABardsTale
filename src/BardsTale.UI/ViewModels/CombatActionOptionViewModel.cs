@@ -8,7 +8,7 @@ namespace BardsTale.UI.ViewModels;
 public sealed class CombatActionOptionViewModel : ViewModelBase
 {
     private CombatActionOptionViewModel(string label, string detail, CombatActionType action,
-        Spell? spell, Song? song, Item? item, bool needsEnemyTarget)
+        Spell? spell, Song? song, Item? item, bool needsEnemyTarget, bool isItemPower = false)
     {
         Label = label;
         Detail = detail;
@@ -17,7 +17,11 @@ public sealed class CombatActionOptionViewModel : ViewModelBase
         Song = song;
         Item = item;
         NeedsEnemyTarget = needsEnemyTarget;
+        IsItemPower = isItemPower;
     }
+
+    /// <summary>True when this action is a once-per-fight power from a wielded item.</summary>
+    public bool IsItemPower { get; }
 
     public string Label { get; }
     public string Detail { get; }
@@ -48,4 +52,18 @@ public sealed class CombatActionOptionViewModel : ViewModelBase
 
     public static CombatActionOptionViewModel UseItem(Item item, int count) =>
         new($"Use {item.Name} (x{count})", item.EffectText, CombatActionType.UseItem, null, null, item, false);
+
+    /// <summary>Fire a wielded item's once-per-fight power — resolves like a free spell.</summary>
+    public static CombatActionOptionViewModel UsePower(Item item)
+    {
+        var p = item.ItemPower!;
+        var detail = p.Effect switch
+        {
+            SpellEffect.DamageEnemy or SpellEffect.DamageAllEnemies => $"once per fight · ~{p.Power} dmg",
+            SpellEffect.HealAlly or SpellEffect.HealParty => $"once per fight · ~{p.Power} heal",
+            _ => "once per fight"
+        };
+        return new($"⚡ Use {item.Name}", detail, CombatActionType.CastSpell, p, null, item, p.TargetsEnemies,
+            isItemPower: true);
+    }
 }

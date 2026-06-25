@@ -40,12 +40,16 @@ public sealed partial class TownViewModel : ViewModelBase
         TavernRumors = new ObservableCollection<string>();
         SpellMenu = new ObservableCollection<SpellMenuItemViewModel>();
         Postings = new ObservableCollection<QuestBoardItemViewModel>();
+        Upgrades = new ObservableCollection<GearUpgradeViewModel>();
         RebuildParty();
         SyncWorld();
     }
 
     /// <summary>The quests currently pinned to the town notice board.</summary>
     public ObservableCollection<QuestBoardItemViewModel> Postings { get; }
+
+    /// <summary>Forgeable gear shown at the Smithy.</summary>
+    public ObservableCollection<GearUpgradeViewModel> Upgrades { get; }
 
     public ObservableCollection<CharacterViewModel> Party { get; }
     public CharacterCreationViewModel Creation { get; }
@@ -126,6 +130,10 @@ public sealed partial class TownViewModel : ViewModelBase
     public bool IsTavern => ActiveBuilding == TownBuilding.Tavern;
     public bool IsInn => ActiveBuilding == TownBuilding.Inn;
     public bool IsQuestBoard => ActiveBuilding == TownBuilding.QuestBoard;
+    public bool IsSmithy => ActiveBuilding == TownBuilding.Smithy;
+
+    public int ForgeEmbers => _session.Party.Inventory.Count(i => i.Slot == ItemSlot.Material);
+    public string ForgeEmbersText => $"Forge Embers: {ForgeEmbers}";
 
     private Position CurrentPosition => new(PartyX, PartyY);
     private BuildingEntrance? BuildingHere => _town.BuildingAt(CurrentPosition);
@@ -142,6 +150,7 @@ public sealed partial class TownViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsTavern));
         OnPropertyChanged(nameof(IsInn));
         OnPropertyChanged(nameof(IsQuestBoard));
+        OnPropertyChanged(nameof(IsSmithy));
         OnPropertyChanged(nameof(CanEnter));
         NotifyMovementCanExecute();
     }
@@ -209,6 +218,8 @@ public sealed partial class TownViewModel : ViewModelBase
             _session.QuestBoard.EnsureStocked(_session.Rng, Math.Max(1, _session.Stats.DeepestDepth));
             RebuildPostings();
         }
+        if (entrance.Building == TownBuilding.Smithy)
+            RebuildUpgrades();
         ActiveBuilding = entrance.Building;
         RefreshEconomy();
         Sfx.Play(GameSound.Door);
@@ -389,7 +400,8 @@ public sealed partial class TownViewModel : ViewModelBase
     private void RebuildStash()
     {
         Stash.Clear();
-        foreach (var item in _session.Party.Inventory.Where(i => !i.IsConsumable))
+        foreach (var item in _session.Party.Inventory
+                     .Where(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield))
             Stash.Add(new ShopItemViewModel(item));
         if (SelectedStashItem is not null && !_session.Party.Inventory.Contains(SelectedStashItem.Item))
             SelectedStashItem = null;
@@ -506,6 +518,76 @@ public sealed partial class TownViewModel : ViewModelBase
         RefreshEconomy();
         // Loosened tongues sometimes turn up honest work.
         MaybeOfferQuest(QuestGiver.TavernPatron, 0.5);
+    }
+
+    // --- The Forge (Smithy) ---
+
+    partial void OnSelectedHeroChanged(CharacterViewModel? value)
+    {
+        if (IsSmithy) RebuildUpgrades();
+    }
+
+    /// <summary>Forges the next enchantment onto a piece of gear, spending gold and forge embers.</summary>
+    [RelayCommand]
+    private void UpgradeGear(GearUpgradeViewModel? row)
+    {
+        if (row?.Upgrade is null) { Notice = "That piece can't be forged any finer."; return; }
+        if (Gold < row.Gold) { Notice = $"The smith needs {row.Gold} gold for that work."; return; }
+        if (ForgeEmbers < row.Embers) { Notice = $"You need {row.Embers} forge embers — slay deeper foes for more."; return; }
+
+        _session.Party.Gold -= row.Gold;
+        RemoveEmbers(row.Embers);
+
+        if (row.Owner is { } hero)
+        {
+            switch (row.Item.Slot)
+            {
+                case ItemSlot.Weapon: hero.Weapon = row.Upgrade; break;
+                case ItemSlot.Armor: hero.Armor = row.Upgrade; break;
+                case ItemSlot.Shield: hero.Shield = row.Upgrade; break;
+            }
+        }
+        else
+        {
+            _session.Party.Inventory.Remove(row.Item);
+            _session.Party.Inventory.Add(row.Upgrade);
+        }
+
+        Notice = $"The smith hammers it into {row.Upgrade.Name}.";
+        Sfx.Play(GameSound.Equip);
+        RebuildUpgrades();
+        RebuildParty(); // refresh roster AC / damage
+    }
+
+    private void RebuildUpgrades()
+    {
+        Upgrades.Clear();
+        if (SelectedHero?.Model is { } hero)
+        {
+            AddUpgradeRow(hero, "Weapon", hero.Weapon);
+            AddUpgradeRow(hero, "Armour", hero.Armor);
+            AddUpgradeRow(hero, "Shield", hero.Shield);
+        }
+        foreach (var item in _session.Party.Inventory
+                     .Where(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield))
+            AddUpgradeRow(null, "Stash", item);
+
+        OnPropertyChanged(nameof(ForgeEmbers));
+        OnPropertyChanged(nameof(ForgeEmbersText));
+    }
+
+    private void AddUpgradeRow(Character? owner, string slot, Item? item)
+    {
+        if (item is null || item == ItemDb.Fists) return;
+        var upgrade = ItemDb.UpgradeOf(item);
+        var (gold, embers) = upgrade is null ? (0, 0) : ItemDb.UpgradeCost(item);
+        Upgrades.Add(new GearUpgradeViewModel(owner, slot, item, upgrade, gold, embers));
+    }
+
+    private void RemoveEmbers(int count)
+    {
+        foreach (var ember in _session.Party.Inventory.Where(i => i.Slot == ItemSlot.Material).Take(count).ToList())
+            _session.Party.Inventory.Remove(ember);
     }
 
     // --- Side quests ---

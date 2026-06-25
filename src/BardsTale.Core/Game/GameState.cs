@@ -223,10 +223,10 @@ public sealed class GameState
                 log.Add($"{member.Name} has learned enough to advance — visit the Review Board.");
         }
 
-        foreach (var item in Loot.Roll(encounter, _rng))
+        foreach (var item in Loot.Roll(encounter, _rng, Depth))
         {
             Party.Inventory.Add(item);
-            log.Add($"Found: {item.Name}.");
+            log.Add($"Found: {item.DisplayName}.");
         }
         return log;
     }

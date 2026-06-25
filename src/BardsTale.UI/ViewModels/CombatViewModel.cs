@@ -28,6 +28,7 @@ public sealed partial class CombatViewModel : ViewModelBase
     private readonly List<Character> _actionables = new();
     private readonly List<CombatCommand> _queued = new();
     private readonly List<Item> _reservedItems = new();
+    private readonly HashSet<Character> _powerUsed = new(); // wielded-item powers fire once per fight
     private int _orderIndex;
     private CombatActionOptionViewModel? _pendingOption;
 
@@ -142,6 +143,10 @@ public sealed partial class CombatViewModel : ViewModelBase
             if (actor.CanSing)
                 foreach (var song in actor.KnownSongs.Select(Songs.Get))
                     Options.Add(CombatActionOptionViewModel.Sing(song));
+
+            // A wielded wand/staff/rod can loose its power once per fight.
+            if (actor.Weapon is { HasPower: true } wand && !_powerUsed.Contains(actor))
+                Options.Add(CombatActionOptionViewModel.UsePower(wand));
         }
 
         foreach (var (item, count) in AvailableConsumables())
@@ -315,6 +320,12 @@ public sealed partial class CombatViewModel : ViewModelBase
         var resolved = commands ?? _queued;
         PlayActionSounds(resolved);
         var round = _engine.ExecuteRound(resolved);
+
+        // A character who fired their item power this round can't do so again this fight.
+        foreach (var cmd in resolved)
+            if (cmd.Action == CombatActionType.CastSpell && cmd.Spell is { } sp
+                && cmd.Actor.Weapon is { } w && ReferenceEquals(w.ItemPower, sp))
+                _powerUsed.Add(cmd.Actor);
         foreach (var line in round.Log)
             Log.Add(line);
 

@@ -336,6 +336,50 @@
                                     </ItemsControl>
                                 </ScrollViewer>
                             </DockPanel>
+
+                            <!-- The Forge (Smithy) -->
+                            <DockPanel IsVisible="{Binding IsSmithy}">
+                                <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+                                    <TextBlock TextWrapping="Wrap" Foreground="#C7CBDA"
+                                               Text="The forge roars. Bring gold and forge embers (won from deep foes) and the smith will hammer a finer edge onto your gear — up to +3."/>
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <TextBlock Grid.Column="0" Text="{Binding ForgeEmbersText}" FontWeight="Bold"
+                                                   Foreground="#E8A05A" VerticalAlignment="Center"/>
+                                        <ComboBox Grid.Column="1" HorizontalAlignment="Right" MinWidth="160"
+                                                  ItemsSource="{Binding Party}" SelectedItem="{Binding SelectedHero, Mode=TwoWay}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:CharacterViewModel">
+                                                    <TextBlock Text="{Binding Name}"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </Grid>
+                                </StackPanel>
+                                <ScrollViewer>
+                                    <ItemsControl ItemsSource="{Binding Upgrades}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:GearUpgradeViewModel">
+                                                <Border Margin="0,0,0,8" Padding="12,9" CornerRadius="4" Background="#222634"
+                                                        BorderThickness="1.5" BorderBrush="#5A3A2A">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <StackPanel Grid.Column="0" Spacing="2">
+                                                            <TextBlock Text="{Binding Line}" FontWeight="Bold" Foreground="#E8E9F0"/>
+                                                            <TextBlock Text="{Binding UpgradeLabel}" FontSize="12" Foreground="#E8C56B"/>
+                                                            <TextBlock Text="{Binding CostText}" FontSize="11" Foreground="#9AA0B5"/>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" Content="Forge" VerticalAlignment="Center"
+                                                                Margin="10,0,0,0" Padding="14,6" Background="#7A4A2A"
+                                                                Foreground="#FFE9D8" FontWeight="Bold"
+                                                                IsVisible="{Binding CanUpgrade}"
+                                                                Command="{Binding $parent[ItemsControl].((vm:TownViewModel)DataContext).UpgradeGearCommand}"
+                                                                CommandParameter="{Binding}"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </DockPanel>
                         </Panel>
                     </DockPanel>
                 </Border>

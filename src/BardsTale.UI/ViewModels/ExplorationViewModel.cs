@@ -5,6 +5,7 @@ using BardsTale.Core.Combat;
 using BardsTale.Core.Dungeon;
 using BardsTale.Core.Game;
 using BardsTale.Core.Geometry;
+using BardsTale.Core.Items;
 using BardsTale.Core.Lore;
 using BardsTale.Core.Magic;
 using BardsTale.Core.Quests;
@@ -63,8 +64,10 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 .GroupBy(i => i)
                 .Select(g => $"{g.Key.Name} x{g.Count()}")
                 .ToList();
-            var gear = _game.Party.Inventory.Count(i => !i.IsConsumable);
+            var gear = _game.Party.Inventory.Count(i => i.Slot is ItemSlot.Weapon or ItemSlot.Armor or ItemSlot.Shield);
             if (gear > 0) parts.Add($"{gear} gear to equip");
+            var embers = _game.Party.Inventory.Count(i => i.Slot == ItemSlot.Material);
+            if (embers > 0) parts.Add($"{embers} forge embers");
             return parts.Count == 0 ? "Inventory: (empty)" : "Inventory: " + string.Join(", ", parts);
         }
     }

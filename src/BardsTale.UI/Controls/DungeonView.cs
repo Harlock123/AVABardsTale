@@ -338,6 +338,11 @@ public sealed class DungeonView : Control
                 for (var i = 0; i < 3; i++)
                     ctx.DrawRectangle(carve, null, new Rect(x + w * 0.28, y + h * (0.26 + i * 0.22), w * 0.44, h * 0.08));
                 break;
+            case TownBuilding.Smithy: // an anvil
+                ctx.DrawRectangle(gold, null, new Rect(x + w * 0.16, y + h * 0.30, w * 0.68, h * 0.18), w * 0.05, w * 0.05);
+                ctx.DrawRectangle(gold, null, new Rect(x + w * 0.40, y + h * 0.46, w * 0.20, h * 0.16));
+                ctx.DrawRectangle(gold, null, new Rect(x + w * 0.28, y + h * 0.60, w * 0.44, h * 0.16), w * 0.04, w * 0.04);
+                break;
             case TownBuilding.Tavern: // foaming tankard
                 ctx.DrawEllipse(null, new Pen(gold, w * 0.09), new Point(x + w * 0.66, cy), w * 0.16, h * 0.2);
                 ctx.DrawRectangle(gold, null, new Rect(x + w * 0.12, y + h * 0.16, w * 0.5, h * 0.7), w * 0.05, w * 0.05);

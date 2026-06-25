@@ -13,7 +13,8 @@ public enum TownBuilding
     Tavern,
     Inn,
     DungeonEntrance,
-    QuestBoard
+    QuestBoard,
+    Smithy
 }
 
 /// <summary>A building's door on the streets of Skara Brae.</summary>

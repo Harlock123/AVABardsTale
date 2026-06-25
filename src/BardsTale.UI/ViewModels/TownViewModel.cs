@@ -525,6 +525,55 @@ public sealed partial class TownViewModel : ViewModelBase
     partial void OnSelectedHeroChanged(CharacterViewModel? value)
     {
         if (IsSmithy) RebuildUpgrades();
+        OnPropertyChanged(nameof(ChangeClassCost));
+        OnPropertyChanged(nameof(ChangeClassInfo));
+    }
+
+    // --- Change Class (retrain at the Guild) ---
+
+    /// <summary>Every class a hero can retrain into.</summary>
+    public IReadOnlyList<ClassDefinition> ChangeableClasses { get; } = Classes.All.Values.ToList();
+
+    [ObservableProperty] private ClassDefinition? _selectedNewClass;
+
+    public int ChangeClassCost => 200 * (SelectedHero?.Model.Level ?? 1);
+
+    public string ChangeClassInfo
+    {
+        get
+        {
+            var hero = SelectedHero?.Model;
+            if (hero is null) return "Pick a hero and a new class to retrain.";
+            if (SelectedNewClass is null) return $"Pick a new class for {hero.Name}.";
+            if (!Progression.CanChangeClass(hero, SelectedNewClass.Class, out var reason)) return reason;
+            return $"Retrain {hero.Name} as a {SelectedNewClass.Name} for {ChangeClassCost} gold — "
+                 + "keeps hit points & known magic, but restarts at level 1.";
+        }
+    }
+
+    partial void OnSelectedNewClassChanged(ClassDefinition? value) => OnPropertyChanged(nameof(ChangeClassInfo));
+
+    [RelayCommand]
+    private void ChangeClass()
+    {
+        var hero = SelectedHero?.Model;
+        if (hero is null) { Notice = "Pick a hero to retrain."; return; }
+        if (SelectedNewClass is null) { Notice = "Pick a class to retrain into."; return; }
+        if (!Progression.CanChangeClass(hero, SelectedNewClass.Class, out var reason)) { Notice = reason; return; }
+        var cost = ChangeClassCost;
+        if (Gold < cost) { Notice = $"Retraining {hero.Name} costs {cost} gold."; return; }
+
+        _session.Party.Gold -= cost;
+        var displaced = Progression.ChangeClass(hero, SelectedNewClass.Class);
+        foreach (var item in displaced) _session.Party.Inventory.Add(item);
+
+        Notice = displaced.Count > 0
+            ? $"{hero.Name} is now a level 1 {SelectedNewClass.Name}; gear they can't use went to the stash."
+            : $"{hero.Name} is now a level 1 {SelectedNewClass.Name}.";
+        Sfx.Play(GameSound.LevelUp);
+        RefreshEconomy();
+        OnPropertyChanged(nameof(ChangeClassCost));
+        OnPropertyChanged(nameof(ChangeClassInfo));
     }
 
     /// <summary>Forges the next enchantment onto a piece of gear, spending gold and forge embers.</summary>

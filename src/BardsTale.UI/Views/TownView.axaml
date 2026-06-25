@@ -100,6 +100,39 @@
 
                                 <DockPanel Grid.Column="1">
                                     <TextBlock DockPanel.Dock="Top" Text="Current Party" Foreground="#9AA0B5" Margin="0,0,0,6"/>
+                                    <Border DockPanel.Dock="Bottom" Margin="0,8,0,0" Padding="10" CornerRadius="4"
+                                            Background="#1C2030">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Train (change class)" Foreground="#9AA0B5"/>
+                                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Hero" VerticalAlignment="Center"
+                                                           Foreground="#C7CBDA" Margin="0,0,8,4"/>
+                                                <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,4" HorizontalAlignment="Stretch"
+                                                          ItemsSource="{Binding Party}" SelectedItem="{Binding SelectedHero, Mode=TwoWay}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:CharacterViewModel">
+                                                            <TextBlock Text="{Binding Name}"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="New class" VerticalAlignment="Center"
+                                                           Foreground="#C7CBDA" Margin="0,0,8,0"/>
+                                                <ComboBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch"
+                                                          ItemsSource="{Binding ChangeableClasses}"
+                                                          SelectedItem="{Binding SelectedNewClass, Mode=TwoWay}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate x:DataType="core:ClassDefinition">
+                                                            <TextBlock Text="{Binding Name}"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                            </Grid>
+                                            <TextBlock Text="{Binding ChangeClassInfo}" FontSize="11" Foreground="#9AA0B5"
+                                                       TextWrapping="Wrap"/>
+                                            <Button Content="Change Class" Command="{Binding ChangeClassCommand}"
+                                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
                                     <ScrollViewer>
                                         <ItemsControl ItemsSource="{Binding Party}">
                                             <ItemsControl.ItemTemplate>

@@ -40,11 +40,14 @@ public sealed partial class CombatViewModel : ViewModelBase
         _magicSuppressed = magicSuppressed;
         _engine = new CombatEngine(party, encounter, rng, magicSuppressed, surprise);
 
+        _partyNames = party.Members.Select(m => m.Name).ToHashSet();
+
         Groups = new ObservableCollection<MonsterGroupViewModel>(
             encounter.Groups.Select((g, i) => new MonsterGroupViewModel(g, i)));
-        Log = new ObservableCollection<string> { Intro() };
+        Log = new ObservableCollection<CombatLogLineViewModel>();
+        AddLog(Intro());
         if (magicSuppressed)
-            Log.Add("The air is dead to magic here — no spells or songs.");
+            AddLog("The air is dead to magic here — no spells or songs.");
         Options = new ObservableCollection<CombatActionOptionViewModel>();
         Orders = new ObservableCollection<string>();
         AllyTargets = new ObservableCollection<AllyTargetViewModel>();
@@ -59,11 +62,11 @@ public sealed partial class CombatViewModel : ViewModelBase
         switch (_engine.Surprise)
         {
             case SurpriseState.PartySurprised:
-                Log.Add("You are ambushed — the enemy strikes before you can react!");
+                AddLog("You are ambushed — the enemy strikes before you can react!");
                 ResolveRound(new List<CombatCommand>()); // monsters-only opening round
                 break;
             case SurpriseState.MonstersSurprised:
-                Log.Add("You catch them unawares — strike while you can!");
+                AddLog("You catch them unawares — strike while you can!");
                 BeginSelection();
                 break;
             default:
@@ -73,7 +76,12 @@ public sealed partial class CombatViewModel : ViewModelBase
     }
 
     public ObservableCollection<MonsterGroupViewModel> Groups { get; }
-    public ObservableCollection<string> Log { get; }
+    public ObservableCollection<CombatLogLineViewModel> Log { get; }
+
+    private readonly HashSet<string> _partyNames;
+
+    /// <summary>Adds a combat-log line, classified for colour/icon by the styler.</summary>
+    private void AddLog(string text) => Log.Add(new CombatLogLineViewModel(text, _partyNames));
     public ObservableCollection<CombatActionOptionViewModel> Options { get; }
     public ObservableCollection<string> Orders { get; }
     public ObservableCollection<AllyTargetViewModel> AllyTargets { get; }
@@ -191,7 +199,7 @@ public sealed partial class CombatViewModel : ViewModelBase
         // Reject a spell the caster can't pay for, without spending the turn.
         if (!option.IsItemPower && option.Spell is { } sp && actor.SpellPoints < sp.Cost)
         {
-            Log.Add($"{actor.Name} hasn't the spell points for {sp.Name}.");
+            AddLog($"{actor.Name} hasn't the spell points for {sp.Name}.");
             return;
         }
 
@@ -354,7 +362,7 @@ public sealed partial class CombatViewModel : ViewModelBase
                 && cmd.Actor.Weapon is { } w && ReferenceEquals(w.ItemPower, sp))
                 _powerUsed.Add(cmd.Actor);
         foreach (var line in round.Log)
-            Log.Add(line);
+            AddLog(line);
 
         // Show any reinforcements that were summoned into the fight this round.
         while (Groups.Count < _encounter.Groups.Count)

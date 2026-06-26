@@ -578,7 +578,9 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
 - First-person pseudo-3D rendering with a receding vanishing point and depth shading.
 - Auto-map that reveals only visited cells, with a directional party marker.
 - Per-character turn-based combat: initiative, multiple attacks per round,
-  monster groups, fleeing, and XP/gold rewards.
+  monster groups, fleeing, and XP/gold rewards. The **combat log is colour-coded and
+  iconed** by event — blows you land vs. blows taken, heals/regen (green), wards & saves
+  (cyan), kills, deaths, misses, status and casts — so a busy round reads at a glance.
 - A **twenty-floor dungeon** with a **bestiary of 120 monsters** across ten toughness
   tiers, depth-banded so each floor draws from a tougher pool than the last, plus a
   **distinct named boss lair on every floor** (twenty in all) down to Mangar. **XP

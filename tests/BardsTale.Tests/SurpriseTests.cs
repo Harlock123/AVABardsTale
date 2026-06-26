@@ -74,7 +74,7 @@ public class SurpriseTests
         var vm = new CombatViewModel(party, encounter, rng, surprise: SurpriseState.PartySurprised);
         vm.Begin();
 
-        Assert.Contains(vm.Log, l => l.Contains("ambushed"));
+        Assert.Contains(vm.Log, l => l.Text.Contains("ambushed"));
         Assert.False(vm.IsOver);
         Assert.NotEmpty(vm.Options); // the party's own (second) round of orders has begun
     }

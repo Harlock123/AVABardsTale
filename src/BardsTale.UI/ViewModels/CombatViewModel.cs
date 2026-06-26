@@ -350,11 +350,32 @@ public sealed partial class CombatViewModel : ViewModelBase
             .Select(m => new CombatCommand(m, CombatActionType.Flee)).ToList());
     }
 
+    /// <summary>Per-hero hit-point change from the last resolved round (negative = damage); the
+    /// exploration roster reads this to pop floating numbers over party members.</summary>
+    public IReadOnlyList<(Character Member, int Delta)> PartyHpDeltas { get; private set; } =
+        new List<(Character, int)>();
+
+    private static int GroupHp(MonsterGroup g) => g.Monsters.Sum(m => m.HitPoints);
+
     private void ResolveRound(List<CombatCommand>? commands = null)
     {
         var resolved = commands ?? _queued;
         PlayActionSounds(resolved);
+
+        // Snapshot hit points so we can pop the per-target deltas as floating numbers.
+        var memberHpBefore = _party.Members.ToDictionary(m => m, m => m.HitPoints);
+        var groupHpBefore = _encounter.Groups.ToDictionary(g => g, GroupHp);
+
         var round = _engine.ExecuteRound(resolved);
+
+        // Floating numbers: enemies here, party members via PartyHpDeltas + StateChanged.
+        foreach (var gvm in Groups)
+            if (groupHpBefore.TryGetValue(gvm.Group, out var before))
+                gvm.Pop(GroupHp(gvm.Group) - before);
+        PartyHpDeltas = _party.Members
+            .Where(m => memberHpBefore.TryGetValue(m, out var b) && m.HitPoints != b)
+            .Select(m => (m, m.HitPoints - memberHpBefore[m]))
+            .ToList();
 
         // A character who fired their item power this round can't do so again this fight.
         foreach (var cmd in resolved)

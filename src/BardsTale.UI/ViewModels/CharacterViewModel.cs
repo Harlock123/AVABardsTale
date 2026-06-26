@@ -69,6 +69,23 @@ public sealed partial class CharacterViewModel : ViewModelBase
     }
     public string ArmorClassText => $"AC {Model.ArmorClass}";
 
+    // --- Floating combat number (pops on the roster when this hero is hit or healed) ---
+    [ObservableProperty] private string _floatingText = "";
+    [ObservableProperty] private IBrush _floatingBrush = Brushes.White;
+    [ObservableProperty] private long _floatingPulse;
+
+    /// <summary>Shows a floating "-N" (damage, red) or "+N" (heal, green) over this hero.</summary>
+    public void Pop(int delta)
+    {
+        if (delta == 0) return;
+        FloatingText = delta < 0 ? delta.ToString() : "+" + delta;
+        FloatingBrush = delta < 0 ? FloatDamage : FloatHeal;
+        FloatingPulse++;
+    }
+
+    private static readonly IBrush FloatDamage = new SolidColorBrush(Color.Parse("#E8746A"));
+    private static readonly IBrush FloatHeal = new SolidColorBrush(Color.Parse("#7FB069"));
+
     /// <summary>The elements this hero's equipped gear wards against, e.g. "Wards: Fire, Cold".</summary>
     public string WardText
     {

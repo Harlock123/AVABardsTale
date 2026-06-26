@@ -580,7 +580,8 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
 - Per-character turn-based combat: initiative, multiple attacks per round,
   monster groups, fleeing, and XP/gold rewards. The **combat log is colour-coded and
   iconed** by event — blows you land vs. blows taken, heals/regen (green), wards & saves
-  (cyan), kills, deaths, misses, status and casts — so a busy round reads at a glance.
+  (cyan), kills, deaths, misses, status and casts — so a busy round reads at a glance, and
+  **floating damage/heal numbers** pop over each struck enemy group and wounded hero.
 - A **twenty-floor dungeon** with a **bestiary of 120 monsters** across ten toughness
   tiers, depth-banded so each floor draws from a tougher pool than the last, plus a
   **distinct named boss lair on every floor** (twenty in all) down to Mangar. **XP

@@ -96,6 +96,11 @@
                                         <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
                                                    Text="{Binding SetBonusText}" FontSize="10" Foreground="#C9A24B"
                                                    IsVisible="{Binding HasSetBonus}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                        <TextBlock Grid.Row="0" Grid.RowSpan="5" Grid.Column="0" Grid.ColumnSpan="2"
+                                                   Text="{Binding FloatingText}" Foreground="{Binding FloatingBrush}"
+                                                   controls:FloatingNumber.Pulse="{Binding FloatingPulse}"
+                                                   FontWeight="Bold" FontSize="20" Opacity="0" IsHitTestVisible="False"
+                                                   HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

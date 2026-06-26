@@ -316,7 +316,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         Music.Play(GameMusic.Combat);
         var vm = new CombatViewModel(_game.Party, encounter, _game.Rng, _game.MagicSuppressed, surprise);
         vm.Finished += OnCombatFinished;
-        vm.StateChanged += RefreshParty;
+        vm.StateChanged += OnCombatStateChanged;
         Combat = vm;
         IsInCombat = true;
         UpdateExploreState();
@@ -407,6 +407,15 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         OnPropertyChanged(nameof(LightText));
         OnPropertyChanged(nameof(CampText));
         OnPropertyChanged(nameof(CampTooltip));
+        RefreshParty();
+    }
+
+    /// <summary>After a combat round, pop floating numbers over hit/healed heroes, then refresh.</summary>
+    private void OnCombatStateChanged()
+    {
+        if (Combat is { } combat)
+            foreach (var (member, delta) in combat.PartyHpDeltas)
+                Party.FirstOrDefault(vm => vm.Model == member)?.Pop(delta);
         RefreshParty();
     }
 

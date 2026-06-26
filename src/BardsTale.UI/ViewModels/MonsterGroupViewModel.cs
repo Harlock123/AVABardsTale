@@ -27,6 +27,23 @@ public sealed partial class MonsterGroupViewModel : ViewModelBase
         ? new SolidColorBrush(Color.Parse("#E8C56B"))
         : new SolidColorBrush(Color.Parse("#E8E9F0"));
 
+    // --- Floating combat number (pops on the group when it's struck or mended) ---
+    [ObservableProperty] private string _floatingText = "";
+    [ObservableProperty] private IBrush _floatingBrush = Brushes.White;
+    [ObservableProperty] private long _floatingPulse;
+
+    /// <summary>Shows a floating "-N" (damage, amber) or "+N" (heal, green) over this group.</summary>
+    public void Pop(int delta)
+    {
+        if (delta == 0) return;
+        FloatingText = delta < 0 ? delta.ToString() : "+" + delta;
+        FloatingBrush = delta < 0 ? FloatHit : FloatHeal;
+        FloatingPulse++;
+    }
+
+    private static readonly IBrush FloatHit = new SolidColorBrush(Color.Parse("#E0A85A"));
+    private static readonly IBrush FloatHeal = new SolidColorBrush(Color.Parse("#7FB069"));
+
     public string HealthText
     {
         get

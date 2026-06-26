@@ -642,6 +642,13 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
   risk and XP/gold rewards — Relaxed is a gentler descent, Hard is tougher and more frequent but
   pays out richer. A non-Normal run shows a difficulty badge, and the choice stacks with both
   New Game+ ascension scaling and Ironman. Persisted with the save.
+- **Seeded daily challenge** (`🎯 Daily`): a run on a shared **seed** — the same dungeon, monsters
+  and loot for everyone — played with the **ready-made party**, on **Normal**, to the **death**
+  (Ironman). The panel offers **today's date-derived seed** or any seed you type (share one to
+  challenge a friend) and shows your **best score** for it. Runs are **scored** (depth dominates,
+  with bonuses for battles, kills, gold, and a big payout for winning); the victory/defeat screen
+  shows your score and flags a **new best**, recorded per seed (and kept even when the Ironman
+  save is wiped).
 - First-person pseudo-3D rendering with a receding vanishing point and depth shading.
 - Auto-map that reveals only visited cells, with a directional party marker.
 - Per-character turn-based combat: initiative, multiple attacks per round,

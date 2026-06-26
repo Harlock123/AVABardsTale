@@ -64,6 +64,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private SlotPanelMode _slotMode;
     [ObservableProperty] private bool _isGameWon;
     [ObservableProperty] private bool _isGameOver;
+
+    // --- Seeded daily challenge ---
+    [ObservableProperty] private bool _isChallengePanelOpen;
+    [ObservableProperty] private string _challengeSeedInput = "";
+    [ObservableProperty] private string _challengeBestText = "";
+    /// <summary>On a finished challenge run, the score line shown on the victory / game-over screen.</summary>
+    [ObservableProperty] private bool _showChallengeResult;
+    [ObservableProperty] private string _challengeResultText = "";
+
+    private static int TodaysSeed => Challenges.DailySeed(System.DateOnly.FromDateTime(System.DateTime.Today));
+    public string TodaysSeedText => $"Today's seed: {TodaysSeed}";
     [ObservableProperty] private bool _isSettingsOpen;
     [ObservableProperty] private bool _isQuestLogOpen;
     [ObservableProperty] private QuestLogViewModel? _questLog;
@@ -90,6 +101,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public bool ShowDifficultyBadge => _session.Difficulty != BardsTale.Core.Combat.Difficulty.Normal;
     public string DifficultyBadge => _session.Difficulty == BardsTale.Core.Combat.Difficulty.Hard ? "🔥 Hard" : "🌿 Relaxed";
 
+    /// <summary>A badge marking a seeded daily-challenge run, with its seed.</summary>
+    public bool IsChallengeRun => _session.IsChallenge;
+    public string ChallengeBadge => $"🎯 #{_session.ChallengeSeed}";
+
     /// <summary>The difficulty options offered by the settings selector.</summary>
     public System.Array DifficultyOptions { get; } = System.Enum.GetValues(typeof(BardsTale.Core.Combat.Difficulty));
 
@@ -112,6 +127,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(AscensionBadge));
         OnPropertyChanged(nameof(ShowDifficultyBadge));
         OnPropertyChanged(nameof(DifficultyBadge));
+        OnPropertyChanged(nameof(IsChallengeRun));
+        OnPropertyChanged(nameof(ChallengeBadge));
         OnPropertyChanged(nameof(ManualSavesAllowed));
     }
 
@@ -262,6 +279,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             _session = await _saves.LoadAsync(slot.Slot);
             IsGameWon = false;
             IsGameOver = false;
+            ShowChallengeResult = false;
             RefreshRunBadges();
             ShowTown();
             StatusMessage = $"Loaded {slot.DisplayName}.";
@@ -341,6 +359,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         StatusMessage = "Victory! Skara Brae is freed.";
         Sfx.Play(GameSound.Victory);
         Music.Play(GameMusic.Victory);
+        RecordChallengeResult();
     }
 
     [RelayCommand]
@@ -349,9 +368,105 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         _session = new GameSession { Ironman = Settings.IronmanMode, Difficulty = Settings.Difficulty };
         IsGameWon = false;
         IsGameOver = false;
+        ShowChallengeResult = false;
         StatusMessage = _session.Ironman ? "A new Ironman run begins — there is no second chance." : "A new adventure begins.";
         RefreshRunBadges();
         ShowTown();
+    }
+
+    // --- Seeded daily challenge ---
+
+    /// <summary>Opens the daily-challenge panel, defaulting the seed to today's and loading its best.</summary>
+    [RelayCommand]
+    private async Task ShowChallenge()
+    {
+        if (string.IsNullOrWhiteSpace(ChallengeSeedInput))
+            ChallengeSeedInput = TodaysSeed.ToString();
+        OnPropertyChanged(nameof(TodaysSeedText));
+        await RefreshChallengeBestAsync();
+        IsChallengePanelOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseChallenge() => IsChallengePanelOpen = false;
+
+    [RelayCommand]
+    private void UseTodaysSeed() => ChallengeSeedInput = TodaysSeed.ToString();
+
+    /// <summary>Re-reads the stored best for the seed in the input box whenever it changes.</summary>
+    partial void OnChallengeSeedInputChanged(string value) => _ = RefreshChallengeBestAsync();
+
+    private async Task RefreshChallengeBestAsync()
+    {
+        if (Challenges.TryParseSeed(ChallengeSeedInput, out var seed))
+        {
+            var best = await LoadChallengeBestAsync(seed);
+            ChallengeBestText = best is { } b ? $"Your best for this seed: {b}" : "No score recorded for this seed yet.";
+        }
+        else
+        {
+            ChallengeBestText = "Enter a whole number for the seed.";
+        }
+    }
+
+    /// <summary>
+    /// Starts a seeded challenge run: a fresh session on the seed, the ready-made party, played to
+    /// the death (Ironman) on Normal difficulty so every attempt at a seed is judged on equal terms.
+    /// </summary>
+    [RelayCommand]
+    private void StartChallenge()
+    {
+        if (!Challenges.TryParseSeed(ChallengeSeedInput, out var seed)) return;
+
+        _session = new GameSession(seed)
+        {
+            ChallengeSeed = seed,
+            Ironman = true,
+            Difficulty = BardsTale.Core.Combat.Difficulty.Normal
+        };
+        _session.FillDefaultParty();
+
+        IsChallengePanelOpen = false;
+        IsGameWon = false;
+        IsGameOver = false;
+        ShowChallengeResult = false;
+        RefreshRunBadges();
+        StatusMessage = $"Daily Challenge #{seed} begins — one party, one life, one seed.";
+        ShowTown();
+    }
+
+    /// <summary>Records a finished challenge run's score and updates the per-seed best (survives the Ironman save wipe).</summary>
+    private async void RecordChallengeResult()
+    {
+        if (_session.ChallengeSeed is not int seed) return;
+
+        var score = _session.Stats.Score;
+        var prevBest = await LoadChallengeBestAsync(seed);
+        var isNewBest = prevBest is null || score > prevBest;
+        if (isNewBest) await SaveChallengeBestAsync(seed, score);
+
+        ChallengeResultText = isNewBest
+            ? $"🎯 Daily Challenge #{seed} — Score {score}   ✦ NEW BEST!"
+            : $"🎯 Daily Challenge #{seed} — Score {score}   (your best: {prevBest})";
+        ShowChallengeResult = true;
+    }
+
+    private static string ChallengeKey(int seed) => $"challenge.best.{seed}";
+
+    private async Task<int?> LoadChallengeBestAsync(int seed)
+    {
+        try
+        {
+            var text = await _saves.LoadTextAsync(ChallengeKey(seed));
+            return int.TryParse(text, out var best) ? best : null;
+        }
+        catch { return null; }
+    }
+
+    private async Task SaveChallengeBestAsync(int seed, int score)
+    {
+        try { await _saves.SaveTextAsync(ChallengeKey(seed), score.ToString()); }
+        catch { /* best-effort */ }
     }
 
     /// <summary>After a win, carry the party forward into a tougher New Game+ (Ascension +1).</summary>
@@ -361,6 +476,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         _session = _session.StartNewGamePlus();
         IsGameWon = false;
         IsGameOver = false;
+        ShowChallengeResult = false;
         StatusMessage = $"New Game+ begins — Ascension {_session.Ascension}. The catacombs grow deadlier, but your heroes carry on.";
         RefreshRunBadges();
         ShowTown();
@@ -385,6 +501,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Music.Stop();
         StatusMessage = "The Ironman run ends here.";
         IsGameOver = true;
+        RecordChallengeResult(); // a challenge run is scored even when it ends in death
     }
 
     /// <summary>Returning to town is a safe checkpoint, so the game autosaves there (if enabled).</summary>

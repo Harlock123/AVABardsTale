@@ -16,6 +16,9 @@ public sealed class SaveData
     /// <summary>Chosen difficulty (enum value; defaults to Normal for older saves).</summary>
     public int Difficulty { get; set; } = (int)BardsTale.Core.Combat.Difficulty.Normal;
 
+    /// <summary>The daily-challenge seed this run was started on, or -1 for an ordinary run.</summary>
+    public int ChallengeSeed { get; set; } = -1;
+
     public PartySave Party { get; set; } = new();
     public DungeonSave? Dungeon { get; set; }
     public RunStatsSave Stats { get; set; } = new();

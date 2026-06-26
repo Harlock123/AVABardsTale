@@ -35,6 +35,7 @@ public static class GameSerializer
             Ascension = session.Ascension,
             Ironman = session.Ironman,
             Difficulty = (int)session.Difficulty,
+            ChallengeSeed = session.ChallengeSeed ?? -1,
             Party = new PartySave
             {
                 Gold = p.Gold,
@@ -207,7 +208,8 @@ public static class GameSerializer
         {
             Ascension = data.Ascension,
             Ironman = data.Ironman,
-            Difficulty = (BardsTale.Core.Combat.Difficulty)data.Difficulty
+            Difficulty = (BardsTale.Core.Combat.Difficulty)data.Difficulty,
+            ChallengeSeed = data.ChallengeSeed >= 0 ? data.ChallengeSeed : null
         };
         var p = session.Party;
 

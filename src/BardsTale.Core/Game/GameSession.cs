@@ -47,6 +47,12 @@ public sealed class GameSession
     /// <summary>The run's chosen challenge level, scaling foes, ambushes, camp risk and rewards.</summary>
     public Combat.Difficulty Difficulty { get; set; } = Combat.Difficulty.Normal;
 
+    /// <summary>The daily-challenge seed this run was started on, or null for an ordinary run.</summary>
+    public int? ChallengeSeed { get; set; }
+
+    /// <summary>True when this run is a seeded daily challenge (scored, fixed party, played to the death).</summary>
+    public bool IsChallenge => ChallengeSeed.HasValue;
+
     /// <summary>Running tally of the party's deeds, shown on the victory screen.</summary>
     public RunStats Stats { get; } = new();
 

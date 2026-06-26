@@ -46,4 +46,14 @@ public static class ShopWares
                 return depth;
         return null;
     }
+
+    /// <summary>The unlock floors newly crossed by descending from one deepest depth to another.</summary>
+    public static IReadOnlyList<int> NewUnlocksBetween(int previousDeepest, int currentDeepest)
+    {
+        var crossed = new List<int>();
+        foreach (var (depth, _) in Unlocks)
+            if (depth > previousDeepest && depth <= currentDeepest)
+                crossed.Add(depth);
+        return crossed;
+    }
 }

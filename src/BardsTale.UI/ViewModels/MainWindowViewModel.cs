@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using BardsTale.Core.Game;
+using BardsTale.Core.Items;
 using BardsTale.UI.Audio;
 using BardsTale.UI.Services;
 using BardsTale.UI.Settings;
@@ -246,8 +247,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         RefreshRenown();
     }
 
+    // The deepest floor reached before the current dive, to spot newly-unlocked Garth's wares.
+    private int _deepestBeforeDive = 1;
+
     private void OnEnterDungeon()
     {
+        _deepestBeforeDive = _session.Stats.DeepestDepth;
         var game = _session.EnterDungeon();
         var exploration = new ExplorationViewModel(game, _session.Stats, _session.Quests, _session.Codex, _session.Renown);
         exploration.ReturnToTownRequested += ReturnFromDungeon;
@@ -301,6 +306,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         // Fresh notices go up on the board while the party was away.
         _session.QuestBoard.Restock(_session.Rng, System.Math.Max(1, _session.Stats.DeepestDepth));
+
+        // Reaching a new depth this dive may have expanded Garth's stock — call it out.
+        var crossed = ShopWares.NewUnlocksBetween(_deepestBeforeDive, _session.Stats.DeepestDepth);
+
         if (Settings.Autosave)
         {
             try
@@ -312,6 +321,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             {
                 StatusMessage = $"Autosave failed: {ex.Message}";
             }
+        }
+
+        if (crossed.Count > 0)
+        {
+            StatusMessage = $"Garth's Equipment Shoppe has restocked — new wares for reaching floor {crossed.Max()}!";
+            Sfx.Play(GameSound.Coin);
         }
         ShowTown();
     }

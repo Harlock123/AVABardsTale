@@ -57,6 +57,21 @@ public class ShopRestockTests
     }
 
     [Fact]
+    public void Crossing_an_unlock_floor_is_reported_for_the_restock_notice()
+    {
+        // A dive from floor 3 to floor 9 crosses the floor-4 and floor-8 unlocks.
+        var crossed = ShopWares.NewUnlocksBetween(previousDeepest: 3, currentDeepest: 9);
+        Assert.Equal(new[] { 4, 8 }, crossed);
+    }
+
+    [Fact]
+    public void Diving_no_deeper_than_before_unlocks_nothing()
+    {
+        Assert.Empty(ShopWares.NewUnlocksBetween(previousDeepest: 8, currentDeepest: 8));
+        Assert.Empty(ShopWares.NewUnlocksBetween(previousDeepest: 10, currentDeepest: 6)); // climbed back up
+    }
+
+    [Fact]
     public void The_session_shop_reflects_the_deepest_floor_reached()
     {
         var session = new GameSession(seed: 3);

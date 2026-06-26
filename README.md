@@ -524,7 +524,8 @@ halves the matching blow. (Foes have their own affinities too: strike a monster'
 Garth's starts with only the **entry-tier defensive accessories** (the single-element wards
 and a Ring of Protection), but **restocks as you progress** — reaching floors 4, 8, 12 and 16
 unlocks progressively stronger effect and vitality accessories for sale (the panel tells you
-which floor the next batch unlocks at). The very best gear still drops first from elites,
+which floor the next batch unlocks at, and a **town-return notice** announces when a dive has
+expanded his stock). The very best gear still drops first from elites,
 chests and bosses, and the legendary **Talisman of the Ages** stays treasure-only. Any
 accessory can be **sold and appraised** at Garth's, and the **Forge** can enchant a warding
 ring **+1/+2/+3** — each tier adding a point of armour while keeping its ward.

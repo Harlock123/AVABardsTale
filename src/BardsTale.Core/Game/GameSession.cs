@@ -62,11 +62,10 @@ public sealed class GameSession
         Items.Items.Dagger, Items.Items.ShortSword, Items.Items.LongSword, Items.Items.BattleAxe,
         Items.Items.Staff, Items.Items.LeatherArmor, Items.Items.ChainMail, Items.Items.PlateMail,
         Items.Items.SmallShield, Items.Items.Robes,
+        // Garth stocks only the entry-tier defensive accessories — a starter ward kit.
+        // The potent effect/vitality rings & amulets must be earned from the deep.
         Items.Items.RingOfProtection, Items.Items.RingOfFireWard, Items.Items.RingOfFrostWard,
         Items.Items.RingOfStormWard, Items.Items.AmuletOfTheViper,
-        Items.Items.RingOfRegeneration, Items.Items.RingOfStriking, Items.Items.RingOfAccuracy,
-        Items.Items.RingOfFreeAction, Items.Items.AmuletOfFortune, Items.Items.AmuletOfValor,
-        Items.Items.RingOfVigor, Items.Items.AmuletOfVitality, Items.Items.AmuletOfTheMagi,
         Items.Items.HealingPotion, Items.Items.ManaDraught, Items.Items.Antidote, Items.Items.ResurrectionDust
     };
 

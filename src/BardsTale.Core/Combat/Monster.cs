@@ -44,7 +44,7 @@ public static class Elites
         AttackBonus = t.AttackBonus + 2,
         ArmorClass = Math.Max(0, t.ArmorClass - 1),
         ExperienceValue = (int)Math.Round(t.ExperienceValue * 2.5),
-        GoldValue = t.GoldValue * 3,
+        GoldValue = (int)Math.Round(t.GoldValue * 2.5),
         Speed = t.Speed + 1,
         MaxPerGroup = 1,
         IsElite = true

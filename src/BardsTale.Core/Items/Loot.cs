@@ -37,7 +37,7 @@ public static class Loot
         if (encounter.HasElite && !encounter.IsBoss)
         {
             drops.Add(RollMagic(rng));
-            if (rng.Chance(0.4)) drops.Add(RollAccessory(rng, depth).AsUnidentified());
+            if (rng.Chance(0.25)) drops.Add(RollAccessory(rng, depth).AsUnidentified());
             if (depth >= 4 && rng.Chance(0.5)) drops.Add(Items.ForgeEmber);
         }
 
@@ -76,7 +76,7 @@ public static class Loot
         // (a themed drop the party can equip together), otherwise a single warding piece.
         if (ornate)
         {
-            if (rng.Chance(0.4)) items.AddRange(SetDrop(rng));
+            if (rng.Chance(0.3)) items.AddRange(SetDrop(rng));
             else items.Add(RollAccessory(rng, depth).AsUnidentified());
         }
 

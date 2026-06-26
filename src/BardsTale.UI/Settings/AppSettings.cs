@@ -1,3 +1,4 @@
+using BardsTale.Core.Combat;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace BardsTale.UI.Settings;
@@ -36,4 +37,7 @@ public sealed partial class AppSettings : ObservableObject
 
     /// <summary>When set, a newly-started run is Ironman: permadeath, with manual save/load disabled.</summary>
     [ObservableProperty] private bool _ironmanMode;
+
+    /// <summary>The challenge level applied to a newly-started run.</summary>
+    [ObservableProperty] private Difficulty _difficulty = Difficulty.Normal;
 }

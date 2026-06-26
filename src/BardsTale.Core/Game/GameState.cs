@@ -59,19 +59,21 @@ public sealed class GameState
     private readonly IRandomSource _rng;
     private readonly EncounterFactory _encounters;
     private readonly int _ascension; // New Game+ level — scales every encounter and boss
+    private readonly DifficultyProfile _difficulty; // chosen challenge level — scales foes, ambushes and rewards
     private int _stepsSinceEncounter;
 
     // Each depth keeps its own maze, so a level's layout and explored map persist
     // when you climb away and return. Keyed by depth.
     private readonly Dictionary<int, Maze> _levels = new();
 
-    public GameState(Party party, Maze maze, IRandomSource rng, int ascension = 0)
+    public GameState(Party party, Maze maze, IRandomSource rng, int ascension = 0, DifficultyProfile? difficulty = null)
     {
         Party = party;
         Maze = maze;
         _rng = rng;
         _ascension = ascension;
-        _encounters = new EncounterFactory(rng, ascension);
+        _difficulty = difficulty ?? DifficultyProfile.Normal;
+        _encounters = new EncounterFactory(rng, ascension, _difficulty);
         _levels[Depth] = maze;
         Party.Position = maze.StartPosition;
         Party.Facing = maze.StartFacing;
@@ -80,13 +82,14 @@ public sealed class GameState
 
     /// <summary>Restores a dungeon from a saved game, preserving depth, position and the explored map.</summary>
     public GameState(Party party, Maze maze, IRandomSource rng, int depth, Position position, Direction facing,
-        int lightRemaining = 0, int ascension = 0)
+        int lightRemaining = 0, int ascension = 0, DifficultyProfile? difficulty = null)
     {
         Party = party;
         Maze = maze;
         _rng = rng;
         _ascension = ascension;
-        _encounters = new EncounterFactory(rng, ascension);
+        _difficulty = difficulty ?? DifficultyProfile.Normal;
+        _encounters = new EncounterFactory(rng, ascension, _difficulty);
         Depth = depth;
         _levels[Depth] = maze;
         Party.Position = position;
@@ -195,7 +198,7 @@ public sealed class GameState
             case CellFeature.BossLair:
                 return new MoveResult(MoveResultKind.Encounter,
                     $"A monstrous presence rises to bar your way — the {Bosses.BossForDepth(Depth).Name}!",
-                    Bosses.Create(Depth, _ascension));
+                    Bosses.Create(Depth, _ascension, _difficulty));
             case CellFeature.Chest:
                 return new MoveResult(MoveResultKind.Chest,
                     "A heavy treasure chest sits here, its lid latched shut.");
@@ -365,7 +368,7 @@ public sealed class GameState
             var chance = 0.15 + 0.02 * Depth;
             if (Party.Members.Any(m => !m.IsDead && m.Class == CharacterClass.Rogue)) chance -= 0.10;
             if (Party.Members.Any(m => !m.IsDead && m.CanSing)) chance -= 0.08;
-            return Math.Clamp(chance, 0.05, 0.5);
+            return Math.Clamp(chance * _difficulty.CampRisk, 0.05, 0.5);
         }
     }
 
@@ -503,7 +506,7 @@ public sealed class GameState
         _stepsSinceEncounter++;
         // Grace period after a fight, then a rising chance to be ambushed.
         if (_stepsSinceEncounter < 2) return false;
-        var chance = 0.10 + 0.03 * (_stepsSinceEncounter - 2);
+        var chance = (0.10 + 0.03 * (_stepsSinceEncounter - 2)) * _difficulty.EncounterChance;
         if (!_rng.Chance(Math.Min(chance, 0.45))) return false;
 
         _stepsSinceEncounter = 0;
@@ -529,9 +532,9 @@ public sealed class GameState
         if (living.Count == 0) return log;
 
         // Both wandering fights and boss lairs flow through here, so scaling once covers both.
-        var scaledXp = (long)(encounter.TotalExperience * DepthXpScale);
+        var scaledXp = (long)(encounter.TotalExperience * DepthXpScale * _difficulty.Reward);
         var xpEach = scaledXp / living.Count;
-        Party.Gold += encounter.TotalGold;
+        Party.Gold += (int)Math.Round(encounter.TotalGold * _difficulty.Reward);
 
         foreach (var member in living)
         {

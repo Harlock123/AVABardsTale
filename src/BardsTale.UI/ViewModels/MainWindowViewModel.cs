@@ -40,18 +40,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         {
             _ = SettingsService.SaveAsync(_saves, Settings);
             Music.RefreshSettings();
-            // The Ironman preference applies to a run that hasn't dived yet (you can still change
-            // your mind in town); once committed to the catacombs it's locked for that run.
-            if (e.PropertyName == nameof(AppSettings.IronmanMode) && !_session.HasActiveDungeon)
-            {
-                _session.Ironman = Settings.IronmanMode;
-                RefreshRunBadges();
-            }
+            // The Ironman/difficulty preferences apply to a run that hasn't dived yet (you can
+            // still change your mind in town); once in the catacombs they're locked for that run.
+            if (e.PropertyName is nameof(AppSettings.IronmanMode) or nameof(AppSettings.Difficulty))
+                ApplyRunPreferences();
         };
         _ = SettingsService.LoadAsync(_saves, Settings).ContinueWith(_ =>
         {
             Music.RefreshSettings();
-            if (!_session.HasActiveDungeon) { _session.Ironman = Settings.IronmanMode; RefreshRunBadges(); }
+            ApplyRunPreferences();
         });
 
         ShowTown();
@@ -89,14 +86,32 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public bool IsNewGamePlus => _session.Ascension > 0;
     public string AscensionBadge => $"NG+{_session.Ascension}";
 
+    /// <summary>A badge for the run's challenge level — shown only when it isn't the default (Normal).</summary>
+    public bool ShowDifficultyBadge => _session.Difficulty != BardsTale.Core.Combat.Difficulty.Normal;
+    public string DifficultyBadge => _session.Difficulty == BardsTale.Core.Combat.Difficulty.Hard ? "🔥 Hard" : "🌿 Relaxed";
+
+    /// <summary>The difficulty options offered by the settings selector.</summary>
+    public System.Array DifficultyOptions { get; } = System.Enum.GetValues(typeof(BardsTale.Core.Combat.Difficulty));
+
     /// <summary>Manual save and load are disabled during an Ironman run so death can't be undone.</summary>
     public bool ManualSavesAllowed => !_session.Ironman;
+
+    /// <summary>Applies the Ironman/difficulty preferences to the current run — only before it descends.</summary>
+    private void ApplyRunPreferences()
+    {
+        if (_session.HasActiveDungeon) return; // locked once committed to the catacombs
+        _session.Ironman = Settings.IronmanMode;
+        _session.Difficulty = Settings.Difficulty;
+        RefreshRunBadges();
+    }
 
     private void RefreshRunBadges()
     {
         OnPropertyChanged(nameof(IsIronman));
         OnPropertyChanged(nameof(IsNewGamePlus));
         OnPropertyChanged(nameof(AscensionBadge));
+        OnPropertyChanged(nameof(ShowDifficultyBadge));
+        OnPropertyChanged(nameof(DifficultyBadge));
         OnPropertyChanged(nameof(ManualSavesAllowed));
     }
 
@@ -331,7 +346,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void NewGame()
     {
-        _session = new GameSession { Ironman = Settings.IronmanMode };
+        _session = new GameSession { Ironman = Settings.IronmanMode, Difficulty = Settings.Difficulty };
         IsGameWon = false;
         IsGameOver = false;
         StatusMessage = _session.Ironman ? "A new Ironman run begins — there is no second chance." : "A new adventure begins.";

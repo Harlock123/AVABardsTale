@@ -61,15 +61,23 @@ public static class Elites
 /// </summary>
 public static class NgPlus
 {
-    public static MonsterTemplate Scale(MonsterTemplate t, int ascension)
+    /// <summary>
+    /// Scales a monster up for the run's New Game+ <paramref name="ascension"/> and chosen
+    /// <paramref name="difficulty"/>. Both stack: each ascension adds +30% HP and +1 to hit/damage
+    /// (and +25% XP &amp; gold), and the difficulty profile multiplies HP and adds its own flat
+    /// attack bonus. A no-op when ascension is 0 and the difficulty is the baseline (Normal).
+    /// </summary>
+    public static MonsterTemplate Scale(MonsterTemplate t, int ascension, DifficultyProfile? difficulty = null)
     {
-        if (ascension <= 0) return t;
-        var hp = 1.0 + 0.30 * ascension;     // +30% HP per ascension
-        var reward = 1.0 + 0.25 * ascension; // +25% XP & gold per ascension
+        var diff = difficulty ?? DifficultyProfile.Normal;
+        if (ascension <= 0 && diff.IsBaseline) return t;
+
+        var hp = (1.0 + 0.30 * ascension) * diff.MonsterHp;
+        var reward = 1.0 + 0.25 * ascension; // XP & gold scale with ascension (difficulty's reward is applied on the win)
         return t with
         {
-            MaxHitPoints = (int)Math.Round(t.MaxHitPoints * hp),
-            AttackBonus = t.AttackBonus + ascension, // +1 to hit & damage per ascension
+            MaxHitPoints = Math.Max(1, (int)Math.Round(t.MaxHitPoints * hp)),
+            AttackBonus = t.AttackBonus + ascension + diff.MonsterAttackBonus,
             ExperienceValue = (int)Math.Round(t.ExperienceValue * reward),
             GoldValue = (int)Math.Round(t.GoldValue * reward)
         };

@@ -73,11 +73,13 @@ public sealed class EncounterFactory
 {
     private readonly IRandomSource _rng;
     private readonly int _ascension;
+    private readonly DifficultyProfile _difficulty;
 
-    public EncounterFactory(IRandomSource rng, int ascension = 0)
+    public EncounterFactory(IRandomSource rng, int ascension = 0, DifficultyProfile? difficulty = null)
     {
         _rng = rng;
         _ascension = ascension;
+        _difficulty = difficulty ?? DifficultyProfile.Normal;
     }
 
     public Encounter CreateRandom(int depth)
@@ -87,14 +89,14 @@ public sealed class EncounterFactory
         var groups = new List<MonsterGroup>();
         for (var i = 0; i < groupCount; i++)
         {
-            var template = NgPlus.Scale(_rng.Pick(pool), _ascension);
+            var template = NgPlus.Scale(_rng.Pick(pool), _ascension, _difficulty);
             var count = _rng.Next(1, template.MaxPerGroup + 1);
             groups.Add(new MonsterGroup(template, count));
         }
 
         // A lone elite occasionally leads the pack — buffed, and worth far more.
         if (_rng.Chance(Elites.ChanceForDepth(depth)))
-            groups.Insert(0, new MonsterGroup(Elites.Promote(NgPlus.Scale(_rng.Pick(pool), _ascension)), 1));
+            groups.Insert(0, new MonsterGroup(Elites.Promote(NgPlus.Scale(_rng.Pick(pool), _ascension, _difficulty)), 1));
 
         return new Encounter(groups);
     }

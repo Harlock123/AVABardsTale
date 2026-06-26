@@ -44,6 +44,9 @@ public sealed class GameSession
     /// </summary>
     public bool Ironman { get; set; }
 
+    /// <summary>The run's chosen challenge level, scaling foes, ambushes, camp risk and rewards.</summary>
+    public Combat.Difficulty Difficulty { get; set; } = Combat.Difficulty.Normal;
+
     /// <summary>Running tally of the party's deeds, shown on the victory screen.</summary>
     public RunStats Stats { get; } = new();
 
@@ -88,7 +91,7 @@ public sealed class GameSession
         if (_dungeon is null)
         {
             var maze = new MazeBuilder(Rng).Build("Catacombs — Level 1", 16, 16);
-            _dungeon = new GameState(Party, maze, Rng, Ascension);
+            _dungeon = new GameState(Party, maze, Rng, Ascension, Combat.DifficultyProfile.For(Difficulty));
         }
         else
         {
@@ -117,7 +120,8 @@ public sealed class GameSession
         var ng = new GameSession
         {
             Ascension = Ascension + 1,
-            Ironman = Ironman
+            Ironman = Ironman,
+            Difficulty = Difficulty
         };
         foreach (var m in Party.Members.ToList())
         {

@@ -634,6 +634,11 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
   ends the game for good** — the save is wiped and there's no revival — and **manual save
   and load are disabled** so death can't be undone. The run shows a `☠ IRONMAN` badge and
   relies on the autosave alone. Ironman composes with New Game+.
+- **Difficulty modes**: choose **Relaxed**, **Normal** or **Hard** for a run (Settings, before
+  you descend). Each scales monster HP and damage, wandering-encounter frequency, camp-ambush
+  risk and XP/gold rewards — Relaxed is a gentler descent, Hard is tougher and more frequent but
+  pays out richer. A non-Normal run shows a difficulty badge, and the choice stacks with both
+  New Game+ ascension scaling and Ironman. Persisted with the save.
 - First-person pseudo-3D rendering with a receding vanishing point and depth shading.
 - Auto-map that reveals only visited cells, with a directional party marker.
 - Per-character turn-based combat: initiative, multiple attacks per round,

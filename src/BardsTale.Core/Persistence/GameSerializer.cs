@@ -34,6 +34,7 @@ public static class GameSerializer
         {
             Ascension = session.Ascension,
             Ironman = session.Ironman,
+            Difficulty = (int)session.Difficulty,
             Party = new PartySave
             {
                 Gold = p.Gold,
@@ -205,7 +206,8 @@ public static class GameSerializer
         var session = new GameSession
         {
             Ascension = data.Ascension,
-            Ironman = data.Ironman
+            Ironman = data.Ironman,
+            Difficulty = (BardsTale.Core.Combat.Difficulty)data.Difficulty
         };
         var p = session.Party;
 
@@ -250,7 +252,8 @@ public static class GameSerializer
             var current = dungeonSave.Levels.FirstOrDefault(l => l.Depth == dungeonSave.Depth)
                           ?? dungeonSave.Levels[0];
             var game = new GameState(p, FromLevelSave(current), session.Rng,
-                dungeonSave.Depth, p.Position, p.Facing, dungeonSave.LightRemaining, session.Ascension);
+                dungeonSave.Depth, p.Position, p.Facing, dungeonSave.LightRemaining, session.Ascension,
+                BardsTale.Core.Combat.DifficultyProfile.For(session.Difficulty));
             foreach (var level in dungeonSave.Levels)
                 if (level.Depth != current.Depth)
                     game.AddLevel(level.Depth, FromLevelSave(level));

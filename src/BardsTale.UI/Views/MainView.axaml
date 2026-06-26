@@ -29,6 +29,10 @@
                         CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
                     <TextBlock Text="{Binding AscensionBadge}" FontSize="11" FontWeight="Bold" Foreground="#C8AEF0"/>
                 </Border>
+                <Border IsVisible="{Binding ShowDifficultyBadge}" Background="#1C2A1E" BorderBrush="#7FB069" BorderThickness="1"
+                        CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding DifficultyBadge}" FontSize="11" FontWeight="Bold" Foreground="#A8D88A"/>
+                </Border>
             </StackPanel>
             <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Foreground="#A9D0B0"
                        VerticalAlignment="Center" Margin="16,0" FontFamily="Consolas,monospace"/>
@@ -250,6 +254,17 @@
                             </StackPanel>
                             <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
                                           IsChecked="{Binding Settings.CrossfadeMusic}"/>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Difficulty" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Sets foe toughness, ambush frequency, camp risk and rewards for a new run. Applies before you next descend."
+                                           Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" VerticalAlignment="Center" MinWidth="120"
+                                      ItemsSource="{Binding DifficultyOptions}"
+                                      SelectedItem="{Binding Settings.Difficulty}"/>
                         </Grid>
 
                         <Grid ColumnDefinitions="*,Auto">

@@ -13,6 +13,9 @@ public sealed class SaveData
     /// <summary>Whether this is an Ironman (permadeath) run.</summary>
     public bool Ironman { get; set; }
 
+    /// <summary>Chosen difficulty (enum value; defaults to Normal for older saves).</summary>
+    public int Difficulty { get; set; } = (int)BardsTale.Core.Combat.Difficulty.Normal;
+
     public PartySave Party { get; set; } = new();
     public DungeonSave? Dungeon { get; set; }
     public RunStatsSave Stats { get; set; } = new();

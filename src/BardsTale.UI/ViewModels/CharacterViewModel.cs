@@ -17,6 +17,16 @@ public sealed partial class CharacterViewModel : ViewModelBase
 
     public Character Model { get; }
 
+    /// <summary>Marching-order rank ("Front"/"Back"), set by the roster when the list is built.</summary>
+    public string RankText { get; set; } = "";
+
+    /// <summary>True when this hero stands in the front rank — shown tinted in the roster.</summary>
+    public bool IsFrontRank { get; set; }
+
+    public IBrush RankBrush => IsFrontRank
+        ? new SolidColorBrush(Color.FromRgb(0xE0, 0xA8, 0x5A))   // amber — in the thick of it
+        : new SolidColorBrush(Color.FromRgb(0x7F, 0xB0, 0x69));  // green — shielded behind the line
+
     public string Name => Model.Name;
     public string ClassLine => $"{Races.Get(Model.Race).Name} {Model.Definition.Name}";
     public int Level => Model.Level;

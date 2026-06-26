@@ -97,6 +97,10 @@ public sealed partial class CombatViewModel : ViewModelBase
     [ObservableProperty] private string _actorSpText = "";
     [ObservableProperty] private bool _hasActorSp;
 
+    /// <summary>The acting Bard's remaining tunes — songs must be kept up, and new ones cost a tune.</summary>
+    [ObservableProperty] private string _actorTunesText = "";
+    [ObservableProperty] private bool _hasActorTunes;
+
     private void UpdateActorSp(Character actor)
     {
         var combatSpells = actor.KnownSpells.Select(Spells.Get).Where(s => s.UsableInCombat).ToList();
@@ -106,6 +110,14 @@ public sealed partial class CombatViewModel : ViewModelBase
         ActorSpText = $"SP {actor.SpellPoints}/{actor.EffectiveMaxSpellPoints}";
         if (!combatSpells.Any(s => s.Cost <= actor.SpellPoints))
             ActorSpText += "  — too low to cast";
+    }
+
+    private void UpdateActorTunes(Character actor)
+    {
+        HasActorTunes = actor.CanSing;
+        if (!HasActorTunes) { ActorTunesText = ""; return; }
+        ActorTunesText = $"♪ Tunes {actor.BardTunes}/{actor.MaxBardTunes}  — songs sustain while sung; a new tune costs one";
+        if (actor.BardTunes == 0) ActorTunesText = $"♪ Tunes 0/{actor.MaxBardTunes}  — spent; can only sustain a current song";
     }
 
     public CombatOutcome Outcome { get; private set; } = CombatOutcome.Ongoing;
@@ -151,11 +163,15 @@ public sealed partial class CombatViewModel : ViewModelBase
         var actor = _actionables[_orderIndex];
         Prompt = $"What will {actor.Name} do?  ({_orderIndex + 1}/{_actionables.Count})";
         UpdateActorSp(actor);
+        UpdateActorTunes(actor);
 
         Options.Clear();
         var frontRank = _party.FrontRank.ToHashSet();
+        // The front rank may swing melee; a back-rank hero needs a ranged weapon to reach the foe.
         if (frontRank.Contains(actor))
             Options.Add(CombatActionOptionViewModel.Attack());
+        else if (actor.HasRangedWeapon)
+            Options.Add(CombatActionOptionViewModel.Shoot());
 
         if (!_magicSuppressed)
         {
@@ -331,7 +347,7 @@ public sealed partial class CombatViewModel : ViewModelBase
             CombatCommand cmd;
             if (damage is not null && actor.SpellPoints >= damage.Cost)
                 cmd = new CombatCommand(actor, CombatActionType.CastSpell, target, Spell: damage);
-            else if (frontRank.Contains(actor))
+            else if (frontRank.Contains(actor) || actor.HasRangedWeapon)
                 cmd = new CombatCommand(actor, CombatActionType.Attack, target);
             else
                 cmd = new CombatCommand(actor, CombatActionType.Defend);
@@ -432,7 +448,7 @@ public sealed partial class CombatViewModel : ViewModelBase
         var groupName = target < Groups.Count ? Groups[target].Name : "enemies";
         return option.Action switch
         {
-            CombatActionType.Attack => $"attack {groupName}",
+            CombatActionType.Attack => $"{(option.Label == "Shoot" ? "shoot" : "attack")} {groupName}",
             CombatActionType.CastSpell when option.Spell!.TargetsEnemies => $"cast {option.Spell.Name} at {groupName}",
             CombatActionType.CastSpell => $"cast {option.Spell!.Name}",
             CombatActionType.Sing => $"sing {option.Song!.Name}",

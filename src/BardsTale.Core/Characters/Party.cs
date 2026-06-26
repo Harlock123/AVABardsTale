@@ -35,6 +35,30 @@ public sealed class Party
     /// <summary>Front rank (first three living members) can make melee attacks.</summary>
     public IEnumerable<Character> FrontRank => _members.Where(m => !m.IsDead).Take(3);
 
+    /// <summary>True when this living member stands in the front rank (and so can melee).</summary>
+    public bool IsInFrontRank(Character c) => FrontRank.Contains(c);
+
+    /// <summary>
+    /// Swaps a member with the one above it in the marching order — the way the player arranges
+    /// who stands in the front rank (melee &amp; the monsters' targets) versus the safer back rank.
+    /// </summary>
+    public bool MoveUp(Character c)
+    {
+        var i = _members.IndexOf(c);
+        if (i <= 0) return false;
+        (_members[i - 1], _members[i]) = (_members[i], _members[i - 1]);
+        return true;
+    }
+
+    /// <summary>Swaps a member with the one below it in the marching order.</summary>
+    public bool MoveDown(Character c)
+    {
+        var i = _members.IndexOf(c);
+        if (i < 0 || i >= _members.Count - 1) return false;
+        (_members[i + 1], _members[i]) = (_members[i], _members[i + 1]);
+        return true;
+    }
+
     public bool Add(Character c)
     {
         if (_members.Count >= MaxSize) return false;
@@ -54,6 +78,7 @@ public sealed class Party
         {
             m.CureAilments();
             m.FullHeal();
+            m.RefreshBardTunes();
         }
     }
 }

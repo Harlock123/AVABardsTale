@@ -57,7 +57,7 @@ public sealed class CombatLogLineViewModel
         // Damage. "X takes N damage" is always a party member being hurt; "X hits Y for N"
         // / "blasting Y for N" depends on whether X is one of ours.
         if (Has(" takes ") && Has("damage")) return ("✸", EnemyHit);
-        if ((Has(" hits ") || Has("blasting ")) && Has(" for "))
+        if ((Has(" hits ") || Has(" shoots ") || Has("blasting ")) && Has(" for "))
             return ByParty() ? ("⚔", PartyHit) : ("✸", EnemyHit);
 
         // Status & stat-drain riders.

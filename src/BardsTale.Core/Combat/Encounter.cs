@@ -21,6 +21,9 @@ public sealed class MonsterGroup
     public string Name => Template.Name;
 
     public Monster? FirstAlive() => _monsters.FirstOrDefault(m => !m.IsDead);
+
+    /// <summary>Removes a monster that has routed — it leaves the field entirely (no XP, no loot).</summary>
+    public bool Remove(Monster monster) => _monsters.Remove(monster);
 }
 
 /// <summary>A whole encounter: up to a few monster groups facing the party.</summary>

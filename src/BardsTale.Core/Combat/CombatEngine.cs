@@ -41,11 +41,19 @@ public sealed class CombatEngine
     private readonly bool _magicSuppressed;
     private readonly HashSet<Character> _defending = new();
 
-    // Party-wide buffs from songs and protection spells; last for the whole encounter.
+    // Party-wide buffs from protection spells; last for the whole encounter.
     private int _partyAttackBonus;
     private int _partyArmorBonus;
     private int _partyExtraAttacks; // Haste: extra swings per round
     private int _partyRegen;        // Aura: HP restored to the party each round
+
+    // Bard songs are SUSTAINED: their bonuses live only for the round they are sung, so a Bard
+    // must keep playing to maintain them. These reset every round and are re-applied by ResolveSong.
+    private int _songAttackBonus;
+    private int _songArmorBonus;
+    private int _songRegen;
+    private readonly Dictionary<Character, string> _activeSongBy = new(); // bard -> song id currently playing
+    private readonly HashSet<Character> _sangThisRound = new();
 
     // Consumed on the first round: the surprised side sits it out.
     private bool _skipMonstersFirstRound;
@@ -106,6 +114,11 @@ public sealed class CombatEngine
         var round = new CombatRound();
         _defending.Clear();
 
+        // Songs are sustained per round: clear last round's song bonuses; ResolveSong re-applies
+        // them only for bards who keep playing this round.
+        _songAttackBonus = _songArmorBonus = _songRegen = 0;
+        _sangThisRound.Clear();
+
         // On a surprise round the caught-off-guard side does nothing.
         var skipMonsters = _skipMonstersFirstRound;
         var skipParty = _skipPartyFirstRound;
@@ -155,12 +168,21 @@ public sealed class CombatEngine
         foreach (var actor in BuildInitiative(commands, preActed, skipMonsters))
             actor(round);
 
-        // End-of-round mending: an Aura of Renewal heals the whole party...
-        if (_partyRegen > 0 && _party.Members.Any(m => !m.IsDead))
+        // A Bard who stopped playing (acted otherwise, fell, or was silenced) lets their song lapse.
+        foreach (var bard in _activeSongBy.Keys.ToList())
+            if (!_sangThisRound.Contains(bard))
+            {
+                round.Log.Add($"The strains of {Songs.Get(_activeSongBy[bard]).Name} fade as {bard.Name} falls silent.");
+                _activeSongBy.Remove(bard);
+            }
+
+        // End-of-round mending: an Aura of Renewal and a sustained Hymn of Renewal heal the party...
+        var regen = _partyRegen + _songRegen;
+        if (regen > 0 && _party.Members.Any(m => !m.IsDead))
         {
             foreach (var m in _party.Members.Where(m => !m.IsDead))
-                m.Heal(_partyRegen);
-            round.Log.Add($"A restoring aura mends the party for {_partyRegen}.");
+                m.Heal(regen);
+            round.Log.Add($"A restoring aura mends the party for {regen}.");
         }
 
         // ...and any hero with a regenerative accessory mends a little more, noted when it heals.
@@ -393,8 +415,9 @@ public sealed class CombatEngine
         var attacker = cmd.Actor;
         var swings = attacker.AttacksPerRound + _partyExtraAttacks;
         var weapon = attacker.EffectiveWeapon;
+        var atkBonus = _partyAttackBonus + _songAttackBonus; // spell buffs plus any sustained war-song
         var attackBonus = attacker.StrengthBonus + (attacker.Level - 1) / 2
-            + attacker.Definition.BaseHitBonus + _partyAttackBonus + weapon.MagicBonus + attacker.GearHitBonus;
+            + attacker.Definition.BaseHitBonus + atkBonus + weapon.MagicBonus + attacker.GearHitBonus;
 
         for (var i = 0; i < swings; i++)
         {
@@ -404,16 +427,19 @@ public sealed class CombatEngine
             if (RollToHit(attackBonus, target.ArmorClass))
             {
                 var raw = Math.Max(1, _rng.Roll(weapon.DamageDice, weapon.DamageSides,
-                    weapon.DamageBonus + attacker.StrengthBonus + _partyAttackBonus + attacker.GearDamageBonus));
+                    weapon.DamageBonus + attacker.StrengthBonus + atkBonus + attacker.GearDamageBonus));
                 var dmg = ScaleByElement(target.Name, raw, Element.Physical, out var note);
                 target.HitPoints -= dmg;
-                round.Log.Add($"{attacker.Name} hits {target.Name} for {dmg}{note}.");
+                var verb = weapon.Ranged ? "shoots" : "hits";
+                round.Log.Add($"{attacker.Name} {verb} {target.Name} for {dmg}{note}.");
                 if (target.IsDead)
                     round.Log.Add($"{target.Name} is slain!");
             }
             else
             {
-                round.Log.Add($"{attacker.Name} misses {group.Name}.");
+                round.Log.Add(weapon.Ranged
+                    ? $"{attacker.Name}'s shot goes wide of {group.Name}."
+                    : $"{attacker.Name} misses {group.Name}.");
             }
         }
     }
@@ -540,23 +566,44 @@ public sealed class CombatEngine
     {
         var bard = cmd.Actor;
         var song = cmd.Song!;
+
+        // Striking up a tune the bard wasn't already playing spends one of their daily tunes;
+        // sustaining the same song round-to-round is free.
+        var sustaining = _activeSongBy.TryGetValue(bard, out var current) && current == song.Id;
+        if (!sustaining)
+        {
+            if (bard.BardTunes <= 0)
+            {
+                round.Log.Add($"{bard.Name}'s voice is spent — no tunes left to strike up {song.Name}.");
+                return;
+            }
+            bard.BardTunes--;
+        }
+        _activeSongBy[bard] = song.Id;
+        _sangThisRound.Add(bard);
+
+        var verb = sustaining ? "sustains" : "strikes up";
         switch (song.Effect)
         {
             case SongEffect.BuffPartyArmor:
-                _partyArmorBonus = Math.Max(_partyArmorBonus, song.Power);
-                round.Log.Add($"{bard.Name} sings {song.Name}; the party fights warded.");
+                _songArmorBonus = Math.Max(_songArmorBonus, song.Power);
+                round.Log.Add($"{bard.Name} {verb} {song.Name}; the party fights warded.");
                 break;
             case SongEffect.BuffPartyAttack:
-                _partyAttackBonus = Math.Max(_partyAttackBonus, song.Power);
-                round.Log.Add($"{bard.Name} sings {song.Name}; the party fights emboldened.");
+                _songAttackBonus = Math.Max(_songAttackBonus, song.Power);
+                round.Log.Add($"{bard.Name} {verb} {song.Name}; the party fights emboldened.");
+                break;
+            case SongEffect.RegenParty:
+                _songRegen = Math.Max(_songRegen, song.Power);
+                round.Log.Add($"{bard.Name} {verb} {song.Name}; a mending refrain wraps the party.");
                 break;
             case SongEffect.HealParty:
-                round.Log.Add($"{bard.Name} sings {song.Name}.");
+                round.Log.Add($"{bard.Name} {verb} {song.Name}.");
                 foreach (var m in _party.Members.Where(m => !m.IsDead))
                     m.Heal(song.Power);
                 break;
             case SongEffect.Light:
-                round.Log.Add($"{bard.Name} sings {song.Name}; light fills the hall.");
+                round.Log.Add($"{bard.Name} {verb} {song.Name}; light fills the hall.");
                 break;
         }
     }
@@ -566,6 +613,7 @@ public sealed class CombatEngine
     {
         if (monster.IsDead) return;
 
+        if (TryRout(monster, round)) return;
         MaybeEnrage(monster, round);
 
         var spell = monster.Template.Spell;
@@ -589,6 +637,35 @@ public sealed class CombatEngine
 
         monster.Enraged = true;
         round.Log.Add($"{monster.Name} ROARS in fury — its wounds drive it into a frenzy!");
+    }
+
+    /// <summary>
+    /// Morale check: a cornered rank-and-file monster may break and flee the field once the tide
+    /// has clearly turned — it is badly wounded and its side is outnumbered or its group all but
+    /// wiped. Bosses, elites (which enrage instead) and the toughest brutes never lose their nerve.
+    /// A routed monster leaves entirely: no XP, no gold.
+    /// </summary>
+    private bool TryRout(Monster monster, CombatRound round)
+    {
+        if (_enrageable.Contains(monster)) return false;                       // bosses & elites hold
+        if (monster.Template.MaxHitPoints >= 45) return false;                 // big brutes are fearless
+        if (monster.HitPoints > monster.Template.MaxHitPoints * 0.35) return false; // not yet desperate
+
+        var livingMonsters = _encounter.Groups.Sum(g => g.LivingCount);
+        var outnumbered = livingMonsters < _party.LivingCount;
+        var group = _encounter.Groups.FirstOrDefault(g => g.Monsters.Contains(monster));
+        var lastOfGroup = group is not null && group.LivingCount == 1;
+        if (!outnumbered && !lastOfGroup) return false;                        // only break when losing
+
+        var chance = 0.25
+            + (lastOfGroup ? 0.15 : 0.0)
+            + (outnumbered ? 0.15 : 0.0)
+            + Math.Max(0, 14 - monster.Template.MaxHitPoints) * 0.01;          // weaker creatures break sooner
+        if (!_rng.Chance(Math.Min(0.6, chance))) return false;
+
+        group?.Remove(monster);
+        round.Log.Add($"{monster.Name} loses its nerve and flees the battle!");
+        return true;
     }
 
     private bool CanCastUsefully(MonsterSpell spell) => spell.Kind switch
@@ -758,7 +835,7 @@ public sealed class CombatEngine
         var target = PickPartyTarget();
         if (target is null) return;
 
-        var ac = target.ArmorClass - _partyArmorBonus + (_defending.Contains(target) ? -2 : 0);
+        var ac = target.ArmorClass - (_partyArmorBonus + _songArmorBonus) + (_defending.Contains(target) ? -2 : 0);
         if (RollToHit(monster.Template.AttackBonus + hitBonus, ac))
         {
             var dmg = _rng.Roll(monster.Template.AttackDice, monster.Template.AttackSides,

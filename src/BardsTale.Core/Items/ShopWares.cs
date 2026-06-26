@@ -11,6 +11,8 @@ public static class ShopWares
     private static readonly Item[] Base =
     {
         Items.Dagger, Items.ShortSword, Items.LongSword, Items.BattleAxe, Items.Staff,
+        // Ranged weapons — arm the back rank so it can fight past the front line.
+        Items.Sling, Items.ShortBow, Items.Crossbow,
         Items.LeatherArmor, Items.ChainMail, Items.PlateMail, Items.SmallShield, Items.Robes,
         // Entry-tier defensive accessories — a starter ward kit.
         Items.RingOfProtection, Items.RingOfFireWard, Items.RingOfFrostWard,

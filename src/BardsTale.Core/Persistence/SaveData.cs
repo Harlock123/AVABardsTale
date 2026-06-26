@@ -120,6 +120,7 @@ public sealed class CharacterSave
     public string? Accessory { get; set; }
     public List<string> KnownSpells { get; set; } = new();
     public List<string> KnownSongs { get; set; } = new();
+    public int BardTunes { get; set; }
 }
 
 public sealed class DungeonSave

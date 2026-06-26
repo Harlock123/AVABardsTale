@@ -48,7 +48,9 @@
                     <TextBlock DockPanel.Dock="Top" Text="{Binding Prompt}" FontWeight="Bold"
                                Foreground="#E8C56B" TextWrapping="Wrap" Margin="0,0,0,2"/>
                     <TextBlock DockPanel.Dock="Top" Text="{Binding ActorSpText}" FontSize="11" Foreground="#8FB7FF"
-                               FontFamily="Consolas,monospace" IsVisible="{Binding HasActorSp}" Margin="0,0,0,8"/>
+                               FontFamily="Consolas,monospace" IsVisible="{Binding HasActorSp}" Margin="0,0,0,2"/>
+                    <TextBlock DockPanel.Dock="Top" Text="{Binding ActorTunesText}" FontSize="11" Foreground="#C8A24B"
+                               FontFamily="Consolas,monospace" IsVisible="{Binding HasActorTunes}" Margin="0,0,0,8"/>
 
                     <Border DockPanel.Dock="Bottom" Margin="0,8,0,0" Padding="6" Background="#0E1018"
                             CornerRadius="4">

@@ -297,6 +297,24 @@ public sealed partial class TownViewModel : ViewModelBase
         RebuildParty();
     }
 
+    /// <summary>Moves a hero forward in the marching order — toward the melee front rank.</summary>
+    [RelayCommand]
+    private void MoveHeroUp(CharacterViewModel? hero)
+    {
+        if (hero is null || !_session.Party.MoveUp(hero.Model)) return;
+        Notice = $"{hero.Name} steps forward in the marching order.";
+        RebuildParty();
+    }
+
+    /// <summary>Moves a hero back in the marching order — toward the safer back rank.</summary>
+    [RelayCommand]
+    private void MoveHeroDown(CharacterViewModel? hero)
+    {
+        if (hero is null || !_session.Party.MoveDown(hero.Model)) return;
+        Notice = $"{hero.Name} falls back in the marching order.";
+        RebuildParty();
+    }
+
     [RelayCommand]
     private void QuickParty()
     {
@@ -1049,7 +1067,10 @@ public sealed partial class TownViewModel : ViewModelBase
     {
         Party.Clear();
         foreach (var m in _session.Party.Members)
-            Party.Add(new CharacterViewModel(m));
+        {
+            var front = _session.Party.IsInFrontRank(m);
+            Party.Add(new CharacterViewModel(m) { IsFrontRank = front, RankText = front ? "Front" : "Back" });
+        }
         if (SelectedHero is null || !_session.Party.Members.Contains(SelectedHero.Model))
             SelectedHero = Party.FirstOrDefault();
         RefreshEconomy();

@@ -305,12 +305,15 @@ dotnet build src/BardsTale.Desktop
 Combat is round-based and resolved per character. Each round you give an order to
 every able party member in turn:
 
-- **Attack** the selected enemy group (front rank only).
+- **Attack** the selected enemy group. Only the **front rank** (the first three in
+  the marching order) can reach with melee; a back-rank hero needs a **ranged weapon**
+  (a sling, bow or crossbow) to **Shoot** past the front line — otherwise their best
+  move is a spell, a song, or Defend.
 - **Cast** a specific spell from that caster's known list — damage, healing,
   revival, or party buffs. Spell points are spent. Single-ally spells (heal, cure,
   revive) open a **target picker** so you choose exactly which companion to affect;
   damage spells hit the selected enemy group; party buffs/AOE need no target.
-- **Sing** a Bard song for a party-wide effect (no spell points).
+- **Sing** a Bard song for a party-wide effect (no spell points) — see *Bard songs* below.
 - **Use** a consumable from the party stash — healing potions, mana draughts,
   antidotes and resurrection dust, each targeted at a chosen ally.
 - **⚡ Use** a wielded item's **once-per-fight power** (if you carry a wand, staff,
@@ -320,7 +323,27 @@ every able party member in turn:
 Pick a **Target** group on the left for offensive actions. **Auto** fills the
 remaining orders with sensible defaults and resolves the round; **Undo Last**
 steps back; **Flee** attempts to escape. Initiative interleaves party and monster
-actions, and song/protection buffs last the whole encounter.
+actions; protection-spell buffs last the whole encounter (songs are sustained — see below).
+
+**Front & back rank tactics.** Monsters' melee strikes only reach the **front rank**
+(your first three living heroes), so the back rank is shielded from blades — but not
+from area spells and breath. Arrange your line in the **Adventurers Guild** roster
+with the **▲/▼** buttons (each hero is tagged *Front*/*Back*): put your armoured
+fighters up front and your fragile casters behind, and arm the back rank with a bow
+or crossbow so they can still fight.
+
+**Bard songs are sustained.** A song's effect lasts only the round it is **sung** —
+a Bard must keep playing to maintain it, and the buff lapses the moment they do
+anything else (the log notes the strains fading). Striking up a *new* tune spends one
+of the Bard's limited **daily tunes** (shown as *♪ Tunes n/max*; sustaining the same
+song round-to-round is free); they refill by **resting** at the Inn or **camping**.
+Songs include warding/emboldening war-chants, a healing ballad, and the *Hymn of
+Renewal*, which mends a little of the whole party every round it is held.
+
+**Monster morale.** When the tide turns against them, ordinary monsters can **lose
+their nerve and rout** — a badly-wounded, outnumbered creature may flee the field
+entirely (granting no XP or gold). Bosses, elite champions (which **enrage** instead)
+and the toughest brutes never break.
 
 A fight may open with a **surprise round** rolled from the party's luck: an
 **ambush** lets the monsters strike before you can react, while catching foes

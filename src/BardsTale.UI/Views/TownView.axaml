@@ -139,12 +139,29 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="vm:CharacterViewModel">
                                                     <Border Margin="0,0,0,6" Padding="8,6" CornerRadius="4" Background="#222634">
-                                                        <Grid ColumnDefinitions="*,Auto">
+                                                        <Grid ColumnDefinitions="*,Auto,Auto">
                                                             <StackPanel Grid.Column="0">
-                                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#E8E9F0"/>
+                                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#E8E9F0"/>
+                                                                    <Border CornerRadius="3" Padding="5,1" VerticalAlignment="Center"
+                                                                            Background="#1C2030">
+                                                                        <TextBlock Text="{Binding RankText}" FontSize="10" FontWeight="Bold"
+                                                                                   Foreground="{Binding RankBrush}"/>
+                                                                    </Border>
+                                                                </StackPanel>
                                                                 <TextBlock Text="{Binding ClassLine}" FontSize="11" Foreground="#9AA0B5"/>
                                                             </StackPanel>
-                                                            <Button Grid.Column="1" Content="Dismiss" VerticalAlignment="Center"
+                                                            <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center" Margin="0,0,6,0">
+                                                                <Button Content="▲" Padding="6,0" FontSize="11"
+                                                                        ToolTip.Tip="Move forward (toward the front rank)"
+                                                                        Command="{Binding $parent[ItemsControl].((vm:TownViewModel)DataContext).MoveHeroUpCommand}"
+                                                                        CommandParameter="{Binding}"/>
+                                                                <Button Content="▼" Padding="6,0" FontSize="11"
+                                                                        ToolTip.Tip="Fall back (toward the back rank)"
+                                                                        Command="{Binding $parent[ItemsControl].((vm:TownViewModel)DataContext).MoveHeroDownCommand}"
+                                                                        CommandParameter="{Binding}"/>
+                                                            </StackPanel>
+                                                            <Button Grid.Column="2" Content="Dismiss" VerticalAlignment="Center"
                                                                     Command="{Binding $parent[ItemsControl].((vm:TownViewModel)DataContext).DismissCommand}"
                                                                     CommandParameter="{Binding}"/>
                                                         </Grid>

@@ -65,6 +65,10 @@ public sealed class CombatActionOptionViewModel : ViewModelBase
     public static CombatActionOptionViewModel Attack() =>
         new("Attack", "strike the selected enemy group", CombatActionType.Attack, null, null, null, true);
 
+    /// <summary>A back-rank attack with a ranged weapon — resolves like Attack, reaching past the front line.</summary>
+    public static CombatActionOptionViewModel Shoot() =>
+        new("Shoot", "loose a ranged shot at the selected enemy group", CombatActionType.Attack, null, null, null, true);
+
     public static CombatActionOptionViewModel Defend() =>
         new("Defend", "brace for blows (harder to hit)", CombatActionType.Defend, null, null, null, false);
 

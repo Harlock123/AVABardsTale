@@ -44,6 +44,7 @@ public sealed class CharacterFactory
         {
             foreach (var song in Songs.KnownAtLevel(character.Level))
                 character.KnownSongs.Add(song.Id);
+            character.RefreshBardTunes();
         }
 
         EquipStarter(character, def);

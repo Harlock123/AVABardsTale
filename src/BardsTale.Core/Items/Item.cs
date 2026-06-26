@@ -50,7 +50,8 @@ public sealed record Item(
     int LuckBonus = 0,
     StatusEffect ImmuneStatus = StatusEffect.None,
     int MaxHitPointBonus = 0,
-    int MaxSpellPointBonus = 0)
+    int MaxSpellPointBonus = 0,
+    bool Ranged = false)
 {
     public bool IsWeapon => Slot == ItemSlot.Weapon;
     public bool IsAccessory => Slot is ItemSlot.Ring or ItemSlot.Amulet;
@@ -148,6 +149,11 @@ public static class Items
     public static readonly Item LongSword = new("Long Sword", ItemSlot.Weapon, 1, 8, 0, 0, 120);
     public static readonly Item BattleAxe = new("Battle Axe", ItemSlot.Weapon, 2, 4, 0, 0, 150);
     public static readonly Item Staff = new("Quarterstaff", ItemSlot.Weapon, 1, 6, 0, 0, 30);
+
+    // Ranged weapons let a back-rank hero strike past the front line (where melee can't reach).
+    public static readonly Item Sling = new("Sling", ItemSlot.Weapon, 1, 4, 0, 0, 25, Ranged: true);
+    public static readonly Item ShortBow = new("Short Bow", ItemSlot.Weapon, 1, 6, 0, 0, 90, Ranged: true);
+    public static readonly Item Crossbow = new("Crossbow", ItemSlot.Weapon, 1, 8, 0, 0, 160, Ranged: true);
 
     public static readonly Item Robes = new("Robes", ItemSlot.Armor, ArmorBonus: 0, Value: 5);
     public static readonly Item LeatherArmor = new("Leather Armor", ItemSlot.Armor, ArmorBonus: 2, Value: 40);

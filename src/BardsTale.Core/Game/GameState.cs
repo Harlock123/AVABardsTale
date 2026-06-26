@@ -359,6 +359,7 @@ public sealed class GameState
         {
             m.HitPoints = Math.Min(m.EffectiveMaxHitPoints, m.HitPoints + Math.Max(1, m.EffectiveMaxHitPoints / 2));
             m.SpellPoints = Math.Min(m.EffectiveMaxSpellPoints, m.SpellPoints + Math.Max(1, m.EffectiveMaxSpellPoints / 2));
+            m.RefreshBardTunes(); // a Bard recovers their repertoire of tunes by resting
         }
         _stepsSinceEncounter = 0;
 

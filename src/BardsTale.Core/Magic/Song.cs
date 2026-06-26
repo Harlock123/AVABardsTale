@@ -5,12 +5,15 @@ public enum SongEffect
     BuffPartyArmor,
     BuffPartyAttack,
     HealParty,
-    Light
+    Light,
+    /// <summary>While sustained, mends a little of the whole party's wounds every round.</summary>
+    RegenParty
 }
 
 /// <summary>
-/// A Bard's tune. Unlike spells, songs cost no spell points — a Bard simply plays
-/// one each round, shaping the battle with party-wide effects.
+/// A Bard's tune. Unlike spells, songs cost no spell points — but a Bard must keep
+/// <em>playing</em> to sustain a song's effect (it lasts only the round it is sung), and
+/// striking up a new tune spends one of the Bard's limited daily "tunes" until they rest.
 /// </summary>
 public sealed record Song(
     string Id,
@@ -22,9 +25,10 @@ public sealed record Song(
 {
     public string Summary => Effect switch
     {
-        SongEffect.BuffPartyArmor => $"party AC +{Power}",
-        SongEffect.BuffPartyAttack => $"party hits +{Power}",
+        SongEffect.BuffPartyArmor => $"sustained · party AC +{Power}",
+        SongEffect.BuffPartyAttack => $"sustained · party hits +{Power}",
         SongEffect.HealParty => $"heal party ~{Power}",
+        SongEffect.RegenParty => $"sustained · party regen {Power}/round",
         SongEffect.Light => "light",
         _ => ""
     };
@@ -42,6 +46,8 @@ public static class Songs
             "A bright air that lights the way through darkness."),
         new Song("LUCK", "Lucklaran's Lullaby", 3, SongEffect.HealParty, 4,
             "A soothing ballad that knits the party's wounds."),
+        new Song("RENE", "Hymn of Renewal", 5, SongEffect.RegenParty, 3,
+            "An enduring hymn that mends the party a little each round it is sustained."),
     };
 
     private static readonly Dictionary<string, Song> ById = All.ToDictionary(s => s.Id);

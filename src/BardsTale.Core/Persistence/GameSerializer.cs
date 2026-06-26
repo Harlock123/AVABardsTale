@@ -146,7 +146,8 @@ public static class GameSerializer
         Ring2 = c.Ring2?.Name,
         Amulet = c.Amulet?.Name,
         KnownSpells = c.KnownSpells.ToList(),
-        KnownSongs = c.KnownSongs.ToList()
+        KnownSongs = c.KnownSongs.ToList(),
+        BardTunes = c.BardTunes
     };
 
     private static DungeonSave ToDungeonSave(GameState dungeon)
@@ -292,6 +293,8 @@ public static class GameSerializer
         }
         c.KnownSpells.AddRange(s.KnownSpells);
         c.KnownSongs.AddRange(s.KnownSongs);
+        // Older saves predate bardic tunes; give bards a full repertoire rather than zero.
+        c.BardTunes = c.IsBard ? (s.BardTunes > 0 ? s.BardTunes : c.MaxBardTunes) : 0;
         c.DrainedAttributes.Strength = s.DrainedStrength;
         c.DrainedAttributes.Intelligence = s.DrainedIntelligence;
         c.DrainedAttributes.Dexterity = s.DrainedDexterity;

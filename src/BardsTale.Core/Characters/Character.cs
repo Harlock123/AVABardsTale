@@ -79,11 +79,20 @@ public sealed class Character
     /// <summary>Song ids this character (a Bard) knows.</summary>
     public List<string> KnownSongs { get; } = new();
 
+    /// <summary>How many fresh tunes a Bard can strike up before resting (refilled by resting/camping).</summary>
+    public int BardTunes { get; set; }
+
     public ClassDefinition Definition => Classes.Get(Class);
     public MagicSchool School => Definition.School;
     public bool IsSpellcaster => Definition.IsSpellcaster;
     public bool IsBard => Class == CharacterClass.Bard;
     public bool CanSing => IsBard && KnownSongs.Count > 0;
+
+    /// <summary>A Bard's maximum daily tunes — grows slowly with level.</summary>
+    public int MaxBardTunes => IsBard ? 4 + Level / 2 : 0;
+
+    /// <summary>Refills the Bard's tunes to full (on resting at the inn or making camp).</summary>
+    public void RefreshBardTunes() { if (IsBard) BardTunes = MaxBardTunes; }
 
     public bool IsDead => Status.HasFlag(StatusEffect.Dead) || HitPoints <= 0;
 
@@ -93,6 +102,9 @@ public sealed class Character
         && !Status.HasFlag(StatusEffect.Asleep);
 
     public Item EffectiveWeapon => Weapon ?? Items.Items.Fists;
+
+    /// <summary>True when the wielded weapon can strike from the back rank (a bow, sling or crossbow).</summary>
+    public bool HasRangedWeapon => EffectiveWeapon.Ranged;
 
     /// <summary>
     /// Lower armour class is better, mirroring the original's AC convention.

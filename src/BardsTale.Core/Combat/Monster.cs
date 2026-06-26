@@ -54,6 +54,28 @@ public static class Elites
     public static double ChanceForDepth(int depth) => Math.Min(0.25, 0.06 + 0.012 * depth);
 }
 
+/// <summary>
+/// Scales monster stat blocks up for a New Game+ <em>ascension</em>: each ascension level makes
+/// every foe tougher (more HP, harder hits) and richer (more XP and gold), so a carried-over
+/// party meets a stiffer challenge. A no-op at ascension 0 (the first playthrough).
+/// </summary>
+public static class NgPlus
+{
+    public static MonsterTemplate Scale(MonsterTemplate t, int ascension)
+    {
+        if (ascension <= 0) return t;
+        var hp = 1.0 + 0.30 * ascension;     // +30% HP per ascension
+        var reward = 1.0 + 0.25 * ascension; // +25% XP & gold per ascension
+        return t with
+        {
+            MaxHitPoints = (int)Math.Round(t.MaxHitPoints * hp),
+            AttackBonus = t.AttackBonus + ascension, // +1 to hit & damage per ascension
+            ExperienceValue = (int)Math.Round(t.ExperienceValue * reward),
+            GoldValue = (int)Math.Round(t.GoldValue * reward)
+        };
+    }
+}
+
 /// <summary>A nasty rider some monsters apply on a successful hit.</summary>
 public enum MonsterAbility
 {

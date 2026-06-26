@@ -6,6 +6,13 @@ namespace BardsTale.Core.Persistence;
 public sealed class SaveData
 {
     public int Version { get; set; } = 1;
+
+    /// <summary>New Game+ level (0 = first playthrough).</summary>
+    public int Ascension { get; set; }
+
+    /// <summary>Whether this is an Ironman (permadeath) run.</summary>
+    public bool Ironman { get; set; }
+
     public PartySave Party { get; set; } = new();
     public DungeonSave? Dungeon { get; set; }
     public RunStatsSave Stats { get; set; } = new();
@@ -67,6 +74,7 @@ public sealed class PartySave
 {
     public int Gold { get; set; }
     public int BankedGold { get; set; }
+    public int Keys { get; set; }
     public int TownX { get; set; }
     public int TownY { get; set; }
     public int TownFacing { get; set; }
@@ -153,5 +161,6 @@ public sealed class CellSave
     public int? DestY { get; set; }
     public int SecretDoors { get; set; }
     public int Gates { get; set; }
+    public int LockedDoors { get; set; }
     public int RiddleId { get; set; } = -1;
 }

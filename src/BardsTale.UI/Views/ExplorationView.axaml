@@ -194,7 +194,9 @@
                 <TextBlock Text="{Binding InventorySummary}" Foreground="#D8C58A" FontSize="11"
                            TextWrapping="Wrap" Margin="2,0,2,2"/>
                 <TextBlock Text="{Binding SecretsHint}" Foreground="#B49AE0" FontSize="11"
-                           IsVisible="{Binding HasSecrets}" TextWrapping="Wrap" Margin="2,0,2,6"/>
+                           IsVisible="{Binding HasSecrets}" TextWrapping="Wrap" Margin="2,0,2,2"/>
+                <TextBlock Text="{Binding KeysText}" Foreground="#D8B45A" FontSize="11" FontWeight="Bold"
+                           IsVisible="{Binding HasKeys}" Margin="2,0,2,6"/>
                 <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
                     <Button Grid.Row="0" Grid.Column="0" Content="{Binding CampText}"
                             Command="{Binding CampCommand}" HorizontalAlignment="Stretch"

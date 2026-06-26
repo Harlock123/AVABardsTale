@@ -22,6 +22,9 @@ public interface ISaveStore
     Task SaveAsync(GameSession session, string slot);
     Task<GameSession> LoadAsync(string slot);
 
+    /// <summary>Removes a saved slot entirely (used by Ironman permadeath). No-op if absent.</summary>
+    Task DeleteAsync(string slot) => Task.CompletedTask;
+
     /// <summary>A short human-readable summary of a slot for the slot picker.</summary>
     Task<string> DescribeAsync(string slot);
 

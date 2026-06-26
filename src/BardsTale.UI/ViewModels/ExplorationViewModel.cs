@@ -55,6 +55,9 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     /// <summary>Raised when the party defeats Mangar and wins the game.</summary>
     public event Action? GameWonRequested;
 
+    /// <summary>Raised when the whole party is killed — the shell decides the consequence (Ironman permadeath, etc.).</summary>
+    public event Action? PartyWipedRequested;
+
     /// <summary>Raised when renown changes (an achievement was unlocked), so the shell can refresh.</summary>
     public event Action? RenownChanged;
 
@@ -97,15 +100,21 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         {
             var (doors, riddles) = _game.RemainingSecrets();
             var gates = _game.BarredGates();
+            var locked = _game.LockedDoors();
             var bits = "";
             if (doors > 0) bits += $"{doors} hidden door{(doors == 1 ? "" : "s")}";
             if (riddles > 0) bits += (bits.Length > 0 ? ", " : "") + $"{riddles} riddle{(riddles == 1 ? "" : "s")}";
             if (gates > 0) bits += (bits.Length > 0 ? ", " : "") + $"{gates} barred gate{(gates == 1 ? "" : "s")}";
+            if (locked > 0) bits += (bits.Length > 0 ? ", " : "") + $"{locked} locked door{(locked == 1 ? "" : "s")}";
             return bits.Length > 0 ? $"🔍 Secrets sensed: {bits}" : "";
         }
     }
 
     public bool HasSecrets => SecretsHint.Length > 0;
+
+    /// <summary>A readout of the iron keys the party is carrying for locked doors.</summary>
+    public string KeysText => _game.Party.Keys == 1 ? "🗝 1 key" : $"🗝 {_game.Party.Keys} keys";
+    public bool HasKeys => _game.Party.Keys > 0;
 
     /// <summary>The Camp button label, showing the current ambush risk so the gamble is informed.</summary>
     public string CampText => $"⛺ Camp ({_game.CampAmbushChance * 100:0}% risk)";
@@ -168,6 +177,8 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     {
         Handle(result);
         if (result.Kind == MoveResultKind.Moved) Sfx.Play(GameSound.FootstepDungeon);
+        else if (result.Kind == MoveResultKind.KeyFound) Sfx.Play(GameSound.Coin);
+        else if (result.Kind == MoveResultKind.Unlocked) Sfx.Play(GameSound.Door);
     }
 
     [RelayCommand(CanExecute = nameof(CanExplore))]
@@ -373,6 +384,8 @@ public sealed partial class ExplorationViewModel : ViewModelBase
             case MoveResultKind.Trapped:
             case MoveResultKind.Darkness:
             case MoveResultKind.AntiMagic:
+            case MoveResultKind.KeyFound:
+            case MoveResultKind.Unlocked:
                 AddLog(result.Description);
                 break;
             case MoveResultKind.Chest:
@@ -467,6 +480,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 break;
             case CombatOutcome.Defeat:
                 AddLog("Your party has been wiped out...");
+                PartyWipedRequested?.Invoke(); // the shell handles the consequence (e.g. Ironman permadeath)
                 break;
         }
 
@@ -515,6 +529,8 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         OnPropertyChanged(nameof(InventorySummary));
         OnPropertyChanged(nameof(SecretsHint));
         OnPropertyChanged(nameof(HasSecrets));
+        OnPropertyChanged(nameof(KeysText));
+        OnPropertyChanged(nameof(HasKeys));
         OnPropertyChanged(nameof(HasLight));
         OnPropertyChanged(nameof(LightText));
         OnPropertyChanged(nameof(CampText));

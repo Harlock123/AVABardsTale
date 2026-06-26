@@ -612,6 +612,10 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
   floor; find it, **pull it**, and every barred gate on the level grinds open. The gates show as
   amber dashed segments on the auto-map, the lever is marked, and the HUD readout counts how many
   gates still bar the way — a find-the-mechanism puzzle distinct from searching and riddles.
+- **Keys & locked doors** — another vault is sealed behind a **locked door** (a steel-blue dashed
+  segment on the auto-map). Its **iron key** lies elsewhere on the floor; step onto it to pocket it
+  (the party's carried-key count shows in the HUD), then bump the door to spend a key and unlock it.
+  A separate carry-the-key puzzle alongside the lever's find-the-switch one.
 - **Camping** — rest anywhere in the dungeon to recover half the party's HP and spell
   points, gambling against a depth-scaled chance of a surprise wandering ambush.
 - A **fixed boss lair** on each level (guarding the descent) — a tough named boss
@@ -622,6 +626,14 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
   him and his guard to free Skara Brae and win the game. A **victory / credits
   screen** then shows your heroes and a tally of the run (battles won, monsters
   slain, gold plundered, deepest level reached), with the option to start anew.
+- **New Game+**: from the victory screen, **carry your party forward** — levels, gear,
+  gold and stash intact and fully rested — into a tougher run. Each **ascension** (shown
+  as an `NG+n` badge) scales every monster and boss up: more HP, harder hits, and richer
+  XP and gold rewards. Ascension persists across saves.
+- **Ironman (permadeath)**: an opt-in mode (Settings) for a new run. A **total party kill
+  ends the game for good** — the save is wiped and there's no revival — and **manual save
+  and load are disabled** so death can't be undone. The run shows a `☠ IRONMAN` badge and
+  relies on the autosave alone. Ironman composes with New Game+.
 - First-person pseudo-3D rendering with a receding vanishing point and depth shading.
 - Auto-map that reveals only visited cells, with a directional party marker.
 - Per-character turn-based combat: initiative, multiple attacks per round,

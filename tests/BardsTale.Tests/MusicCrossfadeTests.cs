@@ -35,7 +35,7 @@ public class MusicCrossfadeTests
         Fader(svc).Run(GameMusic.Combat, target: 0.8, fadeOutFirst: true, CancellationToken.None);
 
         // Exactly one track swap, to the requested track.
-        Assert.Single(svc.Ops.Where(o => o.Op == "play"));
+        Assert.Single(svc.Ops, o => o.Op == "play");
         Assert.Equal(GameMusic.Combat, svc.Ops.First(o => o.Op == "play").Track);
 
         // The fade-out runs before the swap; the swap lands at silence.

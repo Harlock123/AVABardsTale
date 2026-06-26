@@ -93,6 +93,42 @@ public sealed class MazeBuilder
         // A barred vault, sealed behind a portcullis. Placed last so nothing clobbers it:
         // the lever that raises it sits out in the open maze, making a find-the-mechanism puzzle.
         PlaceLeverVault(maze, width, height, Take);
+
+        // A locked vault: sealed behind a locked door, with its iron key dropped elsewhere on
+        // the floor — find and carry the key to open it.
+        PlaceKeyedVault(maze, width, height, Take);
+    }
+
+    /// <summary>
+    /// Seals a dead-end cell behind a locked door and stocks it with treasure, then drops the
+    /// iron key that opens it on an open tile elsewhere. Like the lever vault, sealing a dead-end
+    /// never strands the maze, and the key is always reachable without one.
+    /// </summary>
+    private void PlaceKeyedVault(Maze maze, int width, int height, Func<Position?> take)
+    {
+        var dirs = new[] { Direction.North, Direction.East, Direction.South, Direction.West };
+
+        var leaves = new List<Position>();
+        for (var x = 0; x < width; x++)
+            for (var y = 0; y < height; y++)
+            {
+                var p = new Position(x, y);
+                if (maze[p].Feature != CellFeature.None) continue;
+                if (OpenPassages(maze, p, dirs).Count == 1) leaves.Add(p);
+            }
+        if (leaves.Count == 0) return;
+
+        if (take() is not { } key) return; // no room for the key — skip the puzzle, never seal blind
+        leaves.Remove(key);
+        if (leaves.Count == 0) return;
+
+        var pos = leaves[_rng.Next(0, leaves.Count)];
+        var open = OpenPassages(maze, pos, dirs);
+        if (open.Count != 1) return;
+
+        maze.MarkLockedDoor(pos.X, pos.Y, open[0]);
+        maze[pos].Feature = _rng.Chance(0.4) ? CellFeature.OrnateChest : CellFeature.Chest;
+        maze[key].Feature = CellFeature.Key;
     }
 
     /// <summary>

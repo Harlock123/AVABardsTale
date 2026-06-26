@@ -62,6 +62,9 @@ public sealed class MiniMap : Control
     // A barred gate reads as an amber, dashed segment so it's clearly a raisable portcullis, not stone.
     private static readonly Pen GatePen = new(new SolidColorBrush(Color.FromRgb(201, 162, 75)), 2.2)
     { DashStyle = new DashStyle(new double[] { 1.4, 1.0 }, 0) };
+    // A locked door reads as a steel-blue dashed segment — visible, but needs a key.
+    private static readonly Pen LockedPen = new(new SolidColorBrush(Color.FromRgb(120, 165, 210)), 2.2)
+    { DashStyle = new DashStyle(new double[] { 1.0, 1.4 }, 0) };
 
     public override void Render(DrawingContext context)
     {
@@ -86,13 +89,13 @@ public sealed class MiniMap : Control
                 if (!revealed) continue;
 
                 if (c.HasWall(Direction.North))
-                    context.DrawLine(c.HasGate(Direction.North) ? GatePen : WallPen, rect.TopLeft, rect.TopRight);
+                    context.DrawLine(PenFor(c, Direction.North), rect.TopLeft, rect.TopRight);
                 if (c.HasWall(Direction.South))
-                    context.DrawLine(c.HasGate(Direction.South) ? GatePen : WallPen, rect.BottomLeft, rect.BottomRight);
+                    context.DrawLine(PenFor(c, Direction.South), rect.BottomLeft, rect.BottomRight);
                 if (c.HasWall(Direction.West))
-                    context.DrawLine(c.HasGate(Direction.West) ? GatePen : WallPen, rect.TopLeft, rect.BottomLeft);
+                    context.DrawLine(PenFor(c, Direction.West), rect.TopLeft, rect.BottomLeft);
                 if (c.HasWall(Direction.East))
-                    context.DrawLine(c.HasGate(Direction.East) ? GatePen : WallPen, rect.TopRight, rect.BottomRight);
+                    context.DrawLine(PenFor(c, Direction.East), rect.TopRight, rect.BottomRight);
 
                 if (Buildings is { } buildings && buildings.TryGetValue(new Position(x, y), out var building))
                     DrawBuildingMarker(context, rect, building);
@@ -103,6 +106,10 @@ public sealed class MiniMap : Control
 
         DrawParty(context, ox, oy, cell);
     }
+
+    /// <summary>A locked door, a barred gate, or plain stone — each drawn distinctly.</summary>
+    private static Pen PenFor(Cell c, Direction dir) =>
+        c.HasLockedDoor(dir) ? LockedPen : c.HasGate(dir) ? GatePen : WallPen;
 
     private static void DrawFeatureMarker(DrawingContext ctx, Rect rect, CellFeature feature)
     {
@@ -119,6 +126,7 @@ public sealed class MiniMap : Control
             CellFeature.BossLair => Brushes.DarkRed,
             CellFeature.Riddle => Brushes.MediumPurple,
             CellFeature.Lever => Brushes.Goldenrod,
+            CellFeature.Key => Brushes.Gold,
             _ => null
         };
         if (brush is null) return;

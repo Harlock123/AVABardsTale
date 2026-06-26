@@ -55,10 +55,10 @@ public class MazeTests
             if (!seen.Add(p)) continue;
             var secrets = maze.SecretDoorsAt(p);
             foreach (Direction d in Enum.GetValues<Direction>())
-                // Reachable through open passages, by searching out a secret door, or by raising a
-                // barred gate with its lever — no cell is permanently stranded.
+                // Reachable through open passages, by searching out a secret door, by raising a barred
+                // gate with its lever, or by unlocking a door with its key — nothing is permanently stranded.
                 if (maze.CanMove(p, d)
-                    || ((secrets.Contains(d) || maze[p].HasGate(d)) && maze.InBounds(p.Step(d))))
+                    || ((secrets.Contains(d) || maze[p].HasGate(d) || maze[p].HasLockedDoor(d)) && maze.InBounds(p.Step(d))))
                     stack.Push(p.Step(d));
         }
 

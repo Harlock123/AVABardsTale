@@ -34,7 +34,9 @@ public enum CellFeature
     /// <summary>An inscribed tile that poses a riddle — answer it for a reward.</summary>
     Riddle,
     /// <summary>A rune-etched lever — pulling it raises the barred gates sealing this level's vaults.</summary>
-    Lever
+    Lever,
+    /// <summary>An iron key lying on the floor — step onto it to pocket it for a locked door.</summary>
+    Key
 }
 
 /// <summary>One tile of a maze level.</summary>
@@ -51,6 +53,9 @@ public sealed class Cell
     /// <summary>Which present walls are barred gates (visible portcullises) raised by a lever.</summary>
     public Walls Gates { get; set; } = Walls.None;
 
+    /// <summary>Which present walls are locked doors, opened by spending a carried key.</summary>
+    public Walls LockedDoors { get; set; } = Walls.None;
+
     /// <summary>For riddle tiles, which riddle is inscribed (index into the riddle catalogue).</summary>
     public int RiddleId { get; set; } = -1;
 
@@ -61,6 +66,9 @@ public sealed class Cell
 
     /// <summary>True when the wall toward <paramref name="dir"/> is a closed, barred gate.</summary>
     public bool HasGate(Direction dir) => (Gates & ToWallFlag(dir)) != 0;
+
+    /// <summary>True when the wall toward <paramref name="dir"/> is a locked door.</summary>
+    public bool HasLockedDoor(Direction dir) => (LockedDoors & ToWallFlag(dir)) != 0;
 
     public static Walls ToWallFlag(Direction dir) => dir switch
     {
@@ -218,6 +226,50 @@ public sealed class Maze
                 cell.Gates = Walls.None;
             }
         return opened;
+    }
+
+    /// <summary>Marks a wall as a locked door — it blocks passage until a carried key is spent on it.</summary>
+    public void MarkLockedDoor(int x, int y, Direction dir)
+    {
+        SetWall(x, y, dir, present: true);
+        this[x, y].LockedDoors |= Cell.ToWallFlag(dir);
+        var n = new Position(x, y).Step(dir);
+        if (InBounds(n)) this[n].LockedDoors |= Cell.ToWallFlag(dir.Opposite());
+    }
+
+    /// <summary>The directions from a cell that hold a still-locked door.</summary>
+    public IReadOnlyList<Direction> LockedDoorsAt(Position p)
+    {
+        var found = new List<Direction>();
+        if (!InBounds(p)) return found;
+        var cell = this[p];
+        foreach (var d in AllDirections)
+            if ((cell.LockedDoors & Cell.ToWallFlag(d)) != 0)
+                found.Add(d);
+        return found;
+    }
+
+    /// <summary>Unlocks a door — removes the wall and clears the locked flag on both sides.</summary>
+    public void OpenLockedDoor(Position p, Direction dir)
+    {
+        SetWall(p.X, p.Y, dir, present: false);
+        this[p].LockedDoors &= ~Cell.ToWallFlag(dir);
+        var n = p.Step(dir);
+        if (InBounds(n)) this[n].LockedDoors &= ~Cell.ToWallFlag(dir.Opposite());
+    }
+
+    /// <summary>How many locked doors remain on this level (each counted once).</summary>
+    public int LockedDoorCount()
+    {
+        var count = 0;
+        for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
+            {
+                var l = _cells[x, y].LockedDoors;
+                if ((l & Walls.North) != 0) count++;
+                if ((l & Walls.West) != 0) count++;
+            }
+        return count;
     }
 
     /// <summary>Raise a wall between a cell and its neighbour, keeping both sides consistent.</summary>

@@ -32,6 +32,18 @@ public sealed class GameSession
     public Party Party { get; }
     public CharacterFactory Factory { get; }
 
+    /// <summary>
+    /// New Game+ level: 0 on a first playthrough, +1 each time the party carries over after a win.
+    /// Every encounter and boss is scaled up by this (see <see cref="Combat.NgPlus"/>).
+    /// </summary>
+    public int Ascension { get; set; }
+
+    /// <summary>
+    /// Ironman (permadeath) run: a total party kill ends the game for good and wipes the save,
+    /// and manual save/load is disabled so the single autosave can't be reloaded to cheat death.
+    /// </summary>
+    public bool Ironman { get; set; }
+
     /// <summary>Running tally of the party's deeds, shown on the victory screen.</summary>
     public RunStats Stats { get; } = new();
 
@@ -76,7 +88,7 @@ public sealed class GameSession
         if (_dungeon is null)
         {
             var maze = new MazeBuilder(Rng).Build("Catacombs — Level 1", 16, 16);
-            _dungeon = new GameState(Party, maze, Rng);
+            _dungeon = new GameState(Party, maze, Rng, Ascension);
         }
         else
         {
@@ -93,6 +105,31 @@ public sealed class GameSession
             if (Party.Members.Count >= Party.MaxSize) break;
             JoinParty(c);
         }
+    }
+
+    /// <summary>
+    /// Begins a New Game+ run: a fresh session that carries this party forward — their levels,
+    /// gear, gold and stash intact and fully rested — into a tougher world (Ascension +1). The
+    /// dungeon, run tally, quests and town progress reset; the Ironman flag carries over.
+    /// </summary>
+    public GameSession StartNewGamePlus()
+    {
+        var ng = new GameSession
+        {
+            Ascension = Ascension + 1,
+            Ironman = Ironman
+        };
+        foreach (var m in Party.Members.ToList())
+        {
+            m.CureAilments();
+            m.FullHeal();
+            m.RefreshBardTunes();
+            ng.Party.Add(m);
+        }
+        ng.Party.Gold = Party.Gold;
+        ng.Party.BankedGold = Party.BankedGold;
+        ng.Party.Inventory.AddRange(Party.Inventory);
+        return ng;
     }
 
     /// <summary>Adds a created character to the party, pooling their starting gold into the purse.</summary>

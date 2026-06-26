@@ -48,6 +48,12 @@ public sealed class SaveService : ISaveStore
     public Task<GameSession> LoadAsync(string slot) => Task.FromResult(Load(slot));
     public Task<string> DescribeAsync(string slot) => Task.FromResult(Describe(slot));
 
+    public Task DeleteAsync(string slot)
+    {
+        try { if (Exists(slot)) File.Delete(PathFor(slot)); } catch { /* best-effort */ }
+        return Task.CompletedTask;
+    }
+
     public Task<string?> LoadTextAsync(string key)
     {
         var path = Path.Combine(_dir, key + ".json");

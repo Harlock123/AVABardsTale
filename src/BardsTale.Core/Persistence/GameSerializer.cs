@@ -32,10 +32,13 @@ public static class GameSerializer
         var p = session.Party;
         var data = new SaveData
         {
+            Ascension = session.Ascension,
+            Ironman = session.Ironman,
             Party = new PartySave
             {
                 Gold = p.Gold,
                 BankedGold = p.BankedGold,
+                Keys = p.Keys,
                 TownX = session.TownPosition.X,
                 TownY = session.TownPosition.Y,
                 TownFacing = (int)session.TownFacing,
@@ -188,6 +191,7 @@ public static class GameSerializer
                     DestY = cell.Destination?.Y,
                     SecretDoors = (int)cell.SecretDoors,
                     Gates = (int)cell.Gates,
+                    LockedDoors = (int)cell.LockedDoors,
                     RiddleId = cell.RiddleId
                 });
             }
@@ -198,11 +202,16 @@ public static class GameSerializer
 
     public static GameSession FromData(SaveData data)
     {
-        var session = new GameSession();
+        var session = new GameSession
+        {
+            Ascension = data.Ascension,
+            Ironman = data.Ironman
+        };
         var p = session.Party;
 
         p.Gold = data.Party.Gold;
         p.BankedGold = data.Party.BankedGold;
+        p.Keys = data.Party.Keys;
         session.TownPosition = new Position(data.Party.TownX, data.Party.TownY);
         session.TownFacing = (Direction)data.Party.TownFacing;
         p.Position = new Position(data.Party.DungeonX, data.Party.DungeonY);
@@ -241,7 +250,7 @@ public static class GameSerializer
             var current = dungeonSave.Levels.FirstOrDefault(l => l.Depth == dungeonSave.Depth)
                           ?? dungeonSave.Levels[0];
             var game = new GameState(p, FromLevelSave(current), session.Rng,
-                dungeonSave.Depth, p.Position, p.Facing, dungeonSave.LightRemaining);
+                dungeonSave.Depth, p.Position, p.Facing, dungeonSave.LightRemaining, session.Ascension);
             foreach (var level in dungeonSave.Levels)
                 if (level.Depth != current.Depth)
                     game.AddLevel(level.Depth, FromLevelSave(level));
@@ -321,6 +330,7 @@ public static class GameSerializer
                 cell.Visited = cs.Visited;
                 cell.SecretDoors = (Walls)cs.SecretDoors;
                 cell.Gates = (Walls)cs.Gates;
+                cell.LockedDoors = (Walls)cs.LockedDoors;
                 cell.RiddleId = cs.RiddleId;
                 if (cs.DestX is { } dx && cs.DestY is { } dy)
                     cell.Destination = new Position(dx, dy);

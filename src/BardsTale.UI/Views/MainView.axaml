@@ -19,8 +19,17 @@
         </LayoutTransformControl.LayoutTransform>
     <Grid Margin="12" RowDefinitions="Auto,*">
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="2,0,0,10">
-            <TextBlock Grid.Column="0" Text="THE BARD'S TALE" FontSize="22" FontWeight="Bold"
-                       Foreground="#E8C56B" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                <TextBlock Text="THE BARD'S TALE" FontSize="22" FontWeight="Bold" Foreground="#E8C56B"/>
+                <Border IsVisible="{Binding IsIronman}" Background="#3A1416" BorderBrush="#C0566B" BorderThickness="1"
+                        CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
+                    <TextBlock Text="☠ IRONMAN" FontSize="11" FontWeight="Bold" Foreground="#E08A8A"/>
+                </Border>
+                <Border IsVisible="{Binding IsNewGamePlus}" Background="#2A1C3A" BorderBrush="#9B7FE0" BorderThickness="1"
+                        CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding AscensionBadge}" FontSize="11" FontWeight="Bold" Foreground="#C8AEF0"/>
+                </Border>
+            </StackPanel>
             <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Foreground="#A9D0B0"
                        VerticalAlignment="Center" Margin="16,0" FontFamily="Consolas,monospace"/>
             <Button Grid.Column="2" Content="{Binding RenownBadge}" Command="{Binding ShowAchievementsCommand}" Margin="0,0,6,0"/>
@@ -28,8 +37,10 @@
             <Button Grid.Column="4" Content="📖 Bestiary (B)" Command="{Binding ShowBestiaryCommand}" Margin="0,0,6,0"/>
             <Button Grid.Column="5" Content="🔗 Sets (K)" Command="{Binding ShowSetCodexCommand}" Margin="0,0,6,0"/>
             <Button Grid.Column="6" Content="⚙ Settings" Command="{Binding ShowSettingsCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="7" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="8" Content="Load" Command="{Binding ShowLoadSlotsCommand}"/>
+            <Button Grid.Column="7" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"
+                    IsEnabled="{Binding ManualSavesAllowed}"/>
+            <Button Grid.Column="8" Content="Load" Command="{Binding ShowLoadSlotsCommand}"
+                    IsEnabled="{Binding ManualSavesAllowed}"/>
         </Grid>
 
         <Panel Grid.Row="1">
@@ -40,9 +51,13 @@
                 <Border Width="580" MaxHeight="640" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="#1A1626" BorderBrush="#E8C56B" BorderThickness="2" CornerRadius="8" Padding="28">
                     <DockPanel>
-                        <Button DockPanel.Dock="Bottom" Content="Begin a New Adventure" Command="{Binding NewGameCommand}"
-                                HorizontalAlignment="Center" Margin="0,16,0,0" Padding="16,8"
-                                Background="#3A5A3A" Foreground="#E9FFE0" FontWeight="Bold"/>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center"
+                                    Spacing="12" Margin="0,16,0,0">
+                            <Button Content="⮕ New Game+ (carry your party)" Command="{Binding NewGamePlusCommand}"
+                                    Padding="16,8" Background="#3A2C5A" Foreground="#E9E0FF" FontWeight="Bold"/>
+                            <Button Content="Begin a New Adventure" Command="{Binding NewGameCommand}"
+                                    Padding="16,8" Background="#3A5A3A" Foreground="#E9FFE0" FontWeight="Bold"/>
+                        </StackPanel>
                         <ScrollViewer>
                             <StackPanel Spacing="14">
                                 <TextBlock Text="✦ VICTORY ✦" FontSize="30" FontWeight="Bold"
@@ -79,6 +94,22 @@
                             </StackPanel>
                         </ScrollViewer>
                     </DockPanel>
+                </Border>
+            </Border>
+
+            <!-- Ironman game-over screen -->
+            <Border IsVisible="{Binding IsGameOver}" Background="#F00B0D14">
+                <Border Width="520" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="#1A1216" BorderBrush="#C0566B" BorderThickness="2" CornerRadius="8" Padding="28">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="☠ THE PARTY HAS FALLEN ☠" FontSize="26" FontWeight="Bold"
+                                   Foreground="#E08A8A" HorizontalAlignment="Center"/>
+                        <TextBlock TextWrapping="Wrap" TextAlignment="Center" Foreground="#D8B0B0" FontSize="14"
+                                   Text="Your Ironman run ends in the dark of the catacombs. There is no reloading, no revival — the save has been wiped. Such is the price of glory sought without a safety net."/>
+                        <Button Content="Begin a New Adventure" Command="{Binding NewGameCommand}"
+                                HorizontalAlignment="Center" Margin="0,8,0,0" Padding="16,8"
+                                Background="#3A5A3A" Foreground="#E9FFE0" FontWeight="Bold"/>
+                    </StackPanel>
                 </Border>
             </Border>
 
@@ -219,6 +250,16 @@
                             </StackPanel>
                             <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
                                           IsChecked="{Binding Settings.CrossfadeMusic}"/>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Ironman mode (permadeath)" Foreground="#E8E9F0"/>
+                                <TextBlock Text="A new run becomes Ironman: a total party kill wipes the save for good, and manual save/load is disabled. Applies before you next descend."
+                                           Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                          IsChecked="{Binding Settings.IronmanMode}"/>
                         </Grid>
                             </StackPanel>
                         </ScrollViewer>

@@ -132,21 +132,21 @@ public static class Bosses
         return bossName == Mangar.Name ? FinalDepth : null;
     }
 
-    /// <summary>Builds the fixed boss encounter for a dungeon level — Mangar's at the bottom.</summary>
-    public static Encounter Create(int depth)
+    /// <summary>Builds the fixed boss encounter for a dungeon level — Mangar's at the bottom. Scales for New Game+.</summary>
+    public static Encounter Create(int depth, int ascension = 0)
     {
         if (depth >= FinalDepth)
             return new Encounter(new[]
             {
-                new MonsterGroup(Mangar, 1),
-                new MonsterGroup(Bestiary.Wraith, 2)
+                new MonsterGroup(NgPlus.Scale(Mangar, ascension), 1),
+                new MonsterGroup(NgPlus.Scale(Bestiary.Wraith, ascension), 2)
             }, isBoss: true, isFinalBoss: true);
 
         var (boss, minion, count) = Lairs[(Math.Max(1, depth) - 1) % Lairs.Length];
         return new Encounter(new[]
         {
-            new MonsterGroup(boss, 1),
-            new MonsterGroup(minion, count)
+            new MonsterGroup(NgPlus.Scale(boss, ascension), 1),
+            new MonsterGroup(NgPlus.Scale(minion, ascension), count)
         }, isBoss: true);
     }
 }

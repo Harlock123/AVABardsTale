@@ -33,4 +33,7 @@ public sealed partial class AppSettings : ObservableObject
 
     /// <summary>Whether music tracks crossfade into one another on a scene change (else a clean cut).</summary>
     [ObservableProperty] private bool _crossfadeMusic = true;
+
+    /// <summary>When set, a newly-started run is Ironman: permadeath, with manual save/load disabled.</summary>
+    [ObservableProperty] private bool _ironmanMode;
 }

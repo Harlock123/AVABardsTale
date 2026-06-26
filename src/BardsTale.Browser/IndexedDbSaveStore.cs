@@ -31,6 +31,8 @@ public sealed class IndexedDbSaveStore : ISaveStore
 
     public async Task<string> DescribeAsync(string slot) => SaveSummary.Describe(await SaveStoreInterop.Get(slot));
 
+    public Task DeleteAsync(string slot) => SaveStoreInterop.Remove(slot);
+
     // Settings and other small values live under a "cfg:" prefix, separate from save slots.
     public Task<string?> LoadTextAsync(string key) => SaveStoreInterop.Get("cfg:" + key);
     public Task SaveTextAsync(string key, string value) => SaveStoreInterop.Set("cfg:" + key, value);

@@ -24,7 +24,9 @@ public enum MoveResultKind
     AntiMagic,
     Chest,
     Riddle,
-    Lever
+    Lever,
+    KeyFound,
+    Unlocked
 }
 
 public sealed record MoveResult(MoveResultKind Kind, string Description, Encounter? Encounter = null);
@@ -56,18 +58,20 @@ public sealed class GameState
 {
     private readonly IRandomSource _rng;
     private readonly EncounterFactory _encounters;
+    private readonly int _ascension; // New Game+ level — scales every encounter and boss
     private int _stepsSinceEncounter;
 
     // Each depth keeps its own maze, so a level's layout and explored map persist
     // when you climb away and return. Keyed by depth.
     private readonly Dictionary<int, Maze> _levels = new();
 
-    public GameState(Party party, Maze maze, IRandomSource rng)
+    public GameState(Party party, Maze maze, IRandomSource rng, int ascension = 0)
     {
         Party = party;
         Maze = maze;
         _rng = rng;
-        _encounters = new EncounterFactory(rng);
+        _ascension = ascension;
+        _encounters = new EncounterFactory(rng, ascension);
         _levels[Depth] = maze;
         Party.Position = maze.StartPosition;
         Party.Facing = maze.StartFacing;
@@ -76,12 +80,13 @@ public sealed class GameState
 
     /// <summary>Restores a dungeon from a saved game, preserving depth, position and the explored map.</summary>
     public GameState(Party party, Maze maze, IRandomSource rng, int depth, Position position, Direction facing,
-        int lightRemaining = 0)
+        int lightRemaining = 0, int ascension = 0)
     {
         Party = party;
         Maze = maze;
         _rng = rng;
-        _encounters = new EncounterFactory(rng);
+        _ascension = ascension;
+        _encounters = new EncounterFactory(rng, ascension);
         Depth = depth;
         _levels[Depth] = maze;
         Party.Position = position;
@@ -137,9 +142,25 @@ public sealed class GameState
     private MoveResult Step(Direction dir)
     {
         if (!Maze.CanMove(Party.Position, dir))
-            return new MoveResult(MoveResultKind.BlockedByWall, CurrentCell.HasGate(dir)
-                ? "An iron portcullis bars the way — some lever must raise it."
-                : "A wall blocks your way.");
+        {
+            if (CurrentCell.HasGate(dir))
+                return new MoveResult(MoveResultKind.BlockedByWall,
+                    "An iron portcullis bars the way — some lever must raise it.");
+
+            if (CurrentCell.HasLockedDoor(dir))
+            {
+                if (Party.Keys <= 0)
+                    return new MoveResult(MoveResultKind.BlockedByWall,
+                        "A locked door bars the way — you'll need to find a key.");
+                // Spend a key to open the door; the party then steps through on the next move.
+                Party.Keys--;
+                Maze.OpenLockedDoor(Party.Position, dir);
+                return new MoveResult(MoveResultKind.Unlocked,
+                    "You fit an iron key to the lock — it turns with a clunk and the door swings open.");
+            }
+
+            return new MoveResult(MoveResultKind.BlockedByWall, "A wall blocks your way.");
+        }
 
         Party.Position = Party.Position.Step(dir);
         MarkVisited();
@@ -174,7 +195,7 @@ public sealed class GameState
             case CellFeature.BossLair:
                 return new MoveResult(MoveResultKind.Encounter,
                     $"A monstrous presence rises to bar your way — the {Bosses.BossForDepth(Depth).Name}!",
-                    Bosses.Create(Depth));
+                    Bosses.Create(Depth, _ascension));
             case CellFeature.Chest:
                 return new MoveResult(MoveResultKind.Chest,
                     "A heavy treasure chest sits here, its lid latched shut.");
@@ -187,6 +208,11 @@ public sealed class GameState
             case CellFeature.Lever:
                 return new MoveResult(MoveResultKind.Lever,
                     "A heavy rune-etched lever juts from the wall, begging to be pulled.");
+            case CellFeature.Key:
+                Party.Keys++;
+                cell.Feature = CellFeature.None; // pocketed
+                return new MoveResult(MoveResultKind.KeyFound,
+                    "Half-buried in the dust lies an iron key — you pocket it.");
         }
 
         if (CheckForEncounter(out var encounter))
@@ -259,6 +285,9 @@ public sealed class GameState
 
     /// <summary>How many barred gates still seal vaults on this level (a lever raises them).</summary>
     public int BarredGates() => Maze.GateCount();
+
+    /// <summary>How many locked doors remain on this level (each needs a carried key to open).</summary>
+    public int LockedDoors() => Maze.LockedDoorCount();
 
     /// <summary>True when the party stands on a pull-able rune lever.</summary>
     public bool OnLever => CurrentCell.Feature == CellFeature.Lever;

@@ -24,6 +24,9 @@ public sealed class Party
     /// <summary>Gold deposited at the Bank: out of the purse, and safe from theft.</summary>
     public int BankedGold { get; set; }
 
+    /// <summary>Iron keys the party carries, spent one at a time to open locked dungeon doors.</summary>
+    public int Keys { get; set; }
+
     /// <summary>Shared loot stash: consumables and unequipped gear the party carries.</summary>
     public List<Item> Inventory { get; } = new();
 

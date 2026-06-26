@@ -36,12 +36,23 @@ public sealed partial class MainWindowViewModel : ViewModelBase
                 .Append(new SaveSlotViewModel(SaveSlots.Autosave, "Autosave", isAutosave: true)));
 
         // Persist preference changes and re-apply music settings; then load saved settings.
-        Settings.PropertyChanged += (_, _) =>
+        Settings.PropertyChanged += (_, e) =>
         {
             _ = SettingsService.SaveAsync(_saves, Settings);
             Music.RefreshSettings();
+            // The Ironman preference applies to a run that hasn't dived yet (you can still change
+            // your mind in town); once committed to the catacombs it's locked for that run.
+            if (e.PropertyName == nameof(AppSettings.IronmanMode) && !_session.HasActiveDungeon)
+            {
+                _session.Ironman = Settings.IronmanMode;
+                RefreshRunBadges();
+            }
         };
-        _ = SettingsService.LoadAsync(_saves, Settings).ContinueWith(_ => Music.RefreshSettings());
+        _ = SettingsService.LoadAsync(_saves, Settings).ContinueWith(_ =>
+        {
+            Music.RefreshSettings();
+            if (!_session.HasActiveDungeon) { _session.Ironman = Settings.IronmanMode; RefreshRunBadges(); }
+        });
 
         ShowTown();
     }
@@ -55,6 +66,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private bool _isSlotPanelOpen;
     [ObservableProperty] private SlotPanelMode _slotMode;
     [ObservableProperty] private bool _isGameWon;
+    [ObservableProperty] private bool _isGameOver;
     [ObservableProperty] private bool _isSettingsOpen;
     [ObservableProperty] private bool _isQuestLogOpen;
     [ObservableProperty] private QuestLogViewModel? _questLog;
@@ -69,6 +81,24 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public string RenownBadge => $"🏆 {_session.Renown.Renown}";
 
     private void RefreshRenown() => OnPropertyChanged(nameof(RenownBadge));
+
+    // --- New Game+ / Ironman run badges ---
+
+    /// <summary>True while the active run is Ironman (permadeath); drives the badge and disables manual save/load.</summary>
+    public bool IsIronman => _session.Ironman;
+    public bool IsNewGamePlus => _session.Ascension > 0;
+    public string AscensionBadge => $"NG+{_session.Ascension}";
+
+    /// <summary>Manual save and load are disabled during an Ironman run so death can't be undone.</summary>
+    public bool ManualSavesAllowed => !_session.Ironman;
+
+    private void RefreshRunBadges()
+    {
+        OnPropertyChanged(nameof(IsIronman));
+        OnPropertyChanged(nameof(IsNewGamePlus));
+        OnPropertyChanged(nameof(AscensionBadge));
+        OnPropertyChanged(nameof(ManualSavesAllowed));
+    }
 
     public ObservableCollection<SaveSlotViewModel> Slots { get; }
 
@@ -92,6 +122,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task ShowSaveSlots()
     {
+        if (!ManualSavesAllowed) { StatusMessage = "Ironman: no manual saves — your fate is sealed by the autosave alone."; return; }
         SlotMode = SlotPanelMode.Save;
         await RefreshSlotsAsync();
         IsSlotPanelOpen = true;
@@ -100,6 +131,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task ShowLoadSlots()
     {
+        if (!ManualSavesAllowed) { StatusMessage = "Ironman: there is no reloading — press on or perish."; return; }
         SlotMode = SlotPanelMode.Load;
         await RefreshSlotsAsync();
         IsSlotPanelOpen = true;
@@ -213,6 +245,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         try
         {
             _session = await _saves.LoadAsync(slot.Slot);
+            IsGameWon = false;
+            IsGameOver = false;
+            RefreshRunBadges();
             ShowTown();
             StatusMessage = $"Loaded {slot.DisplayName}.";
             IsSlotPanelOpen = false;
@@ -257,6 +292,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         var exploration = new ExplorationViewModel(game, _session.Stats, _session.Quests, _session.Codex, _session.Renown);
         exploration.ReturnToTownRequested += ReturnFromDungeon;
         exploration.GameWonRequested += OnGameWon;
+        exploration.PartyWipedRequested += OnPartyWiped;
         exploration.RenownChanged += RefreshRenown;
         CurrentView = exploration;
         Music.Play(GameMusic.Dungeon);
@@ -295,10 +331,45 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void NewGame()
     {
-        _session = new GameSession();
+        _session = new GameSession { Ironman = Settings.IronmanMode };
         IsGameWon = false;
-        StatusMessage = "A new adventure begins.";
+        IsGameOver = false;
+        StatusMessage = _session.Ironman ? "A new Ironman run begins — there is no second chance." : "A new adventure begins.";
+        RefreshRunBadges();
         ShowTown();
+    }
+
+    /// <summary>After a win, carry the party forward into a tougher New Game+ (Ascension +1).</summary>
+    [RelayCommand]
+    private void NewGamePlus()
+    {
+        _session = _session.StartNewGamePlus();
+        IsGameWon = false;
+        IsGameOver = false;
+        StatusMessage = $"New Game+ begins — Ascension {_session.Ascension}. The catacombs grow deadlier, but your heroes carry on.";
+        RefreshRunBadges();
+        ShowTown();
+    }
+
+    /// <summary>
+    /// A total party kill. In an Ironman run this is permanent: the saves are wiped and a
+    /// game-over banner shows. (Outside Ironman the party can still be carried back and revived.)
+    /// </summary>
+    private async void OnPartyWiped()
+    {
+        if (!_session.Ironman) return;
+
+        try
+        {
+            await _saves.DeleteAsync(SaveSlots.Autosave);
+            foreach (var slot in _saves.ManualSlots) await _saves.DeleteAsync(slot);
+        }
+        catch { /* best-effort wipe */ }
+
+        Sfx.Play(GameSound.Hurt);
+        Music.Stop();
+        StatusMessage = "The Ironman run ends here.";
+        IsGameOver = true;
     }
 
     /// <summary>Returning to town is a safe checkpoint, so the game autosaves there (if enabled).</summary>

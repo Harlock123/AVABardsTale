@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using BardsTale.Core.Characters;
 using BardsTale.Core.Combat;
 using BardsTale.Core.Items;
 using BardsTale.Core.Town;
@@ -62,11 +63,32 @@ public static class ScreenshotRunner
             Capture(view, dir, file);
         }
 
-        // The bestiary overlay (over the town).
+        // Back to the town hub so the overlays render over a clean backdrop.
+        vm.ShowTownScreen();
+        await Settle();
+
+        // The bestiary overlay.
         vm.ShowBestiaryCommand.Execute(null);
         await Settle();
         Capture(view, dir, "bestiary");
         vm.CloseBestiaryCommand.Execute(null);
+
+        // The accessory-set codex overlay.
+        vm.ShowSetCodexCommand.Execute(null);
+        await Settle();
+        Capture(view, dir, "set-codex");
+        vm.CloseSetCodexCommand.Execute(null);
+
+        // The town "Cast a Spell" menu (spell points, costs, dimmed-unaffordable).
+        vm.ShowTownScreen();
+        if (vm.Town is { } town)
+        {
+            town.SelectedHero = town.Party.FirstOrDefault(h => h.Model.IsSpellcaster) ?? town.Party.FirstOrDefault();
+            town.OpenSpellMenuCommand.Execute(null);
+            town.SelectedSpell = town.SpellMenu.FirstOrDefault();
+        }
+        await Settle();
+        Capture(view, dir, "spell-menu");
 
         // The catacombs (dungeon exploration).
         vm.EnterDungeonScreen();
@@ -107,9 +129,25 @@ public static class ScreenshotRunner
         s.Party.Inventory.Add(Items.LongSword);
         for (var i = 0; i < 4; i++) s.Party.Inventory.Add(Items.ForgeEmber);
 
+        // A second hero anchors the Lifeguard set (so the codex shows two assembled).
+        var second = s.Party.Members[1];
+        second.Ring1 = Items.RingOfVigor;
+        second.Amulet = Items.AmuletOfVitality;
+
+        // Make one member a caster with a few town spells (partial SP) so the spell menu has content.
+        var mage = s.Party.Members[2];
+        mage.Class = CharacterClass.Conjurer;
+        mage.MaxSpellPoints = 12;
+        mage.SpellPoints = 4; // enough for the cheap spells, not the dear ones
+        mage.KnownSpells.Clear();
+        mage.KnownSpells.AddRange(new[] { "VOPL", "PURE", "HEPA", "REST" });
+
         // Fill in a slice of the bestiary so affinities render.
         foreach (var name in new[] { "Giant Centipede", "Gray Ooze", "Skeleton", "Goblin", "Orc", "Ghoul", "Salamander", "Mimic" })
             s.Codex.DiscoverOne(name, 3);
+
+        s.Party.Rest();        // top everyone up to their gear-boosted maxima (no HURT bars in shots)
+        mage.SpellPoints = 4;  // ...but leave the caster partly spent so the spell menu shows unaffordable spells
     }
 
     private static void EnterBuilding(MainWindowViewModel vm, TownBuilding building)

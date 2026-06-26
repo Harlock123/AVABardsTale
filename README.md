@@ -24,6 +24,10 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 | --- | --- | --- |
 | ![Combat](SCREENSHOTS/combat.png) | ![The Smithy](SCREENSHOTS/smithy.png) | ![The bestiary](SCREENSHOTS/bestiary.png) |
 
+| Accessory-set codex | Cast a Spell |
+| --- | --- |
+| ![Accessory-set codex](SCREENSHOTS/set-codex.png) | ![Cast a Spell](SCREENSHOTS/spell-menu.png) |
+
 <details>
 <summary>More of Skara Brae's buildings</summary>
 

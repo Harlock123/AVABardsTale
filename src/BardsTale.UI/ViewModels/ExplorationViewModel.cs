@@ -126,7 +126,14 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     partial void OnIsAtChestChanged(bool value) => UpdateExploreState();
 
-    public bool CanExplore => !IsInCombat && !IsAtChest;
+    /// <summary>True while a riddle prompt is showing; the player answers or steps away.</summary>
+    [ObservableProperty] private bool _isAtRiddle;
+    [ObservableProperty] private string _riddlePrompt = "";
+    [ObservableProperty] private string _riddleAnswer = "";
+
+    partial void OnIsAtRiddleChanged(bool value) => UpdateExploreState();
+
+    public bool CanExplore => !IsInCombat && !IsAtChest && !IsAtRiddle;
 
     [RelayCommand(CanExecute = nameof(CanExplore))]
     private void MoveForward() => Walk(_game.StepForward());
@@ -166,6 +173,16 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     [RelayCommand(CanExecute = nameof(CanReturnToTown))]
     private void ReturnToTown() => ReturnToTownRequested?.Invoke();
+
+    /// <summary>Searches the current cell for hidden doors (a Rogue does it far better).</summary>
+    [RelayCommand(CanExecute = nameof(CanExplore))]
+    private void Search()
+    {
+        var result = _game.Search();
+        AddLog(result.Message);
+        Sfx.Play(result.Found ? GameSound.Door : GameSound.FootstepDungeon);
+        SyncWorld(); // an opened door changes the map
+    }
 
     /// <summary>Makes camp to recover HP/SP — at the risk of a wandering ambush that interrupts the rest.</summary>
     [RelayCommand(CanExecute = nameof(CanExplore))]
@@ -222,6 +239,39 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         AddLog("You leave the chest untouched for now.");
         IsAtChest = false;
         ChestPrompt = "";
+    }
+
+    /// <summary>Submits the typed answer to the riddle underfoot.</summary>
+    [RelayCommand]
+    private void AnswerRiddle()
+    {
+        if (!IsAtRiddle) return;
+        var result = _game.AnswerRiddle(RiddleAnswer);
+        foreach (var line in result.Log)
+            AddLog(line);
+
+        if (result.Correct)
+        {
+            Sfx.Play(GameSound.Coin);
+            IsAtRiddle = false;
+            RiddlePrompt = "";
+        }
+        else
+        {
+            Sfx.Play(GameSound.Hurt);
+        }
+        RiddleAnswer = "";
+        SyncWorld();
+    }
+
+    /// <summary>Steps away from the riddle, leaving it for later.</summary>
+    [RelayCommand]
+    private void LeaveRiddle()
+    {
+        AddLog("You step back from the glowing runes.");
+        IsAtRiddle = false;
+        RiddlePrompt = "";
+        RiddleAnswer = "";
     }
 
     /// <summary>Conjures light from a Bard's song (free) or a mage's light spell to pierce darkness.</summary>
@@ -284,6 +334,12 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 AddLog(result.Description);
                 ChestPrompt = result.Description;
                 IsAtChest = true;
+                break;
+            case MoveResultKind.Riddle:
+                AddLog(result.Description);
+                RiddlePrompt = result.Description;
+                RiddleAnswer = "";
+                IsAtRiddle = true;
                 break;
         }
 
@@ -393,6 +449,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         ReturnToTownCommand.NotifyCanExecuteChanged();
         CastLightCommand.NotifyCanExecuteChanged();
         CampCommand.NotifyCanExecuteChanged();
+        SearchCommand.NotifyCanExecuteChanged();
     }
 
     private void SyncWorld()

@@ -22,7 +22,8 @@ public enum MoveResultKind
     Trapped,
     Darkness,
     AntiMagic,
-    Chest
+    Chest,
+    Riddle
 }
 
 public sealed record MoveResult(MoveResultKind Kind, string Description, Encounter? Encounter = null);
@@ -36,6 +37,12 @@ public sealed record ChestResult(IReadOnlyList<string> Log, IReadOnlyList<Item> 
 
 /// <summary>The outcome of making camp: whether the party rested, narration, and any ambush that interrupted it.</summary>
 public sealed record CampResult(bool Rested, IReadOnlyList<string> Log, Encounter? Ambush);
+
+/// <summary>The outcome of searching a cell for hidden passages.</summary>
+public sealed record SearchResult(bool Found, string Message);
+
+/// <summary>The outcome of answering a riddle tile.</summary>
+public sealed record RiddleResult(bool Correct, IReadOnlyList<string> Log);
 
 /// <summary>
 /// The live game world: the party exploring the current maze level. Owns movement,
@@ -168,6 +175,9 @@ public sealed class GameState
             case CellFeature.OrnateChest:
                 return new MoveResult(MoveResultKind.Chest,
                     "An ornate, gold-filigreed chest rests here — clearly valuable, and surely trapped.");
+            case CellFeature.Riddle:
+                return new MoveResult(MoveResultKind.Riddle,
+                    $"Glowing runes are graven in the floor: \"{Riddles.Get(cell.RiddleId).Question}\"");
         }
 
         if (CheckForEncounter(out var encounter))
@@ -183,6 +193,63 @@ public sealed class GameState
     {
         if (CurrentCell.Feature == CellFeature.BossLair)
             CurrentCell.Feature = CellFeature.None;
+    }
+
+    /// <summary>
+    /// Searches the current cell for hidden doors. A Rogue greatly improves the odds; on success
+    /// any secret door bordering the cell swings open, revealing the passage beyond.
+    /// </summary>
+    public SearchResult Search()
+    {
+        var secrets = Maze.SecretDoorsAt(Party.Position);
+        if (secrets.Count == 0)
+            return new SearchResult(false, "You search the stonework but find nothing hidden here.");
+
+        var rogue = Party.Members
+            .Where(m => !m.IsDead && m.Class == CharacterClass.Rogue)
+            .OrderByDescending(m => m.Level)
+            .FirstOrDefault();
+        var chance = rogue is null ? 0.45 : Math.Min(0.95, 0.6 + 0.04 * rogue.Level);
+        if (!_rng.Chance(chance))
+            return new SearchResult(false, "Your search turns up nothing — though something here feels amiss. (Search again.)");
+
+        foreach (var d in secrets)
+            Maze.OpenSecretDoor(Party.Position, d);
+        MarkVisited();
+        var where = string.Join(" and ", secrets.Select(d => d.ToString().ToLowerInvariant()));
+        return new SearchResult(true, $"You find a hidden door to the {where}!");
+    }
+
+    /// <summary>True when the party stands on an unsolved riddle tile.</summary>
+    public bool OnRiddle => CurrentCell.Feature == CellFeature.Riddle;
+
+    /// <summary>
+    /// Answers the riddle underfoot. A correct answer grants gold and loot and the runes go dark;
+    /// a wrong answer leaves the tile to try again.
+    /// </summary>
+    public RiddleResult AnswerRiddle(string answer)
+    {
+        var log = new List<string>();
+        if (CurrentCell.Feature != CellFeature.Riddle)
+            return new RiddleResult(false, new[] { "There is no riddle here." });
+
+        if (!Riddles.Get(CurrentCell.RiddleId).Accepts(answer))
+        {
+            log.Add("The runes flare red and stay dark — that is not the answer.");
+            return new RiddleResult(false, log);
+        }
+
+        var (gold, items) = Loot.RiddleReward(_rng, Depth);
+        Party.Gold += gold;
+        log.Add("The runes glow gold — you have answered true!");
+        log.Add($"A hidden cache yields {gold} gold.");
+        foreach (var item in items)
+        {
+            Party.Inventory.Add(item);
+            log.Add($"Found: {item.DisplayName}.");
+        }
+        CurrentCell.Feature = CellFeature.None; // solved
+        return new RiddleResult(true, log);
     }
 
     /// <summary>True when the party stands on an unopened treasure chest (plain or ornate).</summary>

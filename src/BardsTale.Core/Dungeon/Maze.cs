@@ -30,7 +30,9 @@ public enum CellFeature
     /// <summary>A treasure chest — may be trapped (or a disguised mimic); a Rogue can disarm it.</summary>
     Chest,
     /// <summary>A gilded chest: always trapped and richer, with a guaranteed warding accessory.</summary>
-    OrnateChest
+    OrnateChest,
+    /// <summary>An inscribed tile that poses a riddle — answer it for a reward.</summary>
+    Riddle
 }
 
 /// <summary>One tile of a maze level.</summary>
@@ -40,6 +42,12 @@ public sealed class Cell
     public CellFeature Feature { get; set; } = CellFeature.None;
     public string? Text { get; set; }
     public bool Visited { get; set; }
+
+    /// <summary>Which present walls are actually hidden doors, openable by searching.</summary>
+    public Walls SecretDoors { get; set; } = Walls.None;
+
+    /// <summary>For riddle tiles, which riddle is inscribed (index into the riddle catalogue).</summary>
+    public int RiddleId { get; set; } = -1;
 
     /// <summary>For teleporters, the cell the party is whisked to.</summary>
     public Position? Destination { get; set; }
@@ -103,6 +111,39 @@ public sealed class Maze
         if (this[from].HasWall(dir)) return false;
         var target = from.Step(dir);
         return InBounds(target);
+    }
+
+    private static readonly Direction[] AllDirections =
+        { Direction.North, Direction.East, Direction.South, Direction.West };
+
+    /// <summary>The directions from a cell that hold an as-yet-undiscovered secret door.</summary>
+    public IReadOnlyList<Direction> SecretDoorsAt(Position p)
+    {
+        var found = new List<Direction>();
+        if (!InBounds(p)) return found;
+        var cell = this[p];
+        foreach (var d in AllDirections)
+            if ((cell.SecretDoors & Cell.ToWallFlag(d)) != 0)
+                found.Add(d);
+        return found;
+    }
+
+    /// <summary>Marks a wall as a hidden door (it reads as a solid wall until searched out).</summary>
+    public void MarkSecretDoor(int x, int y, Direction dir)
+    {
+        SetWall(x, y, dir, present: true);
+        this[x, y].SecretDoors |= Cell.ToWallFlag(dir);
+        var n = new Position(x, y).Step(dir);
+        if (InBounds(n)) this[n].SecretDoors |= Cell.ToWallFlag(dir.Opposite());
+    }
+
+    /// <summary>Opens a discovered secret door — removes the wall and clears the flag on both sides.</summary>
+    public void OpenSecretDoor(Position p, Direction dir)
+    {
+        SetWall(p.X, p.Y, dir, present: false);
+        this[p].SecretDoors &= ~Cell.ToWallFlag(dir);
+        var n = p.Step(dir);
+        if (InBounds(n)) this[n].SecretDoors &= ~Cell.ToWallFlag(dir.Opposite());
     }
 
     /// <summary>Raise a wall between a cell and its neighbour, keeping both sides consistent.</summary>

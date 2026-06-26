@@ -570,6 +570,13 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
   you across the level), **darkness** zones (the view blacks out and can't be
   mapped — until you conjure **light**), **traps** (spring for damage), and
   **anti-magic** zones (spells and songs fizzle for both sides). All survive save/load.
+- **Search & secret doors** — every floor hides **secret vaults**, sealed dead-ends reachable
+  only by **Searching** (the *🔍 Search* action) the walls; a Rogue finds them far more reliably.
+  Each opened door reveals a treasure-stocked hidden room.
+- **Riddle tiles** — an inscribed tile per floor poses a classic riddle; **type the answer** to
+  open a hidden cache of gold and loot (answers ignore case, articles and spacing; wrong guesses
+  let you try again). The answer field auto-focuses (raising the soft keyboard on mobile) and
+  submits on **Return**, with the prompt anchored clear of the on-screen keyboard.
 - **Camping** — rest anywhere in the dungeon to recover half the party's HP and spell
   points, gambling against a depth-scaled chance of a surprise wandering ambush.
 - A **fixed boss lair** on each level (guarding the descent) — a tough named boss

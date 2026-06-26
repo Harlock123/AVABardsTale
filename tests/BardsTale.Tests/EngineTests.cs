@@ -53,8 +53,10 @@ public class MazeTests
         {
             var p = stack.Pop();
             if (!seen.Add(p)) continue;
+            var secrets = maze.SecretDoorsAt(p);
             foreach (Direction d in Enum.GetValues<Direction>())
-                if (maze.CanMove(p, d))
+                // Reachable through open passages or by searching out a secret door — no cell is stranded.
+                if (maze.CanMove(p, d) || (secrets.Contains(d) && maze.InBounds(p.Step(d))))
                     stack.Push(p.Step(d));
         }
 

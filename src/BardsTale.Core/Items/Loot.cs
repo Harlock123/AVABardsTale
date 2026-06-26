@@ -96,6 +96,16 @@ public static class Loot
         return (gold, items);
     }
 
+    /// <summary>The reward for answering a riddle tile: a purse of gold and a magic prize or two.</summary>
+    public static (int Gold, List<Item> Items) RiddleReward(IRandomSource rng, int depth)
+    {
+        var gold = rng.Roll(2, 20, 8) * (4 + depth);
+        var items = new List<Item> { RollMagic(rng) };          // always a magic find
+        if (rng.Chance(0.4)) items.Add(RollAccessory(rng, depth).AsUnidentified());
+        if (depth >= 4 && rng.Chance(0.5)) items.Add(Items.ForgeEmber);
+        return (gold, items);
+    }
+
     /// <summary>The matched pieces of a random accessory set — a themed haul, identified so the set reads at a glance.</summary>
     private static IEnumerable<Item> SetDrop(IRandomSource rng)
     {

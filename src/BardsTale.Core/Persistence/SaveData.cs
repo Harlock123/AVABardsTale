@@ -150,4 +150,6 @@ public sealed class CellSave
     public bool Visited { get; set; }
     public int? DestX { get; set; }
     public int? DestY { get; set; }
+    public int SecretDoors { get; set; }
+    public int RiddleId { get; set; } = -1;
 }

@@ -75,6 +75,14 @@ public sealed class MazeBuilder
         // with one rarer gilded chest holding a guaranteed warding accessory.
         Place(CellFeature.Chest, 2);
         Place(CellFeature.OrnateChest, 1);
+        // An inscribed riddle tile, answerable for a reward.
+        if (Take() is { } riddle)
+        {
+            maze[riddle].Feature = CellFeature.Riddle;
+            maze[riddle].RiddleId = _rng.Next(0, Riddles.All.Count);
+        }
+
+        PlaceSecretVaults(maze, width, height, count: 2);
 
         if (Take() is { } tele && Take() is { } dest)
         {
@@ -82,6 +90,41 @@ public sealed class MazeBuilder
             maze[tele].Destination = dest;
         }
     }
+
+    /// <summary>
+    /// Turns a few dead-end cells into hidden vaults: seals the cell's single passage into a
+    /// secret door and stocks it with treasure, so it can only be reached by searching it out.
+    /// Dead-ends carry no through-traffic, so sealing them never strands the rest of the maze.
+    /// </summary>
+    private void PlaceSecretVaults(Maze maze, int width, int height, int count)
+    {
+        var dirs = new[] { Direction.North, Direction.East, Direction.South, Direction.West };
+
+        var leaves = new List<Position>();
+        for (var x = 0; x < width; x++)
+            for (var y = 0; y < height; y++)
+            {
+                var p = new Position(x, y);
+                if (maze[p].Feature != CellFeature.None) continue;
+                if (OpenPassages(maze, p, dirs).Count == 1) leaves.Add(p);
+            }
+
+        for (var i = 0; i < count && leaves.Count > 0; i++)
+        {
+            var idx = _rng.Next(0, leaves.Count);
+            var pos = leaves[idx];
+            leaves.RemoveAt(idx);
+
+            var open = OpenPassages(maze, pos, dirs);
+            if (open.Count != 1) continue; // a previous vault may have changed this one
+
+            maze.MarkSecretDoor(pos.X, pos.Y, open[0]);
+            maze[pos].Feature = _rng.Chance(0.35) ? CellFeature.OrnateChest : CellFeature.Chest;
+        }
+    }
+
+    private static List<Direction> OpenPassages(Maze maze, Position p, Direction[] dirs) =>
+        dirs.Where(d => !maze[p].HasWall(d) && maze.InBounds(p.Step(d))).ToList();
 
     private static void FillAllWalls(Maze maze)
     {

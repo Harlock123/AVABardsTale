@@ -184,7 +184,9 @@ public static class GameSerializer
                     Text = cell.Text,
                     Visited = cell.Visited,
                     DestX = cell.Destination?.X,
-                    DestY = cell.Destination?.Y
+                    DestY = cell.Destination?.Y,
+                    SecretDoors = (int)cell.SecretDoors,
+                    RiddleId = cell.RiddleId
                 });
             }
         return level;
@@ -313,6 +315,8 @@ public static class GameSerializer
                 cell.Feature = (CellFeature)cs.Feature;
                 cell.Text = cs.Text;
                 cell.Visited = cs.Visited;
+                cell.SecretDoors = (Walls)cs.SecretDoors;
+                cell.RiddleId = cs.RiddleId;
                 if (cs.DestX is { } dx && cs.DestY is { } dy)
                     cell.Destination = new Position(dx, dy);
             }

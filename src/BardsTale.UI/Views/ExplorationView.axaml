@@ -60,6 +60,32 @@
                         </StackPanel>
                     </Border>
                 </Border>
+
+                <!-- Riddle prompt — anchored high so a mobile soft keyboard can't cover it -->
+                <Border IsVisible="{Binding IsAtRiddle}" Background="#C00B0D14"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Border VerticalAlignment="Top" HorizontalAlignment="Center" Width="460" Margin="0,28,0,0"
+                            Background="#1B1E2A" BorderBrush="#9B7FE0" BorderThickness="2"
+                            CornerRadius="6" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="✦  A Riddle in Runes" FontSize="18" FontWeight="Bold"
+                                       Foreground="#C18FE0" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding RiddlePrompt}" Foreground="#CFD3E0"
+                                       TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,12"/>
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                                <TextBox Grid.Column="0" x:Name="RiddleAnswerBox" KeyDown="OnRiddleAnswerKeyDown"
+                                         Text="{Binding RiddleAnswer, Mode=TwoWay}" Watermark="Speak your answer…"
+                                         HorizontalAlignment="Stretch"/>
+                                <Button Grid.Column="1" Content="Answer" Command="{Binding AnswerRiddleCommand}"
+                                        HorizontalContentAlignment="Center" Margin="6,0,0,0"/>
+                            </Grid>
+                            <TextBlock Text="Type your answer and press Return, or tap Answer."
+                                       Foreground="#8C93AB" FontSize="11" TextAlignment="Center" Margin="0,2,0,10"/>
+                            <Button Content="Step Away" Command="{Binding LeaveRiddleCommand}"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Border>
             </Panel>
         </Border>
 
@@ -151,6 +177,10 @@
                     <Button Grid.Row="0" Grid.Column="1" Content="▲ Fwd"
                             Command="{Binding MoveForwardCommand}" HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center" Margin="2"/>
+                    <Button Grid.Row="0" Grid.Column="2" Content="🔍 Search"
+                            Command="{Binding SearchCommand}" HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center" Margin="2" FontSize="11"
+                            ToolTip.Tip="Search the walls here for hidden doors (a Rogue helps)"/>
                     <Button Grid.Row="1" Grid.Column="0" Content="◄ Turn"
                             Command="{Binding TurnLeftCommand}" HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center" Margin="2"/>

@@ -50,7 +50,8 @@
                             <Grid IsVisible="{Binding IsGuild}" ColumnDefinitions="*,*">
                                 <StackPanel Grid.Column="0" Margin="0,0,12,0" Spacing="8">
                                     <TextBlock Text="Create a Hero" Foreground="#9AA0B5"/>
-                                    <TextBox Watermark="Name" Text="{Binding Creation.Name, Mode=TwoWay}"/>
+                                    <TextBox x:Name="HeroNameBox" Watermark="Name" KeyDown="OnHeroNameKeyDown"
+                                             Text="{Binding Creation.Name, Mode=TwoWay}"/>
                                     <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Race" VerticalAlignment="Center"
                                                    Foreground="#C7CBDA" Margin="0,0,8,4"/>

@@ -80,6 +80,34 @@ public class TownViewModelTests
         Assert.False(town.Creation.HasCandidate); // draft reset after recruiting
     }
 
+    // Mirrors the decision the Guild's name-box Enter handler makes (TownView.axaml.cs):
+    // Enter rolls a recruit when one is named, then recruits the rolled candidate — so a
+    // hero can be created entirely from the soft keyboard without reaching for a button.
+    [Fact]
+    public void The_name_box_enter_shortcut_rolls_then_recruits()
+    {
+        var session = new GameSession(seed: 11);
+        var town = new TownViewModel(session);
+
+        // Empty name: nothing to do — neither action is available.
+        Assert.False(town.Creation.RollCommand.CanExecute(null));
+        Assert.False(town.Creation.HasCandidate);
+
+        // Name typed, no candidate yet: Enter should roll.
+        town.Creation.Name = "Keyboard Knight";
+        Assert.True(town.Creation.RollCommand.CanExecute(null));
+        Assert.False(town.Creation.HasCandidate);
+        town.Creation.RollCommand.Execute(null);
+
+        // Candidate rolled: Enter should now recruit.
+        Assert.True(town.Creation.HasCandidate);
+        Assert.True(town.RecruitCommand.CanExecute(null));
+        town.RecruitCommand.Execute(null);
+
+        Assert.Single(town.Party);
+        Assert.False(town.Creation.HasCandidate);
+    }
+
     [Fact]
     public void ReviewBoard_advances_a_hero_with_enough_experience()
     {

@@ -171,7 +171,9 @@ public sealed class GameState
         }
 
         if (CheckForEncounter(out var encounter))
-            return new MoveResult(MoveResultKind.Encounter, "Monsters block your path!", encounter);
+            return new MoveResult(MoveResultKind.Encounter,
+                encounter!.HasElite ? "An elite foe leads monsters to block your path!" : "Monsters block your path!",
+                encounter);
 
         return new MoveResult(MoveResultKind.Moved, DescribeView());
     }

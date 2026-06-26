@@ -1,3 +1,4 @@
+using Avalonia.Media;
 using BardsTale.Core.Combat;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -16,9 +17,15 @@ public sealed partial class MonsterGroupViewModel : ViewModelBase
     public int Index { get; }
 
     public string Name => Group.Name;
+    public bool IsElite => Group.Template.IsElite;
     public string CountText => Group.IsDefeated ? "defeated" : $"{Group.LivingCount} remaining";
     public bool IsDefeated => Group.IsDefeated;
     public string Label => $"{Index + 1}. {Name} ×{Group.LivingCount}";
+
+    /// <summary>Elite groups read in gold to stand out from the rabble.</summary>
+    public IBrush LabelBrush => IsElite
+        ? new SolidColorBrush(Color.Parse("#E8C56B"))
+        : new SolidColorBrush(Color.Parse("#E8E9F0"));
 
     public string HealthText
     {

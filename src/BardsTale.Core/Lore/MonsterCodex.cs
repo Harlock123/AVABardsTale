@@ -30,8 +30,9 @@ public sealed class MonsterCodex
     /// <summary>Records every monster in an encounter as seen — call when a fight begins.</summary>
     public void Discover(Encounter encounter, int depth)
     {
+        // Elites fold into their base creature's entry (an Elite Goblin counts as a Goblin).
         foreach (var group in encounter.Groups)
-            DiscoverOne(group.Template.Name, depth);
+            DiscoverOne(group.Template.BaseName, depth);
     }
 
     /// <summary>Marks a single monster as seen, remembering the depth it was first met.</summary>
@@ -46,8 +47,9 @@ public sealed class MonsterCodex
     {
         foreach (var group in encounter.Groups)
         {
-            DiscoverOne(group.Template.Name, depth);
-            _entries[group.Template.Name].Slain += group.Monsters.Count;
+            var name = group.Template.BaseName;
+            DiscoverOne(name, depth);
+            _entries[name].Slain += group.Monsters.Count;
         }
     }
 

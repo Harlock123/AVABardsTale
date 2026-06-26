@@ -583,6 +583,11 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
   tiers, depth-banded so each floor draws from a tougher pool than the last, plus a
   **distinct named boss lair on every floor** (twenty in all) down to Mangar. **XP
   scales geometrically with depth**, keeping the party's level in step with the climb.
+- **Elite monsters** — a wandering pack is occasionally led by a lone **elite** (the chance
+  rises with depth): a buffed champion (~1.8× HP, harder-hitting, faster) worth far more XP
+  and gold and dropping a **guaranteed extra prize**. Elites keep their base creature's
+  abilities and elemental affinities, fold into that creature's bestiary entry, and stand
+  out in gold on the combat screen.
 - Per-school spell lists (Conjurer / Magician / Sorcerer / Wizard) that grow with
   caster level, Bard songs, and encounter-long party buffs from protective spells
   and songs.

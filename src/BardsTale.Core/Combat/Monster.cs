@@ -30,6 +30,30 @@ public sealed record MonsterSpell(string Name, MonsterSpellKind Kind, int Power,
     public Element Element => MonsterElements.OfSpell(Name);
 }
 
+/// <summary>
+/// Promotes a wandering monster to an "elite": a buffed, lone champion worth far more XP,
+/// gold and loot. Elites keep the base creature's abilities and elemental affinities (the
+/// "Elite " name prefix is stripped for those lookups), so an Elite Skeleton still burns.
+/// </summary>
+public static class Elites
+{
+    public static MonsterTemplate Promote(MonsterTemplate t) => t with
+    {
+        Name = $"Elite {t.Name}",
+        MaxHitPoints = (int)Math.Round(t.MaxHitPoints * 1.8),
+        AttackBonus = t.AttackBonus + 2,
+        ArmorClass = Math.Max(0, t.ArmorClass - 1),
+        ExperienceValue = (int)Math.Round(t.ExperienceValue * 2.5),
+        GoldValue = t.GoldValue * 3,
+        Speed = t.Speed + 1,
+        MaxPerGroup = 1,
+        IsElite = true
+    };
+
+    /// <summary>The chance a wandering pack is led by an elite — rising slowly with depth.</summary>
+    public static double ChanceForDepth(int depth) => Math.Min(0.25, 0.06 + 0.012 * depth);
+}
+
 /// <summary>A nasty rider some monsters apply on a successful hit.</summary>
 public enum MonsterAbility
 {
@@ -58,9 +82,15 @@ public sealed record MonsterTemplate(
     double StatusChance = 0.0,
     MonsterSpell? Spell = null,
     MonsterAbility Ability = MonsterAbility.None,
-    double AbilityChance = 0.0)
+    double AbilityChance = 0.0,
+    bool IsElite = false)
 {
     public bool IsCaster => Spell is not null;
+
+    /// <summary>The underlying creature's name with any "Elite " prefix stripped (for codex/affinities).</summary>
+    public string BaseName => IsElite && Name.StartsWith("Elite ", StringComparison.Ordinal)
+        ? Name["Elite ".Length..]
+        : Name;
 
     /// <summary>A short verb describing the status this monster can inflict, for combat narration.</summary>
     public string StatusVerb => InflictsStatus switch

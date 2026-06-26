@@ -27,7 +27,7 @@
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:MonsterGroupViewModel">
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Label}" FontWeight="Bold" Foreground="#E8E9F0"/>
+                                        <TextBlock Text="{Binding Label}" FontWeight="Bold" Foreground="{Binding LabelBrush}"/>
                                         <TextBlock Text="{Binding HealthText}" FontSize="11" Foreground="#9AA0B5"/>
                                     </StackPanel>
                                 </DataTemplate>

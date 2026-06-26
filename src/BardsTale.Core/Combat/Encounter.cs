@@ -49,6 +49,9 @@ public sealed class Encounter
     public IEnumerable<MonsterGroup> LivingGroups => _groups.Where(g => !g.IsDefeated);
     public bool CanSummonMore => _groups.Count < MaxGroups;
 
+    /// <summary>True when a buffed elite leads this pack — they drop richer loot.</summary>
+    public bool HasElite => _groups.Any(g => g.Template.IsElite);
+
     public int TotalExperience => _groups.Sum(g => g.Monsters.Count * g.Template.ExperienceValue);
     public int TotalGold => _groups.Sum(g => g.Monsters.Count * g.Template.GoldValue);
 
@@ -80,6 +83,11 @@ public sealed class EncounterFactory
             var count = _rng.Next(1, template.MaxPerGroup + 1);
             groups.Add(new MonsterGroup(template, count));
         }
+
+        // A lone elite occasionally leads the pack — buffed, and worth far more.
+        if (_rng.Chance(Elites.ChanceForDepth(depth)))
+            groups.Insert(0, new MonsterGroup(Elites.Promote(_rng.Pick(pool)), 1));
+
         return new Encounter(groups);
     }
 }

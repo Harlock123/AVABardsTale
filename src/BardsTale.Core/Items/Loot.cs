@@ -33,6 +33,14 @@ public static class Loot
             if (depth >= 3 && rng.Chance(0.03 + 0.004 * depth)) drops.Add(RollAccessory(rng, depth));
         }
 
+        // An elite leading a wandering pack drops a guaranteed prize on top of the usual spoils.
+        if (encounter.HasElite && !encounter.IsBoss)
+        {
+            drops.Add(RollMagic(rng));
+            if (rng.Chance(0.4)) drops.Add(RollAccessory(rng, depth).AsUnidentified());
+            if (depth >= 4 && rng.Chance(0.5)) drops.Add(Items.ForgeEmber);
+        }
+
         // Bosses always yield treasure; Mangar yields his signature staff.
         if (encounter.IsFinalBoss)
         {

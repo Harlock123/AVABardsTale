@@ -114,8 +114,12 @@ public static class MonsterElements
         ["Mimic"] = new(Element.None, Element.Fire),
     };
 
-    public static Element ResistOf(string name) => Table.TryGetValue(name, out var a) ? a.Resist : Element.None;
-    public static Element WeakOf(string name) => Table.TryGetValue(name, out var a) ? a.Weak : Element.None;
+    // Elites share their base creature's affinities ("Elite Skeleton" → "Skeleton").
+    private static string Strip(string name) =>
+        name.StartsWith("Elite ", StringComparison.Ordinal) ? name["Elite ".Length..] : name;
+
+    public static Element ResistOf(string name) => Table.TryGetValue(Strip(name), out var a) ? a.Resist : Element.None;
+    public static Element WeakOf(string name) => Table.TryGetValue(Strip(name), out var a) ? a.Weak : Element.None;
 
     /// <summary>
     /// The element of a monster's damaging spell or breath weapon, keyed by name so the

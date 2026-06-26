@@ -57,6 +57,18 @@ public sealed partial class TownViewModel : ViewModelBase
     public CharacterCreationViewModel Creation { get; }
     public ObservableCollection<ShopItemViewModel> Stock { get; }
 
+    /// <summary>Tells the player Garth's stock grows with progress, and when it next expands.</summary>
+    public string ShopRestockHint
+    {
+        get
+        {
+            var next = ShopWares.NextUnlockDepth(_session.Stats.DeepestDepth);
+            return next is { } depth
+                ? $"Garth stocks finer wares the deeper you delve — more unlock at floor {depth}."
+                : "Garth now lays out his full range of wares.";
+        }
+    }
+
     /// <summary>Unequipped gear (weapons / armour / shields) the party is carrying.</summary>
     public ObservableCollection<ShopItemViewModel> Stash { get; }
     public ObservableCollection<string> TavernRumors { get; }

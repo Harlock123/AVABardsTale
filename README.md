@@ -521,11 +521,13 @@ shade's cinderblast, a storm giant's thunderclap, an acid breath — and warded 
 halves the matching blow. (Foes have their own affinities too: strike a monster's
 **weakness** for double damage, its **resistance** for half — both shown in the bestiary.)
 
-Garth's stocks only the **entry-tier defensive accessories** (the single-element wards and
-a Ring of Protection); the **potent effect and vitality gear is earned** from deep-floor
-fights, elites, chests and boss rewards. Any accessory can be **sold and appraised** at
-Garth's, and the **Forge** can enchant a warding ring **+1/+2/+3** — each tier adding a
-point of armour while keeping its ward.
+Garth's starts with only the **entry-tier defensive accessories** (the single-element wards
+and a Ring of Protection), but **restocks as you progress** — reaching floors 4, 8, 12 and 16
+unlocks progressively stronger effect and vitality accessories for sale (the panel tells you
+which floor the next batch unlocks at). The very best gear still drops first from elites,
+chests and bosses, and the legendary **Talisman of the Ages** stays treasure-only. Any
+accessory can be **sold and appraised** at Garth's, and the **Forge** can enchant a warding
+ring **+1/+2/+3** — each tier adding a point of armour while keeping its ward.
 
 **Treasure chests** dot every floor. Step onto one and choose to **open** or **leave** it.
 Most are trapped: your ablest **Rogue** tries to disarm the snare first, and a failure

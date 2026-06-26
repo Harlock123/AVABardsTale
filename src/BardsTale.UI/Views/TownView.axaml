@@ -159,7 +159,9 @@
                             <Grid IsVisible="{Binding IsShop}" ColumnDefinitions="*,260">
                                 <Grid Grid.Column="0" Margin="0,0,12,0" RowDefinitions="*,*">
                                     <DockPanel Grid.Row="0" Margin="0,0,0,6">
-                                        <TextBlock DockPanel.Dock="Top" Text="Wares for sale" Foreground="#9AA0B5" Margin="0,0,0,6"/>
+                                        <TextBlock DockPanel.Dock="Top" Text="Wares for sale" Foreground="#9AA0B5" Margin="0,0,0,2"/>
+                                        <TextBlock DockPanel.Dock="Top" Text="{Binding ShopRestockHint}" Foreground="#8FB7FF"
+                                                   FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6"/>
                                         <ListBox ItemsSource="{Binding Stock}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                                                  Background="#181B24">
                                             <ListBox.ItemTemplate>

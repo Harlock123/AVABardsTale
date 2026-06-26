@@ -56,18 +56,11 @@ public sealed class GameSession
     public Position TownPosition { get; set; }
     public Direction TownFacing { get; set; }
 
-    /// <summary>The wares for sale at Garth's Equipment Shoppe.</summary>
-    public IReadOnlyList<Item> ShopStock { get; } = new[]
-    {
-        Items.Items.Dagger, Items.Items.ShortSword, Items.Items.LongSword, Items.Items.BattleAxe,
-        Items.Items.Staff, Items.Items.LeatherArmor, Items.Items.ChainMail, Items.Items.PlateMail,
-        Items.Items.SmallShield, Items.Items.Robes,
-        // Garth stocks only the entry-tier defensive accessories — a starter ward kit.
-        // The potent effect/vitality rings & amulets must be earned from the deep.
-        Items.Items.RingOfProtection, Items.Items.RingOfFireWard, Items.Items.RingOfFrostWard,
-        Items.Items.RingOfStormWard, Items.Items.AmuletOfTheViper,
-        Items.Items.HealingPotion, Items.Items.ManaDraught, Items.Items.Antidote, Items.Items.ResurrectionDust
-    };
+    /// <summary>
+    /// The wares for sale at Garth's Equipment Shoppe — restocked from progress: Garth carries
+    /// stronger accessories the deeper the party has reached. Re-read each town visit.
+    /// </summary>
+    public IReadOnlyList<Item> ShopStock => Items.ShopWares.For(Stats.DeepestDepth);
 
     public bool HasActiveDungeon => _dungeon is not null;
 

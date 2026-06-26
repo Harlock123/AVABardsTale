@@ -11,7 +11,7 @@ public static class SettingsService
     // Music fields are nullable so settings files written before music existed load with
     // sensible defaults (music on) rather than a missing-field false/zero.
     private sealed record Dto(bool ReducedMotion, bool Autosave, double UiScale, double SoundVolume, bool Muted,
-        bool? MusicEnabled = null, double? MusicVolume = null);
+        bool? MusicEnabled = null, double? MusicVolume = null, bool? CrossfadeMusic = null);
 
     public static async Task LoadAsync(ISaveStore store, AppSettings into)
     {
@@ -27,6 +27,7 @@ public static class SettingsService
             into.Muted = dto.Muted;
             into.MusicEnabled = dto.MusicEnabled ?? true;
             into.MusicVolume = dto.MusicVolume is >= 0 and <= 1 ? dto.MusicVolume.Value : 0.20;
+            into.CrossfadeMusic = dto.CrossfadeMusic ?? true;
         }
         catch
         {
@@ -37,7 +38,7 @@ public static class SettingsService
     public static Task SaveAsync(ISaveStore store, AppSettings s)
     {
         var json = JsonSerializer.Serialize(new Dto(s.ReducedMotion, s.Autosave, s.UiScale, s.SoundVolume, s.Muted,
-            s.MusicEnabled, s.MusicVolume));
+            s.MusicEnabled, s.MusicVolume, s.CrossfadeMusic));
         return store.SaveTextAsync(Key, json);
     }
 }

@@ -30,4 +30,7 @@ public sealed partial class AppSettings : ObservableObject
 
     /// <summary>Background-music volume (0–1).</summary>
     [ObservableProperty] private double _musicVolume = 0.20;
+
+    /// <summary>Whether music tracks crossfade into one another on a scene change (else a clean cut).</summary>
+    [ObservableProperty] private bool _crossfadeMusic = true;
 }

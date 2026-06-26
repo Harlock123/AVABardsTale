@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using BardsTale.UI.Settings;
 
 namespace BardsTale.UI.Audio;
@@ -30,6 +32,13 @@ public interface IMusicService
 
     /// <summary>Sets the playback volume (0–1), live where the platform supports it.</summary>
     void SetVolume(double volume);
+
+    /// <summary>
+    /// True when <see cref="SetVolume"/> takes effect immediately on the playing track — the
+    /// prerequisite for a volume crossfade. Backends that can only change volume on the next
+    /// loop (e.g. desktop <c>afplay</c>) return false and get a clean cut instead.
+    /// </summary>
+    bool SupportsLiveVolume => false;
 }
 
 /// <summary>Silent fallback for platforms without a music backend (and tests).</summary>
@@ -54,7 +63,10 @@ public static class Music
     public static IMusicService Current { get; set; } = new NullMusicService();
 
     private static GameMusic? _desired; // what the game wants playing
-    private static GameMusic? _playing; // what the backend is currently playing
+    private static GameMusic? _playing; // what the backend is (or will, mid-fade, be) playing
+
+    private static CancellationTokenSource? _fadeCts; // in-flight crossfade, if any
+    private const int FadeMs = 700;
 
     /// <summary>Requests a track. Idempotent — asking for the current track again does nothing.</summary>
     public static void Play(GameMusic track)
@@ -89,19 +101,56 @@ public static class Music
     {
         var s = AppSettings.Current;
         var on = _desired is not null && s.MusicEnabled && !s.Muted && s.MusicVolume > 0;
-        if (on)
+
+        if (!on)
         {
+            CancelFade();
+            if (_playing is not null) { Current.Stop(); _playing = null; }
+            return;
+        }
+
+        if (_playing == _desired)
+        {
+            // Already on the right track: keep the live volume in sync, unless a fade owns it.
+            if (_fadeCts is null) Current.SetVolume(s.MusicVolume);
+            return;
+        }
+
+        // A scene change. Crossfade when the backend can ramp volume live and the user wants it;
+        // otherwise switch immediately (e.g. desktop afplay, which can't fade a running clip).
+        if (Current.SupportsLiveVolume && s.CrossfadeMusic)
+        {
+            StartFade(_desired!.Value, s.MusicVolume, fadeOutFirst: _playing is not null);
+        }
+        else
+        {
+            CancelFade();
+            Current.Play(_desired!.Value);
             Current.SetVolume(s.MusicVolume);
-            if (_playing != _desired)
-            {
-                Current.Play(_desired!.Value);
-                _playing = _desired;
-            }
+            _playing = _desired;
         }
-        else if (_playing is not null)
+    }
+
+    /// <summary>Kicks off a background crossfade to <paramref name="track"/>, cancelling any prior one.</summary>
+    private static void StartFade(GameMusic track, double target, bool fadeOutFirst)
+    {
+        CancelFade();
+        var cts = new CancellationTokenSource();
+        _fadeCts = cts;
+        _playing = track; // claim the target now, so a repeat request for it mid-fade is a no-op
+        var backend = Current;
+        var fader = new MusicCrossfader(backend, FadeMs);
+        Task.Run(() =>
         {
-            Current.Stop();
-            _playing = null;
-        }
+            try { fader.Run(track, target, fadeOutFirst, cts.Token); }
+            catch { /* music is non-essential */ }
+            finally { lock (Gate) { if (_fadeCts == cts) _fadeCts = null; } }
+        });
+    }
+
+    private static void CancelFade()
+    {
+        _fadeCts?.Cancel();
+        _fadeCts = null;
     }
 }

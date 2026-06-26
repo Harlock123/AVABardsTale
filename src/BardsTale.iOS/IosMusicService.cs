@@ -55,6 +55,8 @@ public sealed class IosMusicService : IMusicService
         if (_player is not null) _player.Volume = _volume;
     }
 
+    public bool SupportsLiveVolume => true; // AVAudioPlayer.Volume applies instantly
+
     private void EnsureSession()
     {
         if (_sessionReady) return;

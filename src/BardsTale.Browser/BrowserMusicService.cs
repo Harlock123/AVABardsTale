@@ -26,6 +26,8 @@ public sealed class BrowserMusicService : IMusicService
         _volume = volume;
         MusicInterop.SetVolume(volume);
     }
+
+    public bool SupportsLiveVolume => true; // Web Audio gain applies instantly
 }
 
 /// <summary>Binding to wwwroot/music.js, imported once at startup (see Program.cs).</summary>

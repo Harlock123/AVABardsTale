@@ -210,6 +210,16 @@
                             <Slider Minimum="0" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True"
                                     Value="{Binding Settings.MusicVolume}"/>
                         </StackPanel>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Crossfade music" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Smoothly fade between tracks on a scene change instead of a hard cut."
+                                           Foreground="#9AA0B5" FontSize="11"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                          IsChecked="{Binding Settings.CrossfadeMusic}"/>
+                        </Grid>
                             </StackPanel>
                         </ScrollViewer>
                     </DockPanel>

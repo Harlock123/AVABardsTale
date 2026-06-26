@@ -73,6 +73,8 @@ public sealed class AndroidMusicService : IMusicService
         }
     }
 
+    public bool SupportsLiveVolume => true; // AudioTrack.SetVolume applies instantly
+
     private void StopLocked()
     {
         _current = null;

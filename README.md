@@ -572,13 +572,18 @@ A **Settings** screen (the ⚙ button) exposes, all persisted across sessions:
 - **Reduced motion** (stops idle animations such as the swaying storefront signs),
   **autosave** on return to town, and **interface size** (0.8–1.2× scale).
 - **Independent volume sliders** for **sound effects** and **background music**, a
-  master **mute**, and a **music on/off** toggle.
+  master **mute**, a **music on/off** toggle, and a **crossfade** toggle.
 
 All audio is **synthesised procedurally** — no asset files. Short **sound effects**
 (footsteps, combat, spells, town services) and four looping **music tracks** (town,
 dungeon, combat, victory) that switch with the game state are generated in code and
 played through a per-platform backend on each head (macOS `afplay`, browser Web Audio,
 Android `AudioTrack`, iOS `AVAudioPlayer`).
+
+When the scene changes, tracks **crossfade** into one another (a smooth dip through
+silence — fade the old track out, swap, fade the new one in) on backends that can ramp
+volume live (iOS, Android, browser); the macOS `afplay` backend, which can't change a
+running clip's volume, falls back to a clean cut. Crossfade can be turned off in Settings.
 
 ## What's implemented
 

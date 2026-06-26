@@ -99,6 +99,57 @@ public class SearchRiddleTests
     }
 
     [Fact]
+    public void Remaining_secrets_counts_hidden_doors_and_riddles()
+    {
+        var maze = new MazeBuilder(new SystemRandomSource(seed: 7)).Build("t", 11, 11);
+
+        Assert.True(maze.HiddenSecretCount() > 0);
+        Assert.Equal(1, maze.CountFeature(CellFeature.Riddle));
+
+        // Opening a secret door drops the hidden-door tally.
+        var door = FindSecretDoor(maze)!.Value;
+        var before = maze.HiddenSecretCount();
+        maze.OpenSecretDoor(door.pos, door.dir);
+        Assert.Equal(before - 1, maze.HiddenSecretCount());
+    }
+
+    [Fact]
+    public void A_rogue_passively_notices_a_secret_door_when_standing_by_it()
+    {
+        var rng = new SystemRandomSource(seed: 7);
+        var party = NewGame.CreateDefaultParty(rng); // includes a Rogue
+        var maze = new MazeBuilder(rng).Build("t", 11, 11);
+        var door = FindSecretDoor(maze)!.Value;
+
+        var game = new GameState(party, maze, rng);
+        party.Position = door.pos;
+
+        var noticed = false;
+        for (var i = 0; i < 60 && !noticed; i++)
+            noticed = game.RoguePassiveSearch() is not null;
+
+        Assert.True(noticed);
+        Assert.True(maze.CanMove(door.pos, door.dir)); // the door opened
+    }
+
+    [Fact]
+    public void A_party_without_a_rogue_never_passively_notices()
+    {
+        var rng = new SystemRandomSource(seed: 7);
+        var party = NewGame.CreateDefaultParty(rng);
+        // retire the Rogue
+        foreach (var m in party.Members.Where(m => m.Class == BardsTale.Core.Characters.CharacterClass.Rogue).ToList())
+            m.Class = BardsTale.Core.Characters.CharacterClass.Warrior;
+        var maze = new MazeBuilder(rng).Build("t", 11, 11);
+        var door = FindSecretDoor(maze)!.Value;
+        var game = new GameState(party, maze, rng);
+        party.Position = door.pos;
+
+        for (var i = 0; i < 50; i++)
+            Assert.Null(game.RoguePassiveSearch());
+    }
+
+    [Fact]
     public void Secret_doors_and_riddles_survive_save_load()
     {
         var session = new GameSession(seed: 9);

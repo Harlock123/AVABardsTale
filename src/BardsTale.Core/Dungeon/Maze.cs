@@ -137,6 +137,31 @@ public sealed class Maze
         if (InBounds(n)) this[n].SecretDoors |= Cell.ToWallFlag(dir.Opposite());
     }
 
+    /// <summary>How many undiscovered secret doors remain on this level (each counted once).</summary>
+    public int HiddenSecretCount()
+    {
+        var count = 0;
+        for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
+            {
+                // Count only North/West flags so each shared door is tallied a single time.
+                var s = _cells[x, y].SecretDoors;
+                if ((s & Walls.North) != 0) count++;
+                if ((s & Walls.West) != 0) count++;
+            }
+        return count;
+    }
+
+    /// <summary>How many cells on this level still carry the given feature.</summary>
+    public int CountFeature(CellFeature feature)
+    {
+        var count = 0;
+        for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
+                if (_cells[x, y].Feature == feature) count++;
+        return count;
+    }
+
     /// <summary>Opens a discovered secret door — removes the wall and clears the flag on both sides.</summary>
     public void OpenSecretDoor(Position p, Direction dir)
     {

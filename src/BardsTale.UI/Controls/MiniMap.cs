@@ -114,6 +114,7 @@ public sealed class MiniMap : Control
             CellFeature.Trap => Brushes.Crimson,
             CellFeature.AntiMagic => Brushes.SlateGray,
             CellFeature.BossLair => Brushes.DarkRed,
+            CellFeature.Riddle => Brushes.MediumPurple,
             _ => null
         };
         if (brush is null) return;

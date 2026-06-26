@@ -220,6 +220,34 @@ public sealed class GameState
         return new SearchResult(true, $"You find a hidden door to the {where}!");
     }
 
+    /// <summary>
+    /// A Rogue's passive perception as the party moves: a small chance to instinctively notice a
+    /// secret door bordering the cell just entered. Returns a message if one was found, else null.
+    /// </summary>
+    public string? RoguePassiveSearch()
+    {
+        var secrets = Maze.SecretDoorsAt(Party.Position);
+        if (secrets.Count == 0) return null;
+
+        var rogue = Party.Members
+            .Where(m => !m.IsDead && m.Class == CharacterClass.Rogue)
+            .OrderByDescending(m => m.Level)
+            .FirstOrDefault();
+        if (rogue is null) return null;
+
+        var chance = Math.Min(0.40, 0.08 + 0.015 * rogue.Level); // far less reliable than a deliberate search
+        if (!_rng.Chance(chance)) return null;
+
+        foreach (var d in secrets)
+            Maze.OpenSecretDoor(Party.Position, d);
+        var where = string.Join(" and ", secrets.Select(d => d.ToString().ToLowerInvariant()));
+        return $"{rogue.Name} instinctively notices a hidden door to the {where}!";
+    }
+
+    /// <summary>Undiscovered secret doors plus unsolved riddle tiles remaining on this level.</summary>
+    public (int SecretDoors, int Riddles) RemainingSecrets() =>
+        (Maze.HiddenSecretCount(), Maze.CountFeature(CellFeature.Riddle));
+
     /// <summary>True when the party stands on an unsolved riddle tile.</summary>
     public bool OnRiddle => CurrentCell.Feature == CellFeature.Riddle;
 

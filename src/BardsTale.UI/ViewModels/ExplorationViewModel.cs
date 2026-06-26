@@ -90,6 +90,21 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     public bool HasLight => _game.HasLight;
     public string LightText => _game.HasLight ? $"Light: {_game.LightRemaining} steps" : "Light: off";
 
+    /// <summary>A faint readout of undiscovered secrets on this floor — hidden doors and riddles.</summary>
+    public string SecretsHint
+    {
+        get
+        {
+            var (doors, riddles) = _game.RemainingSecrets();
+            var bits = "";
+            if (doors > 0) bits += $"{doors} hidden door{(doors == 1 ? "" : "s")}";
+            if (riddles > 0) bits += (bits.Length > 0 ? ", " : "") + $"{riddles} riddle{(riddles == 1 ? "" : "s")}";
+            return bits.Length > 0 ? $"🔍 Secrets sensed: {bits}" : "";
+        }
+    }
+
+    public bool HasSecrets => SecretsHint.Length > 0;
+
     /// <summary>The Camp button label, showing the current ambush risk so the gamble is informed.</summary>
     public string CampText => $"⛺ Camp ({_game.CampAmbushChance * 100:0}% risk)";
 
@@ -343,9 +358,12 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 break;
         }
 
-        // Poison gnaws with every step taken (a turn or a wall-bump is not a step).
+        // Each real step: poison gnaws, and a Rogue may passively spot a hidden door here.
         if (result.Kind is not (MoveResultKind.BlockedByWall or MoveResultKind.Turned or MoveResultKind.Encounter))
+        {
             TickPoison();
+            if (_game.RoguePassiveSearch() is { } noticed) AddLog(noticed);
+        }
 
         UpdateLocationState();
         SyncWorld();
@@ -460,6 +478,8 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         LocationText = $"{_game.Maze.Name}   {_game.Party.Position}   facing {Facing}";
         Revision++;
         OnPropertyChanged(nameof(InventorySummary));
+        OnPropertyChanged(nameof(SecretsHint));
+        OnPropertyChanged(nameof(HasSecrets));
         OnPropertyChanged(nameof(HasLight));
         OnPropertyChanged(nameof(LightText));
         OnPropertyChanged(nameof(CampText));

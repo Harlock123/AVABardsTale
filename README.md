@@ -498,10 +498,13 @@ A **bestiary** (the *📖 Bestiary* button or **B**) catalogues all **120 monste
 the wandering foes of all ten tiers plus the twenty floor bosses — and the lurking
 **mimic** besides, for 121 in all. An entry fills in
 the moment you first face a creature (even if you flee), and its kill tally grows
-with every victory. Each discovered card shows the monster's HP, armour class, damage,
-speed, special abilities (poison, drains, breath weapons, spells…), its XP/gold worth,
-and the floor you first met it; undiscovered monsters show as `??? — undiscovered`, so
-filling the book is a long-game goal. Your progress persists in the save.
+with every victory. Each discovered card opens with a line of **lore** — bespoke for the
+bosses and marquee foes, and drawn from the creature's nature for the rank-and-file — then
+shows its HP, armour class, damage, speed, special abilities (poison, drains, breath
+weapons, spells…), a **drop hint** at the spoils it yields (and the bosses' guaranteed magic
+item), its XP/gold worth, elemental weaknesses/resistances, and the floor you first met it.
+Undiscovered monsters show as `??? — undiscovered`, so filling the book is a long-game goal.
+Your progress persists in the save.
 
 ### Accessories, elemental wards & treasure chests
 

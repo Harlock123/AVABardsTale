@@ -449,12 +449,17 @@
                                             <StackPanel Spacing="2">
                                                 <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"
                                                            Foreground="{Binding NameBrush}"/>
+                                                <TextBlock Text="{Binding Lore}" IsVisible="{Binding IsDiscovered}" FontSize="12"
+                                                           FontStyle="Italic" Foreground="#B8C0A8" TextWrapping="Wrap"
+                                                           Margin="0,1,0,3"/>
                                                 <TextBlock Text="{Binding StatLine}" FontSize="12" Foreground="#C7CBDA"
                                                            FontFamily="Consolas,monospace" TextWrapping="Wrap"/>
                                                 <TextBlock Text="{Binding Notes}" IsVisible="{Binding HasNotes}" FontSize="12"
                                                            Foreground="#D69FC4" TextWrapping="Wrap"/>
                                                 <TextBlock Text="{Binding Affinities}" IsVisible="{Binding HasAffinities}"
                                                            FontSize="12" Foreground="#6FD0E8" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding DropHint}" IsVisible="{Binding IsDiscovered}"
+                                                           FontSize="12" Foreground="#C9A24B" TextWrapping="Wrap"/>
                                                 <TextBlock Text="{Binding Worth}" IsVisible="{Binding IsDiscovered}"
                                                            FontSize="11" Foreground="#D8C58A"/>
                                                 <TextBlock Text="{Binding TallyLine}" IsVisible="{Binding IsDiscovered}"

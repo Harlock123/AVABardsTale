@@ -46,6 +46,12 @@ public sealed class BestiaryEntryViewModel : ViewModelBase
 
     public string Name => IsDiscovered ? _t.Name : "??? — undiscovered";
 
+    /// <summary>A line of evocative lore, learned once the party has faced the creature.</summary>
+    public string Lore => IsDiscovered ? MonsterLore.FlavorFor(_t) : "";
+
+    /// <summary>A hint at the spoils the creature yields.</summary>
+    public string DropHint => IsDiscovered ? MonsterLore.DropHint(_t) : "";
+
     public string StatLine => IsDiscovered
         ? $"HP {_t.MaxHitPoints}    AC {_t.ArmorClass}    Dmg {Damage}    Speed {_t.Speed}"
         : "An unknown terror still lurking somewhere in the catacombs.";

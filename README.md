@@ -579,6 +579,11 @@ Android `AudioTrack`, iOS `AVAudioPlayer`).
   open a hidden cache of gold and loot (answers ignore case, articles and spacing; wrong guesses
   let you try again). The answer field auto-focuses (raising the soft keyboard on mobile) and
   submits on **Return**, with the prompt anchored clear of the on-screen keyboard.
+- **Levers & barred gates** — a treasure vault is sealed behind an **iron portcullis** you
+  can see but not pass (*"some lever must raise it"*). A **rune lever** waits elsewhere on the
+  floor; find it, **pull it**, and every barred gate on the level grinds open. The gates show as
+  amber dashed segments on the auto-map, the lever is marked, and the HUD readout counts how many
+  gates still bar the way — a find-the-mechanism puzzle distinct from searching and riddles.
 - **Camping** — rest anywhere in the dungeon to recover half the party's HP and spell
   points, gambling against a depth-scaled chance of a surprise wandering ambush.
 - A **fixed boss lair** on each level (guarding the descent) — a tough named boss

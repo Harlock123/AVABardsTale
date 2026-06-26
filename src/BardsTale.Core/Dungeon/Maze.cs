@@ -32,7 +32,9 @@ public enum CellFeature
     /// <summary>A gilded chest: always trapped and richer, with a guaranteed warding accessory.</summary>
     OrnateChest,
     /// <summary>An inscribed tile that poses a riddle — answer it for a reward.</summary>
-    Riddle
+    Riddle,
+    /// <summary>A rune-etched lever — pulling it raises the barred gates sealing this level's vaults.</summary>
+    Lever
 }
 
 /// <summary>One tile of a maze level.</summary>
@@ -46,6 +48,9 @@ public sealed class Cell
     /// <summary>Which present walls are actually hidden doors, openable by searching.</summary>
     public Walls SecretDoors { get; set; } = Walls.None;
 
+    /// <summary>Which present walls are barred gates (visible portcullises) raised by a lever.</summary>
+    public Walls Gates { get; set; } = Walls.None;
+
     /// <summary>For riddle tiles, which riddle is inscribed (index into the riddle catalogue).</summary>
     public int RiddleId { get; set; } = -1;
 
@@ -53,6 +58,9 @@ public sealed class Cell
     public Position? Destination { get; set; }
 
     public bool HasWall(Direction dir) => (Walls & ToWallFlag(dir)) != 0;
+
+    /// <summary>True when the wall toward <paramref name="dir"/> is a closed, barred gate.</summary>
+    public bool HasGate(Direction dir) => (Gates & ToWallFlag(dir)) != 0;
 
     public static Walls ToWallFlag(Direction dir) => dir switch
     {
@@ -169,6 +177,47 @@ public sealed class Maze
         this[p].SecretDoors &= ~Cell.ToWallFlag(dir);
         var n = p.Step(dir);
         if (InBounds(n)) this[n].SecretDoors &= ~Cell.ToWallFlag(dir.Opposite());
+    }
+
+    /// <summary>Marks a wall as a barred gate — it blocks passage (and reads as a portcullis) until a lever raises it.</summary>
+    public void MarkGate(int x, int y, Direction dir)
+    {
+        SetWall(x, y, dir, present: true);
+        this[x, y].Gates |= Cell.ToWallFlag(dir);
+        var n = new Position(x, y).Step(dir);
+        if (InBounds(n)) this[n].Gates |= Cell.ToWallFlag(dir.Opposite());
+    }
+
+    /// <summary>How many barred gates remain closed on this level (each counted once).</summary>
+    public int GateCount()
+    {
+        var count = 0;
+        for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
+            {
+                // Count only North/West flags so each shared gate is tallied a single time.
+                var g = _cells[x, y].Gates;
+                if ((g & Walls.North) != 0) count++;
+                if ((g & Walls.West) != 0) count++;
+            }
+        return count;
+    }
+
+    /// <summary>Raises every barred gate on the level (a lever's doing); returns how many opened.</summary>
+    public int OpenAllGates()
+    {
+        var opened = GateCount();
+        for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
+            {
+                var cell = _cells[x, y];
+                if (cell.Gates == Walls.None) continue;
+                foreach (var d in AllDirections)
+                    if ((cell.Gates & Cell.ToWallFlag(d)) != 0)
+                        SetWall(x, y, d, present: false);
+                cell.Gates = Walls.None;
+            }
+        return opened;
     }
 
     /// <summary>Raise a wall between a cell and its neighbour, keeping both sides consistent.</summary>

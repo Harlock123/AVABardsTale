@@ -86,6 +86,30 @@
                         </StackPanel>
                     </Border>
                 </Border>
+
+                <!-- Rune lever prompt -->
+                <Border IsVisible="{Binding IsAtLever}" Background="#C00B0D14"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="420"
+                            Background="#1B1E2A" BorderBrush="#C9A24B" BorderThickness="2"
+                            CornerRadius="6" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="🔩  A Rune Lever" FontSize="18" FontWeight="Bold"
+                                       Foreground="#E8C56B" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding LeverPrompt}" Foreground="#CFD3E0"
+                                       TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBlock Text="Pulling it raises the barred gates sealing this level's vaults."
+                                       Foreground="#8C93AB" FontSize="11" TextWrapping="Wrap"
+                                       TextAlignment="Center" Margin="0,0,0,14"/>
+                            <Grid ColumnDefinitions="*,*">
+                                <Button Grid.Column="0" Content="Pull Lever" Command="{Binding PullLeverCommand}"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                                <Button Grid.Column="1" Content="Leave It" Command="{Binding LeaveLeverCommand}"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Border>
             </Panel>
         </Border>
 

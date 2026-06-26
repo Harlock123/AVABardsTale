@@ -151,5 +151,6 @@ public sealed class CellSave
     public int? DestX { get; set; }
     public int? DestY { get; set; }
     public int SecretDoors { get; set; }
+    public int Gates { get; set; }
     public int RiddleId { get; set; } = -1;
 }

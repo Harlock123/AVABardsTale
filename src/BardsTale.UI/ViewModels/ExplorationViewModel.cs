@@ -96,9 +96,11 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         get
         {
             var (doors, riddles) = _game.RemainingSecrets();
+            var gates = _game.BarredGates();
             var bits = "";
             if (doors > 0) bits += $"{doors} hidden door{(doors == 1 ? "" : "s")}";
             if (riddles > 0) bits += (bits.Length > 0 ? ", " : "") + $"{riddles} riddle{(riddles == 1 ? "" : "s")}";
+            if (gates > 0) bits += (bits.Length > 0 ? ", " : "") + $"{gates} barred gate{(gates == 1 ? "" : "s")}";
             return bits.Length > 0 ? $"🔍 Secrets sensed: {bits}" : "";
         }
     }
@@ -148,7 +150,13 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     partial void OnIsAtRiddleChanged(bool value) => UpdateExploreState();
 
-    public bool CanExplore => !IsInCombat && !IsAtChest && !IsAtRiddle;
+    /// <summary>True while standing on a rune lever, with the pull/step-away prompt showing.</summary>
+    [ObservableProperty] private bool _isAtLever;
+    [ObservableProperty] private string _leverPrompt = "";
+
+    partial void OnIsAtLeverChanged(bool value) => UpdateExploreState();
+
+    public bool CanExplore => !IsInCombat && !IsAtChest && !IsAtRiddle && !IsAtLever;
 
     [RelayCommand(CanExecute = nameof(CanExplore))]
     private void MoveForward() => Walk(_game.StepForward());
@@ -289,6 +297,28 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         RiddleAnswer = "";
     }
 
+    /// <summary>Hauls the rune lever, raising the level's barred gates so the vaults can be reached.</summary>
+    [RelayCommand]
+    private void PullLever()
+    {
+        if (!IsAtLever) return;
+        var result = _game.PullLever();
+        AddLog(result.Message);
+        Sfx.Play(result.GatesOpened > 0 ? GameSound.Door : GameSound.FootstepDungeon);
+        IsAtLever = false;
+        LeverPrompt = "";
+        SyncWorld(); // raised gates change the map and the secrets hint
+    }
+
+    /// <summary>Steps away from the lever, leaving it unpulled for now.</summary>
+    [RelayCommand]
+    private void LeaveLever()
+    {
+        AddLog("You leave the lever untouched for now.");
+        IsAtLever = false;
+        LeverPrompt = "";
+    }
+
     /// <summary>Conjures light from a Bard's song (free) or a mage's light spell to pierce darkness.</summary>
     [RelayCommand(CanExecute = nameof(CanExplore))]
     private void CastLight()
@@ -355,6 +385,11 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 RiddlePrompt = result.Description;
                 RiddleAnswer = "";
                 IsAtRiddle = true;
+                break;
+            case MoveResultKind.Lever:
+                AddLog(result.Description);
+                LeverPrompt = result.Description;
+                IsAtLever = true;
                 break;
         }
 

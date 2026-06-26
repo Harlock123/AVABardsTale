@@ -89,6 +89,45 @@ public sealed class MazeBuilder
             maze[tele].Feature = CellFeature.Teleporter;
             maze[tele].Destination = dest;
         }
+
+        // A barred vault, sealed behind a portcullis. Placed last so nothing clobbers it:
+        // the lever that raises it sits out in the open maze, making a find-the-mechanism puzzle.
+        PlaceLeverVault(maze, width, height, Take);
+    }
+
+    /// <summary>
+    /// Seals a dead-end cell behind a barred gate and stocks it with treasure, then drops a rune
+    /// lever on an open tile elsewhere. The vault can only be reached by finding and pulling the
+    /// lever (which raises every gate on the level). Sealing a dead-end never strands the maze.
+    /// </summary>
+    private void PlaceLeverVault(Maze maze, int width, int height, Func<Position?> take)
+    {
+        var dirs = new[] { Direction.North, Direction.East, Direction.South, Direction.West };
+
+        var leaves = new List<Position>();
+        for (var x = 0; x < width; x++)
+            for (var y = 0; y < height; y++)
+            {
+                var p = new Position(x, y);
+                if (maze[p].Feature != CellFeature.None) continue;
+                if (OpenPassages(maze, p, dirs).Count == 1) leaves.Add(p);
+            }
+        if (leaves.Count == 0) return;
+
+        // Reserve the lever's tile first; with no room for a lever, skip the puzzle entirely
+        // rather than seal an unreachable vault.
+        if (take() is not { } lever) return;
+
+        leaves.Remove(lever); // never put the lever inside the vault it opens
+        if (leaves.Count == 0) return;
+
+        var pos = leaves[_rng.Next(0, leaves.Count)];
+        var open = OpenPassages(maze, pos, dirs);
+        if (open.Count != 1) return;
+
+        maze.MarkGate(pos.X, pos.Y, open[0]);
+        maze[pos].Feature = _rng.Chance(0.4) ? CellFeature.OrnateChest : CellFeature.Chest;
+        maze[lever].Feature = CellFeature.Lever;
     }
 
     /// <summary>

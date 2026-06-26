@@ -23,7 +23,8 @@ public enum MoveResultKind
     Darkness,
     AntiMagic,
     Chest,
-    Riddle
+    Riddle,
+    Lever
 }
 
 public sealed record MoveResult(MoveResultKind Kind, string Description, Encounter? Encounter = null);
@@ -43,6 +44,9 @@ public sealed record SearchResult(bool Found, string Message);
 
 /// <summary>The outcome of answering a riddle tile.</summary>
 public sealed record RiddleResult(bool Correct, IReadOnlyList<string> Log);
+
+/// <summary>The outcome of pulling a rune lever: how many gates it raised, and narration.</summary>
+public sealed record LeverResult(int GatesOpened, string Message);
 
 /// <summary>
 /// The live game world: the party exploring the current maze level. Owns movement,
@@ -133,7 +137,9 @@ public sealed class GameState
     private MoveResult Step(Direction dir)
     {
         if (!Maze.CanMove(Party.Position, dir))
-            return new MoveResult(MoveResultKind.BlockedByWall, "A wall blocks your way.");
+            return new MoveResult(MoveResultKind.BlockedByWall, CurrentCell.HasGate(dir)
+                ? "An iron portcullis bars the way — some lever must raise it."
+                : "A wall blocks your way.");
 
         Party.Position = Party.Position.Step(dir);
         MarkVisited();
@@ -178,6 +184,9 @@ public sealed class GameState
             case CellFeature.Riddle:
                 return new MoveResult(MoveResultKind.Riddle,
                     $"Glowing runes are graven in the floor: \"{Riddles.Get(cell.RiddleId).Question}\"");
+            case CellFeature.Lever:
+                return new MoveResult(MoveResultKind.Lever,
+                    "A heavy rune-etched lever juts from the wall, begging to be pulled.");
         }
 
         if (CheckForEncounter(out var encounter))
@@ -247,6 +256,33 @@ public sealed class GameState
     /// <summary>Undiscovered secret doors plus unsolved riddle tiles remaining on this level.</summary>
     public (int SecretDoors, int Riddles) RemainingSecrets() =>
         (Maze.HiddenSecretCount(), Maze.CountFeature(CellFeature.Riddle));
+
+    /// <summary>How many barred gates still seal vaults on this level (a lever raises them).</summary>
+    public int BarredGates() => Maze.GateCount();
+
+    /// <summary>True when the party stands on a pull-able rune lever.</summary>
+    public bool OnLever => CurrentCell.Feature == CellFeature.Lever;
+
+    /// <summary>
+    /// Hauls the rune lever underfoot, raising every barred gate on the level so its sealed
+    /// vaults can be reached. The lever locks spent afterward (the gates stay open).
+    /// </summary>
+    public LeverResult PullLever()
+    {
+        if (CurrentCell.Feature != CellFeature.Lever)
+            return new LeverResult(0, "There is no lever here.");
+
+        var opened = Maze.OpenAllGates();
+        CurrentCell.Feature = CellFeature.None; // the lever locks into place, spent
+        MarkVisited();
+        var message = opened switch
+        {
+            0 => "You haul the lever down with a heavy clunk — but nothing stirs. Its work is already done.",
+            1 => "You haul the lever down. Stone grinds as a barred gate rises somewhere on this level!",
+            _ => $"You haul the lever down. Stone grinds as {opened} barred gates rise across this level!"
+        };
+        return new LeverResult(opened, message);
+    }
 
     /// <summary>True when the party stands on an unsolved riddle tile.</summary>
     public bool OnRiddle => CurrentCell.Feature == CellFeature.Riddle;

@@ -186,6 +186,7 @@ public static class GameSerializer
                     DestX = cell.Destination?.X,
                     DestY = cell.Destination?.Y,
                     SecretDoors = (int)cell.SecretDoors,
+                    Gates = (int)cell.Gates,
                     RiddleId = cell.RiddleId
                 });
             }
@@ -316,6 +317,7 @@ public static class GameSerializer
                 cell.Text = cs.Text;
                 cell.Visited = cs.Visited;
                 cell.SecretDoors = (Walls)cs.SecretDoors;
+                cell.Gates = (Walls)cs.Gates;
                 cell.RiddleId = cs.RiddleId;
                 if (cs.DestX is { } dx && cs.DestY is { } dy)
                     cell.Destination = new Position(dx, dy);

@@ -59,6 +59,9 @@ public sealed class MiniMap : Control
     private static readonly IBrush KnownBrush = new SolidColorBrush(Color.FromRgb(60, 64, 78));
     private static readonly IBrush PartyBrush = Brushes.Gold;
     private static readonly Pen WallPen = new(new SolidColorBrush(Color.FromRgb(170, 175, 190)), 1.4);
+    // A barred gate reads as an amber, dashed segment so it's clearly a raisable portcullis, not stone.
+    private static readonly Pen GatePen = new(new SolidColorBrush(Color.FromRgb(201, 162, 75)), 2.2)
+    { DashStyle = new DashStyle(new double[] { 1.4, 1.0 }, 0) };
 
     public override void Render(DrawingContext context)
     {
@@ -83,13 +86,13 @@ public sealed class MiniMap : Control
                 if (!revealed) continue;
 
                 if (c.HasWall(Direction.North))
-                    context.DrawLine(WallPen, rect.TopLeft, rect.TopRight);
+                    context.DrawLine(c.HasGate(Direction.North) ? GatePen : WallPen, rect.TopLeft, rect.TopRight);
                 if (c.HasWall(Direction.South))
-                    context.DrawLine(WallPen, rect.BottomLeft, rect.BottomRight);
+                    context.DrawLine(c.HasGate(Direction.South) ? GatePen : WallPen, rect.BottomLeft, rect.BottomRight);
                 if (c.HasWall(Direction.West))
-                    context.DrawLine(WallPen, rect.TopLeft, rect.BottomLeft);
+                    context.DrawLine(c.HasGate(Direction.West) ? GatePen : WallPen, rect.TopLeft, rect.BottomLeft);
                 if (c.HasWall(Direction.East))
-                    context.DrawLine(WallPen, rect.TopRight, rect.BottomRight);
+                    context.DrawLine(c.HasGate(Direction.East) ? GatePen : WallPen, rect.TopRight, rect.BottomRight);
 
                 if (Buildings is { } buildings && buildings.TryGetValue(new Position(x, y), out var building))
                     DrawBuildingMarker(context, rect, building);
@@ -115,6 +118,7 @@ public sealed class MiniMap : Control
             CellFeature.AntiMagic => Brushes.SlateGray,
             CellFeature.BossLair => Brushes.DarkRed,
             CellFeature.Riddle => Brushes.MediumPurple,
+            CellFeature.Lever => Brushes.Goldenrod,
             _ => null
         };
         if (brush is null) return;

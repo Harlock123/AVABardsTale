@@ -39,7 +39,9 @@
                 <!-- Current actor's orders -->
                 <DockPanel Grid.Column="1" Margin="0,0,12,0">
                     <TextBlock DockPanel.Dock="Top" Text="{Binding Prompt}" FontWeight="Bold"
-                               Foreground="#E8C56B" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                               Foreground="#E8C56B" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                    <TextBlock DockPanel.Dock="Top" Text="{Binding ActorSpText}" FontSize="11" Foreground="#8FB7FF"
+                               FontFamily="Consolas,monospace" IsVisible="{Binding HasActorSp}" Margin="0,0,0,8"/>
 
                     <Border DockPanel.Dock="Bottom" Margin="0,8,0,0" Padding="6" Background="#0E1018"
                             CornerRadius="4">
@@ -60,13 +62,18 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:CombatActionOptionViewModel">
                                         <Button Margin="0,0,0,4" Padding="10,6" HorizontalAlignment="Stretch"
-                                                HorizontalContentAlignment="Left"
+                                                HorizontalContentAlignment="Stretch"
                                                 Command="{Binding $parent[ItemsControl].((vm:CombatViewModel)DataContext).ChooseActionCommand}"
                                                 CommandParameter="{Binding}">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding Label}" FontWeight="Bold" Foreground="#E8E9F0"/>
-                                                <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#9AA0B5"/>
-                                            </StackPanel>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="{Binding Label}" FontWeight="Bold" Foreground="{Binding LabelBrush}"/>
+                                                    <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#9AA0B5"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Text="{Binding CostText}" IsVisible="{Binding ShowsCost}"
+                                                           FontWeight="Bold" Foreground="{Binding CostBrush}"
+                                                           VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            </Grid>
                                         </Button>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

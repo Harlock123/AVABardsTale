@@ -1,3 +1,4 @@
+using Avalonia.Media;
 using BardsTale.Core.Combat;
 using BardsTale.Core.Items;
 using BardsTale.Core.Magic;
@@ -8,7 +9,8 @@ namespace BardsTale.UI.ViewModels;
 public sealed class CombatActionOptionViewModel : ViewModelBase
 {
     private CombatActionOptionViewModel(string label, string detail, CombatActionType action,
-        Spell? spell, Song? song, Item? item, bool needsEnemyTarget, bool isItemPower = false)
+        Spell? spell, Song? song, Item? item, bool needsEnemyTarget, bool isItemPower = false,
+        int spellCost = 0, bool canAfford = true)
     {
         Label = label;
         Detail = detail;
@@ -18,10 +20,32 @@ public sealed class CombatActionOptionViewModel : ViewModelBase
         Item = item;
         NeedsEnemyTarget = needsEnemyTarget;
         IsItemPower = isItemPower;
+        SpellCost = spellCost;
+        CanAfford = canAfford;
     }
 
     /// <summary>True when this action is a once-per-fight power from a wielded item.</summary>
     public bool IsItemPower { get; }
+
+    /// <summary>The spell-point cost of this action (only meaningful for cast-spell options).</summary>
+    public int SpellCost { get; }
+
+    /// <summary>True unless this is a spell the caster can't currently pay for.</summary>
+    public bool CanAfford { get; }
+
+    /// <summary>True for a real spell with an SP cost (not a free item power or a non-spell action).</summary>
+    public bool ShowsCost => Action == CombatActionType.CastSpell && !IsItemPower;
+
+    public string CostText => ShowsCost ? $"{SpellCost} SP" : "";
+
+    /// <summary>Affordable actions read normally; spells the caster can't pay for dim out.</summary>
+    public IBrush LabelBrush => CanAfford
+        ? new SolidColorBrush(Color.Parse("#E8E9F0"))
+        : new SolidColorBrush(Color.Parse("#6B7280"));
+
+    public IBrush CostBrush => CanAfford
+        ? new SolidColorBrush(Color.Parse("#7FB069"))
+        : new SolidColorBrush(Color.Parse("#C0566B"));
 
     public string Label { get; }
     public string Detail { get; }
@@ -44,8 +68,9 @@ public sealed class CombatActionOptionViewModel : ViewModelBase
     public static CombatActionOptionViewModel Defend() =>
         new("Defend", "brace for blows (harder to hit)", CombatActionType.Defend, null, null, null, false);
 
-    public static CombatActionOptionViewModel Cast(Spell spell) =>
-        new($"Cast {spell.Name}", spell.Summary, CombatActionType.CastSpell, spell, null, null, spell.TargetsEnemies);
+    public static CombatActionOptionViewModel Cast(Spell spell, int casterSp) =>
+        new($"Cast {spell.Name}", spell.Summary, CombatActionType.CastSpell, spell, null, null, spell.TargetsEnemies,
+            spellCost: spell.Cost, canAfford: casterSp >= spell.Cost);
 
     public static CombatActionOptionViewModel Sing(Song song) =>
         new($"Sing {song.Name}", song.Summary, CombatActionType.Sing, null, song, null, false);

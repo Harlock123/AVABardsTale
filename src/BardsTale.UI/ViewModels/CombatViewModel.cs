@@ -85,6 +85,21 @@ public sealed partial class CombatViewModel : ViewModelBase
     /// <summary>True while the player is picking which ally a single-target spell affects.</summary>
     [ObservableProperty] private bool _isChoosingTarget;
 
+    /// <summary>The acting caster's spell points (with a low-SP nudge), shown by the prompt.</summary>
+    [ObservableProperty] private string _actorSpText = "";
+    [ObservableProperty] private bool _hasActorSp;
+
+    private void UpdateActorSp(Character actor)
+    {
+        var combatSpells = actor.KnownSpells.Select(Spells.Get).Where(s => s.UsableInCombat).ToList();
+        HasActorSp = actor.IsSpellcaster && combatSpells.Count > 0;
+        if (!HasActorSp) { ActorSpText = ""; return; }
+
+        ActorSpText = $"SP {actor.SpellPoints}/{actor.EffectiveMaxSpellPoints}";
+        if (!combatSpells.Any(s => s.Cost <= actor.SpellPoints))
+            ActorSpText += "  — too low to cast";
+    }
+
     public CombatOutcome Outcome { get; private set; } = CombatOutcome.Ongoing;
 
     /// <summary>Raised once combat resolves, carrying the final outcome and encounter.</summary>
@@ -127,6 +142,7 @@ public sealed partial class CombatViewModel : ViewModelBase
         _pendingOption = null;
         var actor = _actionables[_orderIndex];
         Prompt = $"What will {actor.Name} do?  ({_orderIndex + 1}/{_actionables.Count})";
+        UpdateActorSp(actor);
 
         Options.Clear();
         var frontRank = _party.FrontRank.ToHashSet();
@@ -135,10 +151,13 @@ public sealed partial class CombatViewModel : ViewModelBase
 
         if (!_magicSuppressed)
         {
+            // Show the whole combat repertoire (affordable first), dimming spells the
+            // caster can't currently pay for — parity with the town spell menu.
             foreach (var spell in actor.KnownSpells.Select(Spells.Get)
-                         .Where(s => s.UsableInCombat && s.Cost <= actor.SpellPoints)
-                         .OrderBy(s => s.Level))
-                Options.Add(CombatActionOptionViewModel.Cast(spell));
+                         .Where(s => s.UsableInCombat)
+                         .OrderByDescending(s => s.Cost <= actor.SpellPoints)
+                         .ThenBy(s => s.Level))
+                Options.Add(CombatActionOptionViewModel.Cast(spell, actor.SpellPoints));
 
             if (actor.CanSing)
                 foreach (var song in actor.KnownSongs.Select(Songs.Get))
@@ -167,6 +186,15 @@ public sealed partial class CombatViewModel : ViewModelBase
     {
         if (option is null || IsOver || _orderIndex >= _actionables.Count) return;
 
+        var actor = _actionables[_orderIndex];
+
+        // Reject a spell the caster can't pay for, without spending the turn.
+        if (!option.IsItemPower && option.Spell is { } sp && actor.SpellPoints < sp.Cost)
+        {
+            Log.Add($"{actor.Name} hasn't the spell points for {sp.Name}.");
+            return;
+        }
+
         // Single-ally spells (heal / cure / revive) drop into a target-picking step.
         if (option.NeedsAllyTarget)
         {
@@ -174,7 +202,6 @@ public sealed partial class CombatViewModel : ViewModelBase
             return;
         }
 
-        var actor = _actionables[_orderIndex];
         var target = ValidTargetIndex();
         var command = option.Action switch
         {

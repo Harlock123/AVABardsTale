@@ -436,7 +436,10 @@ The town also has a **Cast a Spell** menu (no building needed): pick a caster's
 restorative spell — heal an ally, heal the party, cure ailments, or revive the
 fallen — and a target, and cast it for spell points instead of paying the Temple.
 The menu shows each caster's **spell points**, every spell's **cost**, and dims the
-ones a caster can't yet afford (affordable spells sort to the top).
+ones a caster can't yet afford (affordable spells sort to the top). The **in-combat
+spell picker** mirrors this: the acting caster's SP (with a "too low to cast" nudge),
+each spell's cost, affordable spells first, and unaffordable ones dimmed rather than
+hidden — and picking one you can't pay for is refused without wasting the turn.
 
 ### The twenty floors
 

@@ -101,12 +101,20 @@ public static class ScreenshotRunner
         await Settle();
         Capture(view, dir, "catacombs");
 
-        // A staged battle scene.
+        // A staged battle scene — tuned so the colour-coded combat log shows variety:
+        // the lead hero keeps a fire ward (cyan "warded" lines vs the dragon's breath) and
+        // wears a regen ring (green lines); a couple of auto-resolved rounds fill the log.
+        foreach (var m in vm.Session.Party.Members) { m.MaxHitPoints = 220; m.HitPoints = 220; }
+        var lead = vm.Session.Party.Members[0];
+        lead.Ring1 = Items.RingOfRegeneration;
+        lead.HitPoints = 150; // wounded, so regeneration shows
         explore.StartCombatForScreenshot(new Encounter(new[]
         {
+            new MonsterGroup(Bestiary.YoungRedDragon, 1),
             new MonsterGroup(Bestiary.Ghoul, 3),
-            new MonsterGroup(Bestiary.Orc, 2),
         }));
+        for (var r = 0; r < 2; r++)
+            if (explore.Combat is { IsOver: false } c) c.AutoCommand.Execute(null);
         await Settle();
         Capture(view, dir, "combat");
     }

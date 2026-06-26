@@ -37,6 +37,9 @@ public sealed class CombatLogLineViewModel
         // Victory / defeat banners.
         if (Has("are defeated")) return ("🏆", Victory);
 
+        // A boss or elite turning berserk — a danger cue the player should feel.
+        if (Has("in fury") || Has("frenzy") || Has("enrage")) return ("💢", Enrage);
+
         // Wards, saves and resists — cyan, the standout the player wants to notice.
         if (Has("warded") || Has("shrugs off") || Has("luck softens") || Has("resists"))
             return ("🛡", Cyan);
@@ -83,4 +86,5 @@ public sealed class CombatLogLineViewModel
     private static readonly IBrush Status = B("#C18FE0");    // sleep / poison / drain (purple)
     private static readonly IBrush Cast = B("#9FB4E8");      // spells, songs, buffs
     private static readonly IBrush Victory = B("#E8C56B");   // victory banner (gold)
+    private static readonly IBrush Enrage = B("#F2683C");    // a foe turns berserk (fiery orange)
 }

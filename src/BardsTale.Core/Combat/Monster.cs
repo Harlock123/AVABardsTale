@@ -108,6 +108,12 @@ public sealed class Monster
     public required MonsterTemplate Template { get; init; }
     public int HitPoints { get; set; }
 
+    /// <summary>
+    /// Set once when a boss or elite champion is driven below its enrage threshold: it
+    /// then strikes harder, faster and casts more readily for the rest of the fight.
+    /// </summary>
+    public bool Enraged { get; set; }
+
     public string Name => Template.Name;
     public int ArmorClass => Template.ArmorClass;
     public bool IsDead => HitPoints <= 0;

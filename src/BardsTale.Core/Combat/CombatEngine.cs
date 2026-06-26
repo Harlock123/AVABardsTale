@@ -51,6 +51,12 @@ public sealed class CombatEngine
     private bool _skipMonstersFirstRound;
     private bool _skipPartyFirstRound;
 
+    // Boss/elite champions that turn berserk once cornered (see MaybeEnrage).
+    private readonly HashSet<Monster> _enrageable = new();
+
+    /// <summary>Fraction of max HP at or below which a boss/elite flips into its enrage.</summary>
+    private const double EnrageThreshold = 0.35;
+
     public CombatEngine(Party party, Encounter encounter, IRandomSource rng,
         bool magicSuppressed = false, SurpriseState? surprise = null)
     {
@@ -58,6 +64,13 @@ public sealed class CombatEngine
         _encounter = encounter;
         _rng = rng;
         _magicSuppressed = magicSuppressed;
+
+        // A lair boss (the lead group of a boss fight) and any elite champion can enrage
+        // when driven near death; their summoned rabble cannot.
+        if (encounter.IsBoss && encounter.Groups.Count > 0)
+            foreach (var m in encounter.Groups[0].Monsters) _enrageable.Add(m);
+        foreach (var group in encounter.Groups.Where(g => g.Template.IsElite))
+            foreach (var m in group.Monsters) _enrageable.Add(m);
 
         Surprise = surprise ?? RollSurprise();
         if (Surprise == SurpriseState.MonstersSurprised) _skipMonstersFirstRound = true;
@@ -553,13 +566,29 @@ public sealed class CombatEngine
     {
         if (monster.IsDead) return;
 
+        MaybeEnrage(monster, round);
+
         var spell = monster.Template.Spell;
-        if (!_magicSuppressed && spell is not null && _rng.Chance(spell.Chance) && CanCastUsefully(spell))
+        if (!_magicSuppressed && spell is not null && CanCastUsefully(spell)
+            && _rng.Chance(EffectiveCastChance(monster, spell)))
         {
             CastMonsterSpell(monster, spell, round);
             return;
         }
         ResolveMonsterAttack(monster, round);
+    }
+
+    /// <summary>
+    /// Drives a boss or elite berserk the first time it is cornered below the enrage
+    /// threshold. From then on <see cref="Monster.Enraged"/> sharpens its attacks and casting.
+    /// </summary>
+    private void MaybeEnrage(Monster monster, CombatRound round)
+    {
+        if (monster.Enraged || !_enrageable.Contains(monster)) return;
+        if (monster.HitPoints > monster.Template.MaxHitPoints * EnrageThreshold) return;
+
+        monster.Enraged = true;
+        round.Log.Add($"{monster.Name} ROARS in fury — its wounds drive it into a frenzy!");
     }
 
     private bool CanCastUsefully(MonsterSpell spell) => spell.Kind switch
@@ -571,6 +600,35 @@ public sealed class CombatEngine
         MonsterSpellKind.Summon => spell.SummonTemplate is not null && _encounter.CanSummonMore,
         _ => false
     };
+
+    /// <summary>
+    /// A smarter caster reads the battlefield: it leans on healing when an ally is dying,
+    /// favours area blasts against a clustered party, and presses spells harder once enraged.
+    /// </summary>
+    private double EffectiveCastChance(Monster monster, MonsterSpell spell)
+    {
+        var chance = spell.Chance;
+        switch (spell.Kind)
+        {
+            case MonsterSpellKind.HealAllies:
+                // Triage: cast far more readily when an ally is gravely wounded.
+                if (_encounter.Groups.SelectMany(g => g.Monsters)
+                        .Any(m => !m.IsDead && m.HitPoints <= m.Template.MaxHitPoints * 0.35))
+                    chance = Math.Max(chance, 0.85);
+                break;
+            case MonsterSpellKind.BlastParty:
+                // Area spells earn their cost against a full party.
+                if (_party.LivingCount >= 4) chance += 0.15;
+                break;
+            case MonsterSpellKind.SleepFoe:
+                // Worth opening with while the party is still awake and intact.
+                if (_party.Members.Count(m => !m.IsDead && !m.IsAsleep) >= 4) chance += 0.10;
+                break;
+        }
+
+        if (monster.Enraged) chance *= 1.4;
+        return Math.Clamp(chance, 0.0, 0.95);
+    }
 
     private void CastMonsterSpell(Monster caster, MonsterSpell spell, CombatRound round)
     {
@@ -681,13 +739,30 @@ public sealed class CombatEngine
     private void ResolveMonsterAttack(Monster monster, CombatRound round)
     {
         if (monster.IsDead) return;
+
+        // An enraged boss/elite lashes out twice and hits harder; everyone else swings once.
+        var swings = monster.Enraged ? 2 : 1;
+        var hitBonus = monster.Enraged ? 2 : 0;
+        var damageBonus = monster.Enraged ? 2 : 0;
+
+        for (var i = 0; i < swings; i++)
+        {
+            if (_party.LivingCount == 0) return;
+            ResolveMonsterSwing(monster, hitBonus, damageBonus, round);
+        }
+    }
+
+    /// <summary>A single attack: pick a target, roll to hit, and apply damage and riders.</summary>
+    private void ResolveMonsterSwing(Monster monster, int hitBonus, int damageBonus, CombatRound round)
+    {
         var target = PickPartyTarget();
         if (target is null) return;
 
         var ac = target.ArmorClass - _partyArmorBonus + (_defending.Contains(target) ? -2 : 0);
-        if (RollToHit(monster.Template.AttackBonus, ac))
+        if (RollToHit(monster.Template.AttackBonus + hitBonus, ac))
         {
-            var dmg = _rng.Roll(monster.Template.AttackDice, monster.Template.AttackSides, monster.Template.AttackBonus);
+            var dmg = _rng.Roll(monster.Template.AttackDice, monster.Template.AttackSides,
+                monster.Template.AttackBonus + damageBonus);
             var wasAsleep = target.IsAsleep;
             target.ApplyDamage(dmg);
             round.Log.Add($"{monster.Name} hits {target.Name} for {dmg}.");
@@ -729,11 +804,25 @@ public sealed class CombatEngine
 
     private Character? ResolveAlly(int index) => _party[index];
 
-    /// <summary>Monsters strike the front rank (first three living members) preferentially.</summary>
+    /// <summary>
+    /// Monsters strike the front rank (first three living members), but a cannier foe
+    /// focuses fire: most of the time it goes for the weakest hero still standing — the
+    /// one closest to death — to press its advantage; otherwise it lashes out at random.
+    /// </summary>
     private Character? PickPartyTarget()
     {
-        var front = _party.FrontRank.ToList();
+        var front = _party.FrontRank.Where(m => !m.IsDead).ToList();
         if (front.Count == 0) return null;
+
+        if (_rng.Chance(0.6))
+        {
+            var weakest = front
+                .OrderBy(m => m.HitPoints)
+                .ThenBy(m => m.EffectiveMaxHitPoints)
+                .First();
+            return weakest;
+        }
+
         return front[_rng.Next(0, front.Count)];
     }
 }

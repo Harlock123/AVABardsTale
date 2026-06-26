@@ -445,7 +445,10 @@ press **Enter** (or the on-screen *Enter Building* button) to go inside:
   levels and attributes sapped by drain attacks, all for gold.
 - **Review Board** — spend banked experience to level heroes up.
 - **The Scarlet Bard** & **Mad Mable's** — taverns where you buy a round of drinks
-  to loosen tongues and hear rumours and hints about the dangers below.
+  to loosen tongues and hear rumours. Many are **dynamic, progress-aware tips**: the
+  named **boss waiting on the next floor down**, a real creature that **prowls that depth**,
+  and nudges toward the **secrets, riddles and locked vaults** still unclaimed in the
+  catacombs you've explored — useful reconnaissance, mixed in with the house's usual gossip.
 - **Garrick's Inn** — rent a room for the night to fully restore the party's hit
   points **and spell points** for a flat per-head fee (the fallen still need the
   Temple).

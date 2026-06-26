@@ -670,13 +670,29 @@ public sealed partial class TownViewModel : ViewModelBase
             return;
         }
         _session.Party.Gold -= Taverns.RoundCost;
-        var rumor = Taverns.RandomRumor(CurrentBuildingName, _session.Rng);
+        var rumor = Taverns.Rumor(CurrentBuildingName, _session.Rng, BuildRumorContext());
         TavernRumors.Insert(0, rumor);
         Notice = $"You buy a round at {CurrentBuildingName}.";
         Sfx.Play(GameSound.Buy);
         RefreshEconomy();
         // Loosened tongues sometimes turn up honest work.
         MaybeOfferQuest(QuestGiver.TavernPatron, 0.5);
+    }
+
+    /// <summary>Gathers the party's progress so rumours can hint at the next boss and unclaimed secrets.</summary>
+    private RumorContext BuildRumorContext()
+    {
+        int doors = 0, riddles = 0, gates = 0, locked = 0;
+        if (_session.ActiveDungeon is { } dungeon)
+            foreach (var maze in dungeon.Levels.Values)
+            {
+                doors += maze.HiddenSecretCount();
+                riddles += maze.CountFeature(BardsTale.Core.Dungeon.CellFeature.Riddle);
+                gates += maze.GateCount();
+                locked += maze.LockedDoorCount();
+            }
+
+        return new RumorContext(_session.Stats.DeepestDepth, doors, riddles, gates, locked, _session.Party.Keys);
     }
 
     // --- The Forge (Smithy) ---

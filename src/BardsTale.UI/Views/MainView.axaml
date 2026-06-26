@@ -244,9 +244,49 @@
                                 <TextBlock Grid.Column="1" Foreground="#9AA0B5"
                                            Text="{Binding Settings.UiScale, StringFormat='{}{0:P0}'}"/>
                             </Grid>
-                            <Slider Minimum="0.8" Maximum="1.2" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                            <Slider Minimum="0.8" Maximum="1.6" TickFrequency="0.05" IsSnapToTickEnabled="True"
                                     Value="{Binding Settings.UiScale}"/>
+                            <TextBlock Text="Enlarges all text and controls — up to 160% for easier reading."
+                                       Foreground="#9AA0B5" FontSize="11"/>
                         </StackPanel>
+
+                        <Border Height="1" Background="#2A2F3E" Margin="0,4"/>
+                        <TextBlock Text="Accessibility" Foreground="#E8C56B" FontWeight="Bold"/>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Colourblind-friendly combat log" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Recolours the combat log to avoid red/green pairings (icons still mark every event)."
+                                           Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                          IsChecked="{Binding Settings.ColorblindMode}"/>
+                        </Grid>
+
+                        <TextBlock Text="Movement keys (the arrow keys always work too)" Foreground="#E8E9F0"/>
+                        <UniformGrid Columns="2" Margin="0,2,0,0">
+                            <StackPanel Margin="0,0,8,6">
+                                <TextBlock Text="Forward" Foreground="#9AA0B5" FontSize="11"/>
+                                <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding BindableKeys}"
+                                          SelectedItem="{Binding Settings.MoveForwardKey}"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Text="Back" Foreground="#9AA0B5" FontSize="11"/>
+                                <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding BindableKeys}"
+                                          SelectedItem="{Binding Settings.MoveBackwardKey}"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Text="Turn left" Foreground="#9AA0B5" FontSize="11"/>
+                                <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding BindableKeys}"
+                                          SelectedItem="{Binding Settings.TurnLeftKey}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Turn right" Foreground="#9AA0B5" FontSize="11"/>
+                                <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding BindableKeys}"
+                                          SelectedItem="{Binding Settings.TurnRightKey}"/>
+                            </StackPanel>
+                        </UniformGrid>
+                        <Border Height="1" Background="#2A2F3E" Margin="0,4"/>
 
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">

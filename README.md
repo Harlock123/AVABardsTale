@@ -573,9 +573,14 @@ enchanted gear. Two twists keep them tense:
 A **Settings** screen (the ⚙ button) exposes, all persisted across sessions:
 
 - **Reduced motion** (stops idle animations such as the swaying storefront signs),
-  **autosave** on return to town, and **interface size** (0.8–1.2× scale).
+  **autosave** on return to town, and **interface size** (0.8–**1.6×** scale, to enlarge
+  all text and controls).
 - **Independent volume sliders** for **sound effects** and **background music**, a
   master **mute**, a **music on/off** toggle, and a **crossfade** toggle.
+- **Accessibility**: a **colourblind-friendly combat-log palette** (an Okabe–Ito scheme
+  with no red/green pairings — and every line is icon-tagged regardless of colour), and
+  **rebindable movement keys** (pick Forward/Back/Turn keys from a dropdown; the arrow keys
+  always work as a fixed fallback).
 
 All audio is **synthesised procedurally** — no asset files. Short **sound effects**
 (footsteps, combat, spells, town services) and four looping **music tracks** (town,

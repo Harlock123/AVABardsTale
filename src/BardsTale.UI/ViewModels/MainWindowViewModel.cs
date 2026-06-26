@@ -36,14 +36,19 @@ public sealed partial class MainWindowViewModel : ViewModelBase
                 .Append(new SaveSlotViewModel(SaveSlots.Autosave, "Autosave", isAutosave: true)));
 
         // Persist preference changes and re-apply music settings; then load saved settings.
+        // A failing persist or audio refresh must never crash the app on a mere settings change.
         Settings.PropertyChanged += (_, e) =>
         {
-            _ = SettingsService.SaveAsync(_saves, Settings);
-            Music.RefreshSettings();
-            // The Ironman/difficulty preferences apply to a run that hasn't dived yet (you can
-            // still change your mind in town); once in the catacombs they're locked for that run.
-            if (e.PropertyName is nameof(AppSettings.IronmanMode) or nameof(AppSettings.Difficulty))
-                ApplyRunPreferences();
+            try
+            {
+                _ = SettingsService.SaveAsync(_saves, Settings);
+                Music.RefreshSettings();
+                // The Ironman/difficulty preferences apply to a run that hasn't dived yet (you can
+                // still change your mind in town); once in the catacombs they're locked for that run.
+                if (e.PropertyName is nameof(AppSettings.IronmanMode) or nameof(AppSettings.Difficulty))
+                    ApplyRunPreferences();
+            }
+            catch { /* a settings side-effect should never bring the game down */ }
         };
         _ = SettingsService.LoadAsync(_saves, Settings).ContinueWith(_ =>
         {
@@ -107,6 +112,19 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     /// <summary>The difficulty options offered by the settings selector.</summary>
     public System.Array DifficultyOptions { get; } = System.Enum.GetValues(typeof(BardsTale.Core.Combat.Difficulty));
+
+    /// <summary>Keys the player may rebind movement to — the letters, minus those reserved for panel hotkeys (J/B/K/Q).</summary>
+    public System.Collections.Generic.IReadOnlyList<Avalonia.Input.Key> BindableKeys { get; } = BuildBindableKeys();
+
+    private static System.Collections.Generic.IReadOnlyList<Avalonia.Input.Key> BuildBindableKeys()
+    {
+        var reserved = new System.Collections.Generic.HashSet<char> { 'J', 'B', 'K', 'Q' };
+        var keys = new System.Collections.Generic.List<Avalonia.Input.Key>();
+        for (var c = 'A'; c <= 'Z'; c++)
+            if (!reserved.Contains(c) && System.Enum.TryParse<Avalonia.Input.Key>(c.ToString(), out var key))
+                keys.Add(key);
+        return keys;
+    }
 
     /// <summary>Manual save and load are disabled during an Ironman run so death can't be undone.</summary>
     public bool ManualSavesAllowed => !_session.Ironman;

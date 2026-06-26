@@ -1,4 +1,5 @@
 using Avalonia.Input;
+using BardsTale.UI.Settings;
 using BardsTale.UI.ViewModels;
 
 namespace BardsTale.UI;
@@ -120,13 +121,29 @@ public static class MovementKeys
         };
         if (mover is null) return;
 
-        switch (e.Key)
+        switch (Resolve(e.Key))
         {
-            case Key.Up or Key.W: mover.Forward(); e.Handled = true; break;
-            case Key.Down or Key.S: mover.Backward(); e.Handled = true; break;
-            case Key.Left or Key.A: mover.Left(); e.Handled = true; break;
-            case Key.Right or Key.D: mover.Right(); e.Handled = true; break;
+            case MoveAction.Forward: mover.Forward(); e.Handled = true; break;
+            case MoveAction.Backward: mover.Backward(); e.Handled = true; break;
+            case MoveAction.Left: mover.Left(); e.Handled = true; break;
+            case MoveAction.Right: mover.Right(); e.Handled = true; break;
         }
+    }
+
+    public enum MoveAction { None, Forward, Backward, Left, Right }
+
+    /// <summary>
+    /// Maps a key to a movement action using the player's rebindable keys; the arrow keys are
+    /// always honoured as a fixed fallback so movement can never become unreachable.
+    /// </summary>
+    public static MoveAction Resolve(Key key)
+    {
+        var s = AppSettings.Current;
+        if (key == Key.Up || key == s.MoveForwardKey) return MoveAction.Forward;
+        if (key == Key.Down || key == s.MoveBackwardKey) return MoveAction.Backward;
+        if (key == Key.Left || key == s.TurnLeftKey) return MoveAction.Left;
+        if (key == Key.Right || key == s.TurnRightKey) return MoveAction.Right;
+        return MoveAction.None;
     }
 
     private interface IMover { void Forward(); void Backward(); void Left(); void Right(); }

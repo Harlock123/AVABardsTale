@@ -12,7 +12,8 @@ public static class SettingsService
     // sensible defaults (music on) rather than a missing-field false/zero.
     private sealed record Dto(bool ReducedMotion, bool Autosave, double UiScale, double SoundVolume, bool Muted,
         bool? MusicEnabled = null, double? MusicVolume = null, bool? CrossfadeMusic = null, bool? IronmanMode = null,
-        int? Difficulty = null);
+        int? Difficulty = null, bool? ColorblindMode = null,
+        int? MoveForwardKey = null, int? MoveBackwardKey = null, int? TurnLeftKey = null, int? TurnRightKey = null);
 
     public static async Task LoadAsync(ISaveStore store, AppSettings into)
     {
@@ -31,6 +32,11 @@ public static class SettingsService
             into.CrossfadeMusic = dto.CrossfadeMusic ?? true;
             into.IronmanMode = dto.IronmanMode ?? false;
             into.Difficulty = dto.Difficulty is >= 0 and <= 2 ? (BardsTale.Core.Combat.Difficulty)dto.Difficulty : BardsTale.Core.Combat.Difficulty.Normal;
+            into.ColorblindMode = dto.ColorblindMode ?? false;
+            if (dto.MoveForwardKey is { } f) into.MoveForwardKey = (Avalonia.Input.Key)f;
+            if (dto.MoveBackwardKey is { } b) into.MoveBackwardKey = (Avalonia.Input.Key)b;
+            if (dto.TurnLeftKey is { } l) into.TurnLeftKey = (Avalonia.Input.Key)l;
+            if (dto.TurnRightKey is { } r) into.TurnRightKey = (Avalonia.Input.Key)r;
         }
         catch
         {
@@ -41,7 +47,8 @@ public static class SettingsService
     public static Task SaveAsync(ISaveStore store, AppSettings s)
     {
         var json = JsonSerializer.Serialize(new Dto(s.ReducedMotion, s.Autosave, s.UiScale, s.SoundVolume, s.Muted,
-            s.MusicEnabled, s.MusicVolume, s.CrossfadeMusic, s.IronmanMode, (int)s.Difficulty));
+            s.MusicEnabled, s.MusicVolume, s.CrossfadeMusic, s.IronmanMode, (int)s.Difficulty, s.ColorblindMode,
+            (int)s.MoveForwardKey, (int)s.MoveBackwardKey, (int)s.TurnLeftKey, (int)s.TurnRightKey));
         return store.SaveTextAsync(Key, json);
     }
 }

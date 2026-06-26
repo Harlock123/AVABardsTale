@@ -1,3 +1,4 @@
+using Avalonia.Input;
 using BardsTale.Core.Combat;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -17,8 +18,19 @@ public sealed partial class AppSettings : ObservableObject
     /// <summary>Whether the game saves automatically on returning to town.</summary>
     [ObservableProperty] private bool _autosave = true;
 
-    /// <summary>Overall interface scale (0.8–1.2). 1.0 is the default size.</summary>
+    /// <summary>Overall interface scale (0.8–1.6). 1.0 is the default size; higher enlarges all text and controls.</summary>
     [ObservableProperty] private double _uiScale = 1.0;
+
+    // --- Accessibility ---
+
+    /// <summary>Switches the combat log (and cues) to a colourblind-friendly palette that avoids red/green pairings.</summary>
+    [ObservableProperty] private bool _colorblindMode;
+
+    /// <summary>Rebindable movement keys for exploring town and the dungeon (the arrow keys always work too).</summary>
+    [ObservableProperty] private Key _moveForwardKey = Key.W;
+    [ObservableProperty] private Key _moveBackwardKey = Key.S;
+    [ObservableProperty] private Key _turnLeftKey = Key.A;
+    [ObservableProperty] private Key _turnRightKey = Key.D;
 
     /// <summary>Sound-effect volume (0–1).</summary>
     [ObservableProperty] private double _soundVolume = 0.7;

@@ -89,6 +89,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private AchievementsViewModel? _achievements;
     [ObservableProperty] private bool _isSetCodexOpen;
     [ObservableProperty] private SetCodexViewModel? _setCodex;
+    [ObservableProperty] private bool _isHelpOpen;
+
+    /// <summary>The help/tutorial overlay sections — rebuilt on open so the control list reflects current key bindings.</summary>
+    public System.Collections.ObjectModel.ObservableCollection<HelpSectionViewModel> HelpSections { get; } = new();
 
     /// <summary>Top-bar renown badge.</summary>
     public string RenownBadge => $"🏆 {_session.Renown.Renown}";
@@ -195,6 +199,35 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void CloseSettings() => IsSettingsOpen = false;
+
+    /// <summary>Opens the help/tutorial overlay, (re)building its sections to reflect the current key bindings.</summary>
+    [RelayCommand]
+    private void ShowHelp()
+    {
+        BuildHelpSections();
+        IsHelpOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseHelp() => IsHelpOpen = false;
+
+    /// <summary>F1 / the ❔ button toggles the help overlay.</summary>
+    public void ToggleHelp()
+    {
+        if (IsHelpOpen) CloseHelp();
+        else ShowHelp();
+    }
+
+    private void BuildHelpSections()
+    {
+        var s = Settings;
+        string Key(Avalonia.Input.Key k) => k.ToString();
+
+        HelpSections.Clear();
+        foreach (var section in HelpContent.Build(
+            Key(s.MoveForwardKey), Key(s.MoveBackwardKey), Key(s.TurnLeftKey), Key(s.TurnRightKey)))
+            HelpSections.Add(section);
+    }
 
     /// <summary>Opens the quest journal, rebuilding it from the current quest progress.</summary>
     [RelayCommand]

@@ -13,10 +13,23 @@ public static class MovementKeys
 {
     public static void Handle(MainWindowViewModel vm, KeyEventArgs e)
     {
-        // Escape backs out: close the save/load panel, leave a building, or close the spell menu.
+        // F1 toggles the help/tutorial overlay from anywhere.
+        if (e.Key is Key.F1)
+        {
+            vm.ToggleHelp();
+            e.Handled = true;
+            return;
+        }
+
+        // Escape backs out: close the help overlay, save/load panel, leave a building, etc.
         if (e.Key is Key.Escape)
         {
-            if (vm.IsQuestLogOpen)
+            if (vm.IsHelpOpen)
+            {
+                vm.CloseHelpCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (vm.IsQuestLogOpen)
             {
                 vm.CloseQuestLogCommand.Execute(null);
                 e.Handled = true;

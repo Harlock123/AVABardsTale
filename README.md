@@ -292,6 +292,10 @@ dotnet build src/BardsTale.Desktop
 - **Quest journal (J)**, **Bestiary (B)** and the **accessory-set codex (K)** — open from
   anywhere (also top-bar buttons). **Settings (⚙)** holds reduced-motion, interface size,
   autosave, and the independent sound-effects / music volumes.
+- **Help (❔ / F1)** — an in-game **how-to-play overlay** that onboards the controls and
+  systems: getting started, movement (showing your current — rebindable — keys), the town
+  buildings, dungeon exploration, combat, and survival tips. Open it any time from the top
+  bar or with **F1**; **Esc** closes it.
 - **Light** — conjure light (a Bard's *Watchwood Melody* for free, or a mage's
   *Mage Flame* for spell points) to see and map darkness for a number of steps.
 - **Save / Load** (top bar) — opens a slot picker with **three named save slots**

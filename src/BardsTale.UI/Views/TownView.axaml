@@ -490,11 +490,15 @@
                 <!-- Town spell menu overlay -->
                 <Border IsVisible="{Binding IsSpellMenuOpen}" Background="#F00B0D14" Padding="14">
                     <DockPanel>
-                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-                            <TextBlock Grid.Column="0" Text="Cast a Spell" FontSize="20" FontWeight="Bold"
-                                       Foreground="#E8C56B"/>
-                            <Button Grid.Column="1" Content="Close" Command="{Binding CloseSpellMenuCommand}"/>
-                        </Grid>
+                        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8" Spacing="4">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" Text="Cast a Spell" FontSize="20" FontWeight="Bold"
+                                           Foreground="#E8C56B"/>
+                                <Button Grid.Column="1" Content="Close" Command="{Binding CloseSpellMenuCommand}"/>
+                            </Grid>
+                            <TextBlock Text="{Binding CasterSpSummary}" FontSize="12" Foreground="#8FB7FF"
+                                       FontFamily="Consolas,monospace" TextWrapping="Wrap"/>
+                        </StackPanel>
 
                         <Border DockPanel.Dock="Bottom" Margin="0,10,0,0" Padding="8" CornerRadius="4"
                                 Background="#0E1018">
@@ -517,6 +521,8 @@
                                 <StackPanel Spacing="2">
                                     <TextBlock Text="{Binding SelectedHero.Name}" FontWeight="Bold" Foreground="#E8E9F0"/>
                                     <TextBlock Text="{Binding SelectedHero.Health}" FontSize="11" Foreground="#9AA0B5"/>
+                                    <TextBlock Text="{Binding SelectedHero.Spell}" FontSize="11" Foreground="#9AA0B5"
+                                               IsVisible="{Binding SelectedHero.IsSpellcaster}"/>
                                     <TextBlock Text="{Binding SelectedHero.StatusText}" FontSize="11" Foreground="#9AA0B5"/>
                                 </StackPanel>
                             </Border>
@@ -528,10 +534,15 @@
                                  Background="#181B24">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:SpellMenuItemViewModel">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Label}" FontWeight="Bold" Foreground="#E8E9F0"/>
-                                        <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#9AA0B5"/>
-                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding Label}" FontWeight="Bold" Foreground="{Binding LabelBrush}"/>
+                                            <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#9AA0B5"/>
+                                            <TextBlock Text="{Binding CasterSpText}" FontSize="10" Foreground="#7E879B"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding CostText}" FontWeight="Bold"
+                                                   Foreground="{Binding CostBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>

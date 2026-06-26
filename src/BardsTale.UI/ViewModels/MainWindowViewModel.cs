@@ -61,6 +61,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private BestiaryViewModel? _bestiary;
     [ObservableProperty] private bool _isAchievementsOpen;
     [ObservableProperty] private AchievementsViewModel? _achievements;
+    [ObservableProperty] private bool _isSetCodexOpen;
+    [ObservableProperty] private SetCodexViewModel? _setCodex;
 
     /// <summary>Top-bar renown badge.</summary>
     public string RenownBadge => $"🏆 {_session.Renown.Renown}";
@@ -155,6 +157,24 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         if (IsBestiaryOpen) CloseBestiary();
         else ShowBestiary();
+    }
+
+    /// <summary>Opens the accessory-set codex, rebuilt from the party's current gear.</summary>
+    [RelayCommand]
+    private void ShowSetCodex()
+    {
+        SetCodex = new SetCodexViewModel(_session.Party);
+        IsSetCodexOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseSetCodex() => IsSetCodexOpen = false;
+
+    /// <summary>The 'K' key toggles the set codex.</summary>
+    public void ToggleSetCodex()
+    {
+        if (IsSetCodexOpen) CloseSetCodex();
+        else ShowSetCodex();
     }
 
     /// <summary>Opens the achievements & renown overlay (rebuilt from current standing).</summary>

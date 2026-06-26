@@ -30,6 +30,11 @@ public static class MovementKeys
                 vm.CloseAchievementsCommand.Execute(null);
                 e.Handled = true;
             }
+            else if (vm.IsSetCodexOpen)
+            {
+                vm.CloseSetCodexCommand.Execute(null);
+                e.Handled = true;
+            }
             else if (vm.Town is { IsQuestOfferOpen: true } offer)
             {
                 offer.DeclineQuestOfferCommand.Execute(null);
@@ -85,6 +90,15 @@ public static class MovementKeys
             && vm.Town is not { IsQuestOfferOpen: true })
         {
             vm.ToggleBestiary();
+            e.Handled = true;
+            return;
+        }
+
+        // K opens (and closes) the accessory-set codex from anywhere.
+        if (e.Key is Key.K && !vm.IsSlotPanelOpen && !vm.IsSettingsOpen
+            && vm.Town is not { IsQuestOfferOpen: true })
+        {
+            vm.ToggleSetCodex();
             e.Handled = true;
             return;
         }

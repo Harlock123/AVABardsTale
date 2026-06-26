@@ -5,6 +5,7 @@ using BardsTale.Core.Combat;
 using BardsTale.Core.Dungeon;
 using BardsTale.Core.Game;
 using BardsTale.Core.Items;
+using BardsTale.Core.Magic;
 using BardsTale.Core.Persistence;
 using BardsTale.Core.Town;
 using BardsTale.Core.Util;
@@ -594,6 +595,73 @@ public class AccessoryChestTests
 
         var round = engine.ExecuteRound(commands);
         Assert.Contains(round.Log, l => l.Contains("warded against fire"));
+    }
+
+    // ── Set codex (data) ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void Set_bonus_summaries_read_clearly()
+    {
+        AccessorySet Set(string n) => AccessorySets.All.First(s => s.Name == n);
+        Assert.Contains("+1 armour", Set("Twin Bulwark").BonusSummary);
+        Assert.Contains("wards Arcane", Set("Stormwarden").BonusSummary);
+        Assert.Contains("+15 max HP", Set("Lifeguard").BonusSummary);
+        Assert.Contains("immune to poison", Set("Warden's Resolve").BonusSummary);
+    }
+
+    [Fact]
+    public void Boss_guarded_sets_report_their_floor_as_a_source()
+    {
+        Assert.Contains("Stone Titan", AccessorySets.SourceHint("Twin Bulwark"));
+        Assert.Contains("floor 11", AccessorySets.SourceHint("Twin Bulwark"));
+        Assert.Contains("Dragon Tyrant", AccessorySets.SourceHint("Elementalist's Regalia"));
+        Assert.Contains("treasure", AccessorySets.SourceHint("Duelist's Edge")); // not boss-guarded
+    }
+
+    [Fact]
+    public void Bosses_report_the_floor_they_lair_on()
+    {
+        Assert.Equal(11, Bosses.FloorOf("Stone Titan"));
+        Assert.Equal(19, Bosses.FloorOf("Dragon Tyrant"));
+        Assert.Equal(20, Bosses.FloorOf("Mangar the Mad"));
+        Assert.Null(Bosses.FloorOf("Brynn the Bold"));
+    }
+
+    [Fact]
+    public void The_set_codex_lists_every_set_and_flags_the_active_one()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var hero = party.Members[0];
+        hero.Ring1 = Items.RingOfProtection;
+        hero.Ring2 = Items.RingOfProtection; // Twin Bulwark active
+
+        var codex = new SetCodexViewModel(party);
+        Assert.Equal(AccessorySets.All.Count, codex.Entries.Count);
+
+        var twin = codex.Entries.First(e => e.Name == "Twin Bulwark");
+        Assert.True(twin.IsActive);
+        Assert.Contains(hero.Name, twin.Status);
+
+        var idle = codex.Entries.First(e => e.Name == "Duelist's Edge");
+        Assert.False(idle.IsActive);
+    }
+
+    // ── Caster QoL: the town spell menu ───────────────────────────────────────
+
+    [Fact]
+    public void A_spell_menu_item_reports_cost_and_affordability()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var caster = party.Members[0];
+        var spell = Spells.All.First(s => s.UsableInTown && s.Cost > 0);
+
+        caster.SpellPoints = spell.Cost;          // exactly enough
+        var affordable = new SpellMenuItemViewModel(caster, spell);
+        Assert.True(affordable.CanAfford);
+        Assert.Contains($"{spell.Cost} SP", affordable.CostText);
+
+        caster.SpellPoints = spell.Cost - 1;      // one short
+        Assert.False(new SpellMenuItemViewModel(caster, spell).CanAfford);
     }
 
     // ── Vitality accessories (max HP / SP) ────────────────────────────────────

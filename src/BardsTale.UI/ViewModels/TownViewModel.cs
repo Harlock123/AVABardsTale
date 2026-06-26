@@ -938,15 +938,37 @@ public sealed partial class TownViewModel : ViewModelBase
     private void BuildSpellMenu()
     {
         SpellMenu.Clear();
-        foreach (var member in _session.Party.Members.Where(m => !m.IsDead))
-            foreach (var spell in member.KnownSpells.Select(Spells.Get)
-                         .Where(s => s.UsableInTown && s.Cost <= member.SpellPoints))
-                SpellMenu.Add(new SpellMenuItemViewModel(member, spell));
+        // List every known town spell (affordable first), dimming the ones a caster can't
+        // currently pay for — so the player sees the full repertoire and their SP at a glance.
+        var items = _session.Party.Members.Where(m => !m.IsDead)
+            .SelectMany(m => m.KnownSpells.Select(Spells.Get).Where(s => s.UsableInTown)
+                .Select(s => new SpellMenuItemViewModel(m, s)))
+            .OrderByDescending(i => i.CanAfford)
+            .ThenBy(i => i.Spell.Cost);
+        foreach (var item in items)
+            SpellMenu.Add(item);
 
         if (SelectedSpell is not null &&
             !SpellMenu.Any(s => s.Caster == SelectedSpell.Caster && s.Spell == SelectedSpell.Spell))
             SelectedSpell = null;
+
+        OnPropertyChanged(nameof(CasterSpSummary));
+        OnPropertyChanged(nameof(HasCasters));
     }
+
+    /// <summary>A one-line readout of each living caster's spell points, for the spell menu.</summary>
+    public string CasterSpSummary
+    {
+        get
+        {
+            var casters = _session.Party.Members
+                .Where(m => !m.IsDead && m.IsSpellcaster)
+                .Select(m => $"{m.Name} {m.SpellPoints}/{m.EffectiveMaxSpellPoints}");
+            return casters.Any() ? "Spell points — " + string.Join("   ", casters) : "No spellcasters in the party.";
+        }
+    }
+
+    public bool HasCasters => _session.Party.Members.Any(m => !m.IsDead && m.IsSpellcaster);
 
     private bool ApplyTownSpell(Spell spell, Character caster, Character? target, out string message)
     {

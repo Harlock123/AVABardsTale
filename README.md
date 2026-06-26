@@ -285,9 +285,9 @@ dotnet build src/BardsTale.Desktop
 - **Enter / Return** — enter the building you're standing before, or use the stairway
   you're on. **Esc** backs out of a building, panel or quest offer. **Q** assembles a
   Quick Party in the Adventurers Guild.
-- **Quest journal (J)** and **Bestiary (B)** — open from anywhere (also top-bar
-  buttons). **Settings (⚙)** holds reduced-motion, interface size, autosave, and the
-  independent sound-effects / music volumes.
+- **Quest journal (J)**, **Bestiary (B)** and the **accessory-set codex (K)** — open from
+  anywhere (also top-bar buttons). **Settings (⚙)** holds reduced-motion, interface size,
+  autosave, and the independent sound-effects / music volumes.
 - **Light** — conjure light (a Bard's *Watchwood Melody* for free, or a mage's
   *Mage Flame* for spell points) to see and map darkness for a number of steps.
 - **Save / Load** (top bar) — opens a slot picker with **three named save slots**
@@ -431,6 +431,8 @@ press **Enter** (or the on-screen *Enter Building* button) to go inside:
 The town also has a **Cast a Spell** menu (no building needed): pick a caster's
 restorative spell — heal an ally, heal the party, cure ailments, or revive the
 fallen — and a target, and cast it for spell points instead of paying the Temple.
+The menu shows each caster's **spell points**, every spell's **cost**, and dims the
+ones a caster can't yet afford (affordable spells sort to the top).
 
 ### The twenty floors
 
@@ -499,7 +501,9 @@ is **one piece away** the panel nudges you (*"Almost: Equip a Ring of Storm Ward
 Stormwarden."*). **Ornate chests** sometimes yield a whole **matched set** as a themed haul,
 and a handful of **lair bosses guard a specific set as a guaranteed reward** (the Dragon
 Tyrant on floor 19 drops the full three-piece Elementalist's Regalia). Recovering a complete
-set is **called out by name** in the log (*"✦ You've recovered the Twin Bulwark set…"*).
+set is **called out by name** in the log (*"✦ You've recovered the Twin Bulwark set…"*). An
+**accessory-set codex** (the *🔗 Sets* button or **K**) lists every set — its pieces, bonus,
+where to find it (which boss guards it, on which floor), and whether the party has it assembled.
 
 Accessory effects are surfaced in the **combat log** as they fire: regeneration ticks
 (*"Brynn regenerates 2 HP."*), elemental wards and luck softening a blast (*"… — luck softens

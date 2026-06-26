@@ -19,7 +19,26 @@ public sealed record AccessorySet(
     int HitBonus = 0,
     int DamageBonus = 0,
     int MaxHpBonus = 0,
-    int MaxSpBonus = 0);
+    int MaxSpBonus = 0)
+{
+    /// <summary>A readable list of everything this set grants, e.g. "+1 armour, +15 max HP, +1 regen/round".</summary>
+    public string BonusSummary
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (ArmorBonus > 0) parts.Add($"+{ArmorBonus} armour");
+            if (WardBonus != Element.None) parts.Add($"wards {MonsterElements.Describe(WardBonus)}");
+            if (MaxHpBonus > 0) parts.Add($"+{MaxHpBonus} max HP");
+            if (MaxSpBonus > 0) parts.Add($"+{MaxSpBonus} max SP");
+            if (RegenBonus > 0) parts.Add($"+{RegenBonus} regen/round");
+            if (HitBonus > 0) parts.Add($"+{HitBonus} to-hit");
+            if (DamageBonus > 0) parts.Add($"+{DamageBonus} dmg");
+            if (ImmuneBonus != StatusEffect.None) parts.Add($"immune to {Item.DescribeStatuses(ImmuneBonus)}");
+            return parts.Count > 0 ? string.Join(", ", parts) : "—";
+        }
+    }
+}
 
 /// <summary>The catalogue of accessory set bonuses and the rules for which are active.</summary>
 public static class AccessorySets
@@ -94,6 +113,15 @@ public static class AccessorySets
     /// <summary>The set a given boss is guaranteed to drop, or null if it guards no set.</summary>
     public static AccessorySet? RewardForBoss(string bossName) =>
         BossRewards.TryGetValue(bossName, out var setName) ? All.First(s => s.Name == setName) : null;
+
+    /// <summary>Where a set's pieces come from — a boss-guarded reward, or general deep treasure.</summary>
+    public static string SourceHint(string setName)
+    {
+        var boss = BossRewards.FirstOrDefault(kv => kv.Value == setName).Key;
+        if (boss is not null && Bosses.FloorOf(boss) is { } floor)
+            return $"Guarded by the {boss} on floor {floor}";
+        return "Assembled from treasure found in the deep (and ornate chests)";
+    }
 
     /// <summary>The (identified) item pieces that make up a set — for boss/themed drops.</summary>
     public static IReadOnlyList<Item> PiecesOf(AccessorySet set) =>

@@ -124,6 +124,14 @@ public static class Bosses
     public static MonsterTemplate BossForDepth(int depth) =>
         depth >= FinalDepth ? Mangar : Lairs[(Math.Max(1, depth) - 1) % Lairs.Length].Boss;
 
+    /// <summary>The floor a named boss lairs on, or null if the name isn't a lair boss.</summary>
+    public static int? FloorOf(string bossName)
+    {
+        for (var i = 0; i < Lairs.Length; i++)
+            if (Lairs[i].Boss.Name == bossName) return i + 1;
+        return bossName == Mangar.Name ? FinalDepth : null;
+    }
+
     /// <summary>Builds the fixed boss encounter for a dungeon level — Mangar's at the bottom.</summary>
     public static Encounter Create(int depth)
     {

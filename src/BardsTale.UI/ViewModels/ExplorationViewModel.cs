@@ -195,6 +195,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         CheckAchievements();
         OnPropertyChanged(nameof(Maze));
         Sfx.Play(GameSound.StairsDown);
+        Music.PlayDungeon(_game.Depth); // the ambience darkens as the party descends
     }
 
     [RelayCommand(CanExecute = nameof(CanAscend))]
@@ -203,6 +204,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         Handle(_game.Ascend());
         OnPropertyChanged(nameof(Maze));
         Sfx.Play(GameSound.StairsUp);
+        Music.PlayDungeon(_game.Depth);
     }
 
     [RelayCommand(CanExecute = nameof(CanReturnToTown))]
@@ -486,7 +488,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
         IsInCombat = false;
         Combat = null;
-        Music.Play(GameMusic.Dungeon); // fight over — back to the catacomb ambience
+        Music.PlayDungeon(_game.Depth); // fight over — back to the depth-appropriate catacomb ambience
         UpdateExploreState();
         SyncWorld();
     }

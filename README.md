@@ -591,10 +591,12 @@ A **Settings** screen (the ⚙ button) exposes, all persisted across sessions:
   always work as a fixed fallback).
 
 All audio is **synthesised procedurally** — no asset files. Short **sound effects**
-(footsteps, combat, spells, town services) and four looping **music tracks** (town,
-dungeon, combat, victory) that switch with the game state are generated in code and
-played through a per-platform backend on each head (macOS `afplay`, browser Web Audio,
-Android `AudioTrack`, iOS `AVAudioPlayer`).
+(footsteps, combat, spells, town services) and looping **music tracks** that switch with the
+game state are generated in code: a warm town theme, a driving combat theme, a victory
+fanfare, and **three catacomb themes that darken as you descend** — an ominous upper-crypt
+ambience (floors 1–6), a brooding lower-crypt theme (7–13), and a slow, dissonant dread for
+the abyss (14+). Each plays through a per-platform backend on every head (macOS `afplay`,
+browser Web Audio, Android `AudioTrack`, iOS `AVAudioPlayer`), crossfading at the boundaries.
 
 When the scene changes, tracks **crossfade** into one another (a smooth dip through
 silence — fade the old track out, swap, fade the new one in) on backends that can ramp

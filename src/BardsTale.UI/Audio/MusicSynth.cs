@@ -65,7 +65,7 @@ public static class MusicSynth
             MelWave: Wave.Triangle, BassPulse: false,
             MelGain: 0.30, BassGain: 0.34, PadGain: 0.10),
 
-        // Slow, sparse, ominous minor ambience: Am – Dm – Am – E.
+        // Slow, sparse, ominous minor ambience for the upper crypts: Am – Dm – Am – E.
         GameMusic.Dungeon => new Track(
             Bpm: 66,
             BassMidi: new[] { 45, 50, 45, 40 },
@@ -77,6 +77,32 @@ public static class MusicSynth
             Arp: new[] { 0, -1, 2, -1, 1, -1, 2, -1 },
             MelWave: Wave.Sine, BassPulse: false,
             MelGain: 0.26, BassGain: 0.32, PadGain: 0.13),
+
+        // Darker, lower and slower for the deep crypts: Dm – Bb – Dm – A, an octave down.
+        GameMusic.DungeonDeep => new Track(
+            Bpm: 58,
+            BassMidi: new[] { 38, 34, 38, 33 },
+            Chord: new[]
+            {
+                new[] { 62, 65, 69 }, new[] { 58, 62, 65 },
+                new[] { 62, 65, 69 }, new[] { 57, 61, 64 }
+            },
+            Arp: new[] { 0, -1, -1, 2, -1, 1, -1, -1 },
+            MelWave: Wave.Sine, BassPulse: false,
+            MelGain: 0.22, BassGain: 0.34, PadGain: 0.16),
+
+        // Dread of the abyss: a slow chromatic descent with a tritone in the pad. Sparse and low.
+        GameMusic.DungeonAbyss => new Track(
+            Bpm: 50,
+            BassMidi: new[] { 36, 35, 34, 33 },
+            Chord: new[]
+            {
+                new[] { 60, 63, 66 }, new[] { 59, 62, 65 },
+                new[] { 58, 61, 64 }, new[] { 57, 60, 63 }
+            },
+            Arp: new[] { 0, -1, -1, -1, 2, -1, -1, -1 },
+            MelWave: Wave.Sine, BassPulse: false,
+            MelGain: 0.20, BassGain: 0.34, PadGain: 0.18),
 
         // Driving minor with a pulsing bass: Am – F – G – E. Warm triangle voices
         // (not saw/square) keep the urgency without the harsh buzz.

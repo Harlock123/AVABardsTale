@@ -382,7 +382,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         exploration.PartyWipedRequested += OnPartyWiped;
         exploration.RenownChanged += RefreshRenown;
         CurrentView = exploration;
-        Music.Play(GameMusic.Dungeon);
+        Music.PlayDungeon(game.Depth);
         RefreshRenown();
     }
 

@@ -9,12 +9,16 @@ public enum GameMusic
 {
     /// <summary>Warm, folk-like theme for the town of Skara Brae.</summary>
     Town,
-    /// <summary>Slow, ominous ambience for exploring the catacombs.</summary>
+    /// <summary>Slow, ominous ambience for the upper catacombs (floors 1–6).</summary>
     Dungeon,
     /// <summary>Fast, driving theme during combat.</summary>
     Combat,
     /// <summary>Triumphant fanfare for the victory screen.</summary>
-    Victory
+    Victory,
+    /// <summary>A darker, brooding ambience for the mid catacombs (floors 7–13).</summary>
+    DungeonDeep,
+    /// <summary>A slow, dissonant theme of dread for the deepest floors (14+).</summary>
+    DungeonAbyss
 }
 
 /// <summary>
@@ -77,6 +81,15 @@ public static class Music
             Apply();
         }
     }
+
+    /// <summary>The catacomb ambience for a dungeon depth — it darkens as the party descends.</summary>
+    public static GameMusic DungeonTheme(int depth) =>
+        depth >= 14 ? GameMusic.DungeonAbyss :
+        depth >= 7 ? GameMusic.DungeonDeep :
+        GameMusic.Dungeon;
+
+    /// <summary>Plays the depth-appropriate catacomb ambience (crossfading at the tier boundaries).</summary>
+    public static void PlayDungeon(int depth) => Play(DungeonTheme(depth));
 
     /// <summary>Stops the music entirely until the next <see cref="Play"/>.</summary>
     public static void Stop()

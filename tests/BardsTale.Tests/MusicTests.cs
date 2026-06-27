@@ -13,6 +13,8 @@ public class MusicTests
     [InlineData(GameMusic.Dungeon)]
     [InlineData(GameMusic.Combat)]
     [InlineData(GameMusic.Victory)]
+    [InlineData(GameMusic.DungeonDeep)]
+    [InlineData(GameMusic.DungeonAbyss)]
     public void Each_track_renders_a_non_silent_loop_safe_buffer(GameMusic music)
     {
         var pcm = MusicSynth.BuildPcm(music);
@@ -33,12 +35,22 @@ public class MusicTests
     [Fact]
     public void Tracks_are_distinct_from_one_another()
     {
-        var all = new[] { GameMusic.Town, GameMusic.Dungeon, GameMusic.Combat, GameMusic.Victory }
-            .Select(MusicSynth.BuildPcm)
-            .ToList();
+        var tracks = Enum.GetValues<GameMusic>();
+        var all = tracks.Select(MusicSynth.BuildPcm).ToList();
         // each pair differs in length or content
         for (var i = 0; i < all.Count; i++)
             for (var j = i + 1; j < all.Count; j++)
-                Assert.False(all[i].SequenceEqual(all[j]), "tracks should be musically distinct");
+                Assert.False(all[i].SequenceEqual(all[j]),
+                    $"{tracks[i]} and {tracks[j]} should be musically distinct");
     }
+
+    [Theory]
+    [InlineData(1, GameMusic.Dungeon)]
+    [InlineData(6, GameMusic.Dungeon)]
+    [InlineData(7, GameMusic.DungeonDeep)]
+    [InlineData(13, GameMusic.DungeonDeep)]
+    [InlineData(14, GameMusic.DungeonAbyss)]
+    [InlineData(20, GameMusic.DungeonAbyss)]
+    public void The_catacomb_ambience_darkens_with_depth(int depth, GameMusic expected)
+        => Assert.Equal(expected, Music.DungeonTheme(depth));
 }

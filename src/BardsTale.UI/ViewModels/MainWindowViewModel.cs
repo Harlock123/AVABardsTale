@@ -43,9 +43,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             {
                 _ = SettingsService.SaveAsync(_saves, Settings);
                 Music.RefreshSettings();
-                // The Ironman/difficulty preferences apply to a run that hasn't dived yet (you can
-                // still change your mind in town); once in the catacombs they're locked for that run.
-                if (e.PropertyName is nameof(AppSettings.IronmanMode) or nameof(AppSettings.Difficulty))
+                // The Ironman/difficulty/mutator preferences apply to a run that hasn't dived yet
+                // (you can still change your mind in town); once in the catacombs they're locked.
+                if (e.PropertyName is nameof(AppSettings.IronmanMode) or nameof(AppSettings.Difficulty)
+                    || e.PropertyName?.StartsWith("Mod") == true)
                     ApplyRunPreferences();
             }
             catch { /* a settings side-effect should never bring the game down */ }
@@ -119,6 +120,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public bool IsChallengeRun => _session.IsChallenge;
     public string ChallengeBadge => $"🎯 #{_session.ChallengeSeed}";
 
+    /// <summary>A badge counting active run mutators.</summary>
+    public bool IsModifiedRun => _session.Modifiers != BardsTale.Core.Game.RunModifier.None;
+    public string ModifierBadge
+    {
+        get
+        {
+            var n = BardsTale.Core.Game.RunModifiers.Count(_session.Modifiers);
+            return $"⚗ {n} mutator{(n == 1 ? "" : "s")}";
+        }
+    }
+
     /// <summary>The difficulty options offered by the settings selector.</summary>
     public System.Array DifficultyOptions { get; } = System.Enum.GetValues(typeof(BardsTale.Core.Combat.Difficulty));
 
@@ -144,6 +156,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         if (_session.HasActiveDungeon) return; // locked once committed to the catacombs
         _session.Ironman = Settings.IronmanMode;
         _session.Difficulty = Settings.Difficulty;
+        _session.Modifiers = Settings.SelectedModifiers;
         RefreshRunBadges();
     }
 
@@ -156,6 +169,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(DifficultyBadge));
         OnPropertyChanged(nameof(IsChallengeRun));
         OnPropertyChanged(nameof(ChallengeBadge));
+        OnPropertyChanged(nameof(IsModifiedRun));
+        OnPropertyChanged(nameof(ModifierBadge));
         OnPropertyChanged(nameof(ManualSavesAllowed));
     }
 
@@ -389,7 +404,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         _deepestBeforeDive = _session.Stats.DeepestDepth;
         var game = _session.EnterDungeon();
-        var exploration = new ExplorationViewModel(game, _session.Stats, _session.Quests, _session.Codex, _session.Renown);
+        var exploration = new ExplorationViewModel(game, _session.Stats, _session.Quests, _session.Codex,
+            _session.Renown, _session.ReachStory);
         exploration.ReturnToTownRequested += ReturnFromDungeon;
         exploration.GameWonRequested += OnGameWon;
         exploration.PartyWipedRequested += OnPartyWiped;
@@ -434,7 +450,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private async Task RecordRun(string outcome)
     {
         var stats = _session.Stats;
-        var record = new RunRecord(outcome, stats.DeepestDepth, stats.Score, _session.Ironman,
+        // Mutators raise the run's score (harder runs are worth more).
+        var score = (int)System.Math.Round(stats.Score * BardsTale.Core.Game.RunModifiers.ScoreMultiplier(_session.Modifiers));
+        var record = new RunRecord(outcome, stats.DeepestDepth, score, _session.Ironman,
             _session.Ascension, (int)_session.Difficulty, _session.ChallengeSeed ?? -1,
             stats.MonstersSlain, stats.GoldEarned, System.DateTime.Now.Ticks);
         try { await RunHistory.AppendAsync(_saves, record); } catch { /* history is non-essential */ }
@@ -443,7 +461,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void NewGame()
     {
-        _session = new GameSession { Ironman = Settings.IronmanMode, Difficulty = Settings.Difficulty };
+        _session = new GameSession
+        {
+            Ironman = Settings.IronmanMode,
+            Difficulty = Settings.Difficulty,
+            Modifiers = Settings.SelectedModifiers
+        };
         IsGameWon = false;
         IsGameOver = false;
         ShowChallengeResult = false;

@@ -47,6 +47,26 @@ public sealed class GameSession
     /// <summary>The run's chosen challenge level, scaling foes, ambushes, camp risk and rewards.</summary>
     public Combat.Difficulty Difficulty { get; set; } = Combat.Difficulty.Normal;
 
+    /// <summary>Opt-in challenge mutators active for this run (see <see cref="RunModifiers"/>).</summary>
+    public RunModifier Modifiers { get; set; } = RunModifier.None;
+
+    /// <summary>Whether Garth's shop is open this run (closed by the No Shops mutator).</summary>
+    public bool ShopsOpen => RunModifiers.ShopsOpen(Modifiers);
+
+    /// <summary>Floors whose story beat the party has already seen (so it plays only once).</summary>
+    public HashSet<int> SeenStory { get; } = new();
+
+    /// <summary>
+    /// Called on reaching a floor: returns its main-quest story beat the first time, or null if the
+    /// floor has no beat or it has already played.
+    /// </summary>
+    public Lore.StoryBeat? ReachStory(int depth)
+    {
+        var beat = Lore.StoryBeats.ForDepth(depth);
+        if (beat is null || !SeenStory.Add(depth)) return null;
+        return beat;
+    }
+
     /// <summary>The daily-challenge seed this run was started on, or null for an ordinary run.</summary>
     public int? ChallengeSeed { get; set; }
 
@@ -97,7 +117,7 @@ public sealed class GameSession
         if (_dungeon is null)
         {
             var maze = new MazeBuilder(Rng).Build("Catacombs — Level 1", 16, 16);
-            _dungeon = new GameState(Party, maze, Rng, Ascension, Combat.DifficultyProfile.For(Difficulty));
+            _dungeon = new GameState(Party, maze, Rng, Ascension, Combat.DifficultyProfile.For(Difficulty), Modifiers);
         }
         else
         {
@@ -127,7 +147,8 @@ public sealed class GameSession
         {
             Ascension = Ascension + 1,
             Ironman = Ironman,
-            Difficulty = Difficulty
+            Difficulty = Difficulty,
+            Modifiers = Modifiers
         };
         foreach (var m in Party.Members.ToList())
         {

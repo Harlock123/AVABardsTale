@@ -647,6 +647,10 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
 - A **fixed boss lair** on each level (guarding the descent) — a tough named boss
   flanked by minions, cleared permanently once beaten; the boss changes by depth.
   Every boss is **guaranteed to drop a magic item**.
+- A **light main-quest thread**: scripted **story beats** play the first time the party reaches
+  certain floors (the descent, a torn journal page, a ghost's warning, the Mad God's mark, the
+  deepening cold, the tower's shadow, and the confrontation), giving the dive a narrative arc
+  toward Mangar. Each plays once and is tracked in the save.
 - A **final boss and win condition**: descend to the deepest level to face
   **Mangar the Mad**. He drops his **signature legendary, Mangar's Staff**; destroy
   him and his guard to free Skara Brae and win the game. A **victory / credits
@@ -665,6 +669,11 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
   risk and XP/gold rewards — Relaxed is a gentler descent, Hard is tougher and more frequent but
   pays out richer. A non-Normal run shows a difficulty badge, and the choice stacks with both
   New Game+ ascension scaling and Ironman. Persisted with the save.
+- **Run modifiers (mutators)**: opt-in challenges chosen in Settings for a new run, **stacking
+  with difficulty and New Game+** — **No Shops** (Garth's boarded up), **Relentless** (far more
+  ambushes), **No Camp** (no resting in the dungeon), **Pauper** (half gold & XP), and **Cursed
+  Loot** (all treasure found unidentified). Each makes the run harder and **raises your score**
+  (+20% apiece); a `⚗ N mutators` badge marks the run. Persisted with the save.
 - **Seeded daily challenge** (`🎯 Daily`): a run on a shared **seed** — the same dungeon, monsters
   and loot for everyone — played with the **ready-made party**, on **Normal**, to the **death**
   (Ironman). The panel offers **today's date-derived seed** or any seed you type (share one to

@@ -33,6 +33,10 @@
                         CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
                     <TextBlock Text="{Binding DifficultyBadge}" FontSize="11" FontWeight="Bold" Foreground="#A8D88A"/>
                 </Border>
+                <Border IsVisible="{Binding IsModifiedRun}" Background="#2A2030" BorderBrush="#C18FE0" BorderThickness="1"
+                        CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ModifierBadge}" FontSize="11" FontWeight="Bold" Foreground="#D9B8F0"/>
+                </Border>
                 <Border IsVisible="{Binding IsChallengeRun}" Background="#2A2410" BorderBrush="#D8B45A" BorderThickness="1"
                         CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
                     <TextBlock Text="{Binding ChallengeBadge}" FontSize="11" FontWeight="Bold" Foreground="#E8C56B"/>
@@ -447,6 +451,52 @@
                             </StackPanel>
                             <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
                                           IsChecked="{Binding Settings.IronmanMode}"/>
+                        </Grid>
+
+                        <Border Height="1" Background="#2A2F3E" Margin="0,4"/>
+                        <TextBlock Text="Run modifiers (mutators)" Foreground="#E8C56B" FontWeight="Bold"/>
+                        <TextBlock Text="Opt-in challenges for a new run — each makes it harder and raises your score. They stack with difficulty and New Game+."
+                                   Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="No Shops" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Garth's shop is boarded up — no buying, selling or identifying."
+                                           Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center" IsChecked="{Binding Settings.ModNoShops}"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Relentless" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Wandering monsters ambush the party far more often."
+                                           Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center" IsChecked="{Binding Settings.ModRelentless}"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="No Camp" Foreground="#E8E9F0"/>
+                                <TextBlock Text="You cannot make camp in the dungeon — recover only in town."
+                                           Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center" IsChecked="{Binding Settings.ModNoCamp}"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Pauper" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Half the gold and experience from every fight."
+                                           Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center" IsChecked="{Binding Settings.ModPauper}"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Cursed Loot" Foreground="#E8E9F0"/>
+                                <TextBlock Text="All treasure is found unidentified — pay to learn what it is."
+                                           Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center" IsChecked="{Binding Settings.ModCursed}"/>
                         </Grid>
                             </StackPanel>
                         </ScrollViewer>

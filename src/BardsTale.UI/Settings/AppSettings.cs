@@ -1,5 +1,6 @@
 using Avalonia.Input;
 using BardsTale.Core.Combat;
+using BardsTale.Core.Game;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace BardsTale.UI.Settings;
@@ -55,4 +56,26 @@ public sealed partial class AppSettings : ObservableObject
 
     /// <summary>The challenge level applied to a newly-started run.</summary>
     [ObservableProperty] private Difficulty _difficulty = Difficulty.Normal;
+
+    // --- Run modifiers (mutators) chosen for a new run ---
+    [ObservableProperty] private bool _modNoShops;
+    [ObservableProperty] private bool _modRelentless;
+    [ObservableProperty] private bool _modNoCamp;
+    [ObservableProperty] private bool _modPauper;
+    [ObservableProperty] private bool _modCursed;
+
+    /// <summary>The combined run-modifier flags from the individual toggles.</summary>
+    public RunModifier SelectedModifiers
+    {
+        get
+        {
+            var m = RunModifier.None;
+            if (ModNoShops) m |= RunModifier.NoShops;
+            if (ModRelentless) m |= RunModifier.Relentless;
+            if (ModNoCamp) m |= RunModifier.NoCamp;
+            if (ModPauper) m |= RunModifier.Pauper;
+            if (ModCursed) m |= RunModifier.Cursed;
+            return m;
+        }
+    }
 }

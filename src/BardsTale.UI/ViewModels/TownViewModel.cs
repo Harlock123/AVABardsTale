@@ -242,6 +242,13 @@ public sealed partial class TownViewModel : ViewModelBase
             return;
         }
 
+        // The No Shops mutator boards up Garth's for the run.
+        if (entrance.Building == TownBuilding.Shop && !_session.ShopsOpen)
+        {
+            Notice = "Garth's Equipment Shoppe is boarded up — no trade on this run.";
+            return;
+        }
+
         CurrentBuildingName = entrance.Name;
         if (entrance.Building == TownBuilding.Tavern)
         {

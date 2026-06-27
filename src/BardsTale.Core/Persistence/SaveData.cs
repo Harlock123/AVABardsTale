@@ -19,6 +19,12 @@ public sealed class SaveData
     /// <summary>The daily-challenge seed this run was started on, or -1 for an ordinary run.</summary>
     public int ChallengeSeed { get; set; } = -1;
 
+    /// <summary>Active run-modifier flags (see <see cref="BardsTale.Core.Game.RunModifier"/>).</summary>
+    public int Modifiers { get; set; }
+
+    /// <summary>Floors whose main-quest story beat has already played.</summary>
+    public List<int> SeenStory { get; set; } = new();
+
     public PartySave Party { get; set; } = new();
     public DungeonSave? Dungeon { get; set; }
     public RunStatsSave Stats { get; set; } = new();

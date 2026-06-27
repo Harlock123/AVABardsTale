@@ -28,14 +28,18 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     private readonly MonsterCodex _codex;
     private readonly RenownLog _renown;
 
+    private readonly Func<int, BardsTale.Core.Lore.StoryBeat?>? _reachStory;
+
     public ExplorationViewModel(GameState game, RunStats? stats = null, QuestLog? quests = null,
-        MonsterCodex? codex = null, RenownLog? renown = null)
+        MonsterCodex? codex = null, RenownLog? renown = null,
+        Func<int, BardsTale.Core.Lore.StoryBeat?>? reachStory = null)
     {
         _game = game;
         _stats = stats ?? new RunStats();
         _quests = quests ?? new QuestLog();
         _codex = codex ?? new MonsterCodex();
         _renown = renown ?? new RenownLog();
+        _reachStory = reachStory;
         Party = new ObservableCollection<CharacterViewModel>();
         Log = new ObservableCollection<string>();
         foreach (var m in _game.Party.Members)
@@ -44,6 +48,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         AddLog("Your party stands at the dungeon entrance.");
         SyncWorld();
         UpdateLocationState();
+        CheckStory(); // the floor the party arrives on may carry a main-quest beat
     }
 
     public ObservableCollection<CharacterViewModel> Party { get; }
@@ -117,7 +122,9 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     public bool HasKeys => _game.Party.Keys > 0;
 
     /// <summary>The Camp button label, showing the current ambush risk so the gamble is informed.</summary>
-    public string CampText => $"⛺ Camp ({_game.CampAmbushChance * 100:0}% risk)";
+    public string CampText => _game.CanCamp
+        ? $"⛺ Camp ({_game.CampAmbushChance * 100:0}% risk)"
+        : "⛺ No camp (mutator)";
 
     /// <summary>Explains how the camp risk is reduced, for the button tooltip.</summary>
     public string CampTooltip
@@ -173,7 +180,35 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     partial void OnIsAtEventChanged(bool value) => UpdateExploreState();
 
-    public bool CanExplore => !IsInCombat && !IsAtChest && !IsAtRiddle && !IsAtLever && !IsAtEvent;
+    /// <summary>True while a main-quest story beat is showing, with a Continue button.</summary>
+    [ObservableProperty] private bool _isAtStory;
+    [ObservableProperty] private string _storyTitle = "";
+    [ObservableProperty] private string _storyText = "";
+
+    partial void OnIsAtStoryChanged(bool value) => UpdateExploreState();
+
+    public bool CanExplore => !IsInCombat && !IsAtChest && !IsAtRiddle && !IsAtLever && !IsAtEvent && !IsAtStory;
+
+    /// <summary>Shows the main-quest beat for the current floor, if it hasn't played yet.</summary>
+    private void CheckStory()
+    {
+        if (_reachStory?.Invoke(_game.Depth) is { } beat)
+        {
+            StoryTitle = beat.Title;
+            StoryText = beat.Text;
+            IsAtStory = true;
+            AddLog($"✦ {beat.Title}");
+        }
+    }
+
+    /// <summary>Dismisses the story beat and returns control to the party.</summary>
+    [RelayCommand]
+    private void ContinueStory()
+    {
+        IsAtStory = false;
+        StoryTitle = "";
+        StoryText = "";
+    }
 
     [RelayCommand(CanExecute = nameof(CanExplore))]
     private void MoveForward() => Walk(_game.StepForward());
@@ -204,6 +239,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         OnPropertyChanged(nameof(Maze));
         Sfx.Play(GameSound.StairsDown);
         Music.PlayDungeon(_game.Depth); // the ambience darkens as the party descends
+        CheckStory();                   // a new floor may carry a main-quest beat
     }
 
     [RelayCommand(CanExecute = nameof(CanAscend))]

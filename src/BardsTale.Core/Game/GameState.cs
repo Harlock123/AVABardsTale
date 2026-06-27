@@ -64,19 +64,22 @@ public sealed class GameState
     private readonly EncounterFactory _encounters;
     private readonly int _ascension; // New Game+ level — scales every encounter and boss
     private readonly DifficultyProfile _difficulty; // chosen challenge level — scales foes, ambushes and rewards
+    private readonly RunModifier _modifiers; // opt-in mutators — alter ambush rate, rewards, camping, loot
     private int _stepsSinceEncounter;
 
     // Each depth keeps its own maze, so a level's layout and explored map persist
     // when you climb away and return. Keyed by depth.
     private readonly Dictionary<int, Maze> _levels = new();
 
-    public GameState(Party party, Maze maze, IRandomSource rng, int ascension = 0, DifficultyProfile? difficulty = null)
+    public GameState(Party party, Maze maze, IRandomSource rng, int ascension = 0, DifficultyProfile? difficulty = null,
+        RunModifier modifiers = RunModifier.None)
     {
         Party = party;
         Maze = maze;
         _rng = rng;
         _ascension = ascension;
         _difficulty = difficulty ?? DifficultyProfile.Normal;
+        _modifiers = modifiers;
         _encounters = new EncounterFactory(rng, ascension, _difficulty);
         _levels[Depth] = maze;
         Party.Position = maze.StartPosition;
@@ -86,13 +89,15 @@ public sealed class GameState
 
     /// <summary>Restores a dungeon from a saved game, preserving depth, position and the explored map.</summary>
     public GameState(Party party, Maze maze, IRandomSource rng, int depth, Position position, Direction facing,
-        int lightRemaining = 0, int ascension = 0, DifficultyProfile? difficulty = null)
+        int lightRemaining = 0, int ascension = 0, DifficultyProfile? difficulty = null,
+        RunModifier modifiers = RunModifier.None)
     {
         Party = party;
         Maze = maze;
         _rng = rng;
         _ascension = ascension;
         _difficulty = difficulty ?? DifficultyProfile.Normal;
+        _modifiers = modifiers;
         _encounters = new EncounterFactory(rng, ascension, _difficulty);
         Depth = depth;
         _levels[Depth] = maze;
@@ -528,9 +533,17 @@ public sealed class GameState
     /// resting party (interrupting the rest with a fight); otherwise every living hero recovers
     /// half their maximum hit points and spell points.
     /// </summary>
+    /// <summary>True when this run permits making camp (the No Camp mutator forbids it).</summary>
+    public bool CanCamp => RunModifiers.CampAllowed(_modifiers);
+
     public CampResult Camp()
     {
         var log = new List<string>();
+        if (!CanCamp)
+        {
+            log.Add("There is no resting on this perilous run — press on, or return to town.");
+            return new CampResult(false, log, null);
+        }
         if (_rng.Chance(CampAmbushChance))
         {
             _stepsSinceEncounter = 0;
@@ -657,8 +670,9 @@ public sealed class GameState
         _stepsSinceEncounter++;
         // Grace period after a fight, then a rising chance to be ambushed.
         if (_stepsSinceEncounter < 2) return false;
-        var chance = (0.10 + 0.03 * (_stepsSinceEncounter - 2)) * _difficulty.EncounterChance;
-        if (!_rng.Chance(Math.Min(chance, 0.45))) return false;
+        var chance = (0.10 + 0.03 * (_stepsSinceEncounter - 2))
+                     * _difficulty.EncounterChance * RunModifiers.EncounterChance(_modifiers);
+        if (!_rng.Chance(Math.Min(chance, 0.60))) return false;
 
         _stepsSinceEncounter = 0;
         encounter = _encounters.CreateRandom(Depth);
@@ -683,9 +697,11 @@ public sealed class GameState
         if (living.Count == 0) return log;
 
         // Both wandering fights and boss lairs flow through here, so scaling once covers both.
-        var scaledXp = (long)(encounter.TotalExperience * DepthXpScale * _difficulty.Reward);
+        // Difficulty and the Pauper mutator both scale the spoils.
+        var reward = _difficulty.Reward * RunModifiers.Reward(_modifiers);
+        var scaledXp = (long)(encounter.TotalExperience * DepthXpScale * reward);
         var xpEach = scaledXp / living.Count;
-        Party.Gold += (int)Math.Round(encounter.TotalGold * _difficulty.Reward);
+        Party.Gold += (int)Math.Round(encounter.TotalGold * reward);
 
         foreach (var member in living)
         {
@@ -695,8 +711,10 @@ public sealed class GameState
         }
 
         var loot = Loot.Roll(encounter, _rng, Depth);
-        foreach (var item in loot)
+        var cursed = RunModifiers.LootUnidentified(_modifiers);
+        foreach (var found in loot)
         {
+            var item = cursed ? found.AsUnidentified() : found;
             Party.Inventory.Add(item);
             log.Add($"Found: {item.DisplayName}.");
         }

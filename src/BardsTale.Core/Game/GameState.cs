@@ -26,7 +26,8 @@ public enum MoveResultKind
     Riddle,
     Lever,
     KeyFound,
-    Unlocked
+    Unlocked,
+    Event
 }
 
 public sealed record MoveResult(MoveResultKind Kind, string Description, Encounter? Encounter = null);
@@ -49,6 +50,9 @@ public sealed record RiddleResult(bool Correct, IReadOnlyList<string> Log);
 
 /// <summary>The outcome of pulling a rune lever: how many gates it raised, and narration.</summary>
 public sealed record LeverResult(int GatesOpened, string Message);
+
+/// <summary>The outcome of a dungeon-event choice: whether it resolved (false = couldn't afford it), and narration.</summary>
+public sealed record EventResult(bool Resolved, IReadOnlyList<string> Log);
 
 /// <summary>
 /// The live game world: the party exploring the current maze level. Owns movement,
@@ -216,6 +220,8 @@ public sealed class GameState
                 cell.Feature = CellFeature.None; // pocketed
                 return new MoveResult(MoveResultKind.KeyFound,
                     "Half-buried in the dust lies an iron key — you pocket it.");
+            case CellFeature.Event:
+                return new MoveResult(MoveResultKind.Event, DungeonEvents.Get(cell.EventId).Prompt);
         }
 
         if (CheckForEncounter(out var encounter))
@@ -291,6 +297,151 @@ public sealed class GameState
 
     /// <summary>How many locked doors remain on this level (each needs a carried key to open).</summary>
     public int LockedDoors() => Maze.LockedDoorCount();
+
+    /// <summary>True when the party stands on a dungeon-event tile.</summary>
+    public bool OnEvent => CurrentCell.Feature == CellFeature.Event;
+
+    /// <summary>The dungeon event underfoot, if any.</summary>
+    public DungeonEvent? CurrentEvent => OnEvent ? DungeonEvents.Get(CurrentCell.EventId) : null;
+
+    /// <summary>
+    /// Resolves the chosen option of the dungeon event underfoot, applying its boon, curse, gamble
+    /// or windfall. The event is consumed (the tile clears) unless the choice couldn't be afforded.
+    /// </summary>
+    public EventResult ResolveEvent(int optionIndex)
+    {
+        if (CurrentEvent is not { } ev)
+            return new EventResult(true, new[] { "There is nothing here." });
+        if (optionIndex < 0 || optionIndex >= ev.Options.Count)
+            return new EventResult(false, System.Array.Empty<string>());
+
+        var option = ev.Options[optionIndex];
+        var log = new List<string>();
+
+        if (option.Cost > 0 && Party.Gold < option.Cost)
+        {
+            log.Add($"You haven't the {option.Cost} gold for that.");
+            return new EventResult(false, log); // not consumed — choose again
+        }
+        if (option.Cost > 0)
+        {
+            Party.Gold -= option.Cost;
+            log.Add($"You part with {option.Cost} gold.");
+        }
+
+        ApplyEventEffect(option.Effect, option.Magnitude, log);
+        CurrentCell.Feature = CellFeature.None; // the scene is played out
+        return new EventResult(true, log);
+    }
+
+    private void ApplyEventEffect(EventEffect effect, int magnitude, List<string> log)
+    {
+        switch (effect)
+        {
+            case EventEffect.Leave:
+                log.Add("You move on, leaving it behind.");
+                break;
+            case EventEffect.FindGold:
+                EventGold(magnitude, log);
+                break;
+            case EventEffect.LoseGold:
+            {
+                var lost = Math.Min(Party.Gold, Math.Max(1, magnitude) * (1 + Depth));
+                Party.Gold -= lost;
+                log.Add(lost > 0 ? $"You're robbed of {lost} gold!" : "Your purse was already empty.");
+                break;
+            }
+            case EventEffect.Heal:
+                EventHeal(magnitude, log);
+                break;
+            case EventEffect.Harm:
+                EventHarm(log);
+                break;
+            case EventEffect.FindItem:
+                EventItem(log);
+                break;
+            case EventEffect.Wager:
+            {
+                Party.Gold -= magnitude; // staked
+                if (_rng.Chance(0.5))
+                {
+                    Party.Gold += magnitude * 2;
+                    log.Add($"The bones fall your way — you win {magnitude} gold!");
+                }
+                else
+                {
+                    log.Add($"The bones betray you — your {magnitude} gold is lost.");
+                }
+                break;
+            }
+            case EventEffect.Boon:
+                switch (_rng.Next(0, 3))
+                {
+                    case 0: EventGold(10, log); break;
+                    case 1: EventHeal(50, log); break;
+                    default: EventItem(log); break;
+                }
+                break;
+            case EventEffect.Curse:
+                if (_rng.Chance(0.5)) EventHarm(log);
+                else ApplyEventEffect(EventEffect.LoseGold, 6, log);
+                break;
+            case EventEffect.Fate:
+                if (_rng.Chance(0.5))
+                {
+                    log.Add("The old god is pleased.");
+                    ApplyEventEffect(EventEffect.Boon, 0, log);
+                }
+                else
+                {
+                    log.Add("The old god is angered.");
+                    ApplyEventEffect(EventEffect.Curse, 0, log);
+                }
+                break;
+        }
+    }
+
+    private void EventGold(int magnitude, List<string> log)
+    {
+        var gold = _rng.Roll(2, 10, Math.Max(1, magnitude)) * (1 + Depth / 2);
+        Party.Gold += gold;
+        log.Add($"You gather up {gold} gold.");
+    }
+
+    private void EventHeal(int percent, List<string> log)
+    {
+        foreach (var m in Party.Members.Where(m => !m.IsDead))
+        {
+            m.Heal(Math.Max(1, m.EffectiveMaxHitPoints * percent / 100));
+            m.SpellPoints = Math.Min(m.EffectiveMaxSpellPoints,
+                m.SpellPoints + Math.Max(1, m.EffectiveMaxSpellPoints * percent / 100));
+            if (percent >= 50) m.CureAilments();
+        }
+        log.Add("A soothing warmth mends the party.");
+    }
+
+    private void EventHarm(List<string> log)
+    {
+        foreach (var m in Party.Members.Where(m => !m.IsDead))
+        {
+            // Scaled, but never enough to fell a hale hero outright.
+            var dmg = Math.Min(m.HitPoints - 1 < 1 ? 0 : _rng.Roll(1, 6, Depth), Math.Max(0, m.HitPoints - 1));
+            if (dmg > 0) m.ApplyDamage(dmg);
+        }
+        log.Add("A wave of ill magic lashes the party!");
+    }
+
+    private void EventItem(List<string> log)
+    {
+        var (gold, items) = Loot.RiddleReward(_rng, Depth);
+        if (gold > 0) { Party.Gold += gold; log.Add($"You uncover {gold} gold."); }
+        foreach (var item in items)
+        {
+            Party.Inventory.Add(item);
+            log.Add($"Found: {item.DisplayName}.");
+        }
+        if (items.Count == 0) log.Add("...but the cache is bare.");
+    }
 
     /// <summary>True when the party stands on a pull-able rune lever.</summary>
     public bool OnLever => CurrentCell.Feature == CellFeature.Lever;

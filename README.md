@@ -634,6 +634,10 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
   segment on the auto-map). Its **iron key** lies elsewhere on the floor; step onto it to pocket it
   (the party's carried-key count shows in the HUD), then bump the door to spend a key and unlock it.
   A separate carry-the-key puzzle alongside the lever's find-the-switch one.
+- **Dungeon events** — non-combat scenes between the fights: a **wishing well**, a **trapped
+  merchant**, a **gambling imp**, a **crumbling shrine**, an **abandoned camp**. Each presents a
+  short scene and **two or three choices** with outcomes — boons, gambles (double-or-nothing),
+  blessings or curses, healing, treasure, or a thief in the dark. One-shot, marked on the auto-map.
 - **Camping** — rest anywhere in the dungeon to recover half the party's HP and spell
   points, gambling against a depth-scaled chance of a surprise wandering ambush.
 - A **fixed boss lair** on each level (guarding the descent) — a tough named boss

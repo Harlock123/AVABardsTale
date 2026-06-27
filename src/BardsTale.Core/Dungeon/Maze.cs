@@ -36,7 +36,9 @@ public enum CellFeature
     /// <summary>A rune-etched lever — pulling it raises the barred gates sealing this level's vaults.</summary>
     Lever,
     /// <summary>An iron key lying on the floor — step onto it to pocket it for a locked door.</summary>
-    Key
+    Key,
+    /// <summary>A non-combat dungeon event — a scene with choices (see <see cref="DungeonEvents"/>).</summary>
+    Event
 }
 
 /// <summary>One tile of a maze level.</summary>
@@ -58,6 +60,9 @@ public sealed class Cell
 
     /// <summary>For riddle tiles, which riddle is inscribed (index into the riddle catalogue).</summary>
     public int RiddleId { get; set; } = -1;
+
+    /// <summary>For event tiles, which dungeon event plays out (index into the event catalogue).</summary>
+    public int EventId { get; set; } = -1;
 
     /// <summary>For teleporters, the cell the party is whisked to.</summary>
     public Position? Destination { get; set; }

@@ -110,6 +110,31 @@
                         </StackPanel>
                     </Border>
                 </Border>
+
+                <!-- Dungeon event scene -->
+                <Border IsVisible="{Binding IsAtEvent}" Background="#C00B0D14"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="460"
+                            Background="#1B1E2A" BorderBrush="#7FB069" BorderThickness="2"
+                            CornerRadius="6" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="{Binding EventTitle}" FontSize="18" FontWeight="Bold"
+                                       Foreground="#A8D88A" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding EventPrompt}" Foreground="#CFD3E0"
+                                       TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,14"/>
+                            <ItemsControl ItemsSource="{Binding EventOptions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:DungeonEventOptionViewModel">
+                                        <Button Content="{Binding Label}" Margin="0,0,0,6" Padding="10,7"
+                                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                                Command="{Binding $parent[ItemsControl].((vm:ExplorationViewModel)DataContext).ChooseEventOptionCommand}"
+                                                CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </Border>
             </Panel>
         </Border>
 

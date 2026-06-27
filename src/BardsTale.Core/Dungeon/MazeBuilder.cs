@@ -82,6 +82,13 @@ public sealed class MazeBuilder
             maze[riddle].RiddleId = _rng.Next(0, Riddles.All.Count);
         }
 
+        // A non-combat dungeon event — a scene with choices, met between the fights.
+        if (Take() is { } evt)
+        {
+            maze[evt].Feature = CellFeature.Event;
+            maze[evt].EventId = _rng.Next(0, DungeonEvents.Count);
+        }
+
         PlaceSecretVaults(maze, width, height, count: 2);
 
         if (Take() is { } tele && Take() is { } dest)

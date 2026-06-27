@@ -165,7 +165,15 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     partial void OnIsAtLeverChanged(bool value) => UpdateExploreState();
 
-    public bool CanExplore => !IsInCombat && !IsAtChest && !IsAtRiddle && !IsAtLever;
+    /// <summary>True while a dungeon-event scene is showing, with its choices.</summary>
+    [ObservableProperty] private bool _isAtEvent;
+    [ObservableProperty] private string _eventTitle = "";
+    [ObservableProperty] private string _eventPrompt = "";
+    public ObservableCollection<DungeonEventOptionViewModel> EventOptions { get; } = new();
+
+    partial void OnIsAtEventChanged(bool value) => UpdateExploreState();
+
+    public bool CanExplore => !IsInCombat && !IsAtChest && !IsAtRiddle && !IsAtLever && !IsAtEvent;
 
     [RelayCommand(CanExecute = nameof(CanExplore))]
     private void MoveForward() => Walk(_game.StepForward());
@@ -332,6 +340,26 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         LeverPrompt = "";
     }
 
+    /// <summary>Picks one of the dungeon event's choices and applies its outcome.</summary>
+    [RelayCommand]
+    private void ChooseEventOption(DungeonEventOptionViewModel? option)
+    {
+        if (!IsAtEvent || option is null) return;
+        var result = _game.ResolveEvent(option.Index);
+        foreach (var line in result.Log)
+            AddLog(line);
+
+        if (result.Resolved)
+        {
+            Sfx.Play(GameSound.Coin);
+            IsAtEvent = false;
+            EventOptions.Clear();
+            EventPrompt = "";
+            EventTitle = "";
+        }
+        SyncWorld();
+    }
+
     /// <summary>Conjures light from a Bard's song (free) or a mage's light spell to pierce darkness.</summary>
     [RelayCommand(CanExecute = nameof(CanExplore))]
     private void CastLight()
@@ -405,6 +433,16 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 AddLog(result.Description);
                 LeverPrompt = result.Description;
                 IsAtLever = true;
+                break;
+            case MoveResultKind.Event when _game.CurrentEvent is { } ev:
+                AddLog($"— {ev.Title} —");
+                AddLog(result.Description);
+                EventTitle = ev.Title;
+                EventPrompt = ev.Prompt;
+                EventOptions.Clear();
+                for (var i = 0; i < ev.Options.Count; i++)
+                    EventOptions.Add(new DungeonEventOptionViewModel(i, ev.Options[i].Label));
+                IsAtEvent = true;
                 break;
         }
 

@@ -194,7 +194,8 @@ public static class GameSerializer
                     SecretDoors = (int)cell.SecretDoors,
                     Gates = (int)cell.Gates,
                     LockedDoors = (int)cell.LockedDoors,
-                    RiddleId = cell.RiddleId
+                    RiddleId = cell.RiddleId,
+                    EventId = cell.EventId
                 });
             }
         return level;
@@ -337,6 +338,7 @@ public static class GameSerializer
                 cell.Gates = (Walls)cs.Gates;
                 cell.LockedDoors = (Walls)cs.LockedDoors;
                 cell.RiddleId = cs.RiddleId;
+                cell.EventId = cs.EventId;
                 if (cs.DestX is { } dx && cs.DestY is { } dy)
                     cell.Destination = new Position(dx, dy);
             }

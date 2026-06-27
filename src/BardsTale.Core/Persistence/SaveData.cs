@@ -169,4 +169,5 @@ public sealed class CellSave
     public int Gates { get; set; }
     public int LockedDoors { get; set; }
     public int RiddleId { get; set; } = -1;
+    public int EventId { get; set; } = -1;
 }

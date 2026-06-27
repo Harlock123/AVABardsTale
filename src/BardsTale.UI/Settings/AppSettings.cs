@@ -18,6 +18,9 @@ public sealed partial class AppSettings : ObservableObject
     /// <summary>Whether the game saves automatically on returning to town.</summary>
     [ObservableProperty] private bool _autosave = true;
 
+    /// <summary>Show the how-to-play guide automatically when the game starts (on by default, for new players).</summary>
+    [ObservableProperty] private bool _showHelpOnStartup = true;
+
     /// <summary>Overall interface scale (0.8–1.6). 1.0 is the default size; higher enlarges all text and controls.</summary>
     [ObservableProperty] private double _uiScale = 1.0;
 

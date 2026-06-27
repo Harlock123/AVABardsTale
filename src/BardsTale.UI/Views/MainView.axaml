@@ -170,6 +170,10 @@
                                        Foreground="#E8C56B" VerticalAlignment="Center"/>
                             <Button Grid.Column="1" Content="Close (Esc)" Command="{Binding CloseHelpCommand}"/>
                         </Grid>
+                        <CheckBox DockPanel.Dock="Bottom" Margin="0,12,0,0"
+                                  IsChecked="{Binding Settings.ShowHelpOnStartup}"
+                                  Content="Show this guide when the game starts"
+                                  Foreground="#9AA0B5"/>
                         <ScrollViewer>
                             <ItemsControl ItemsSource="{Binding HelpSections}">
                                 <ItemsControl.ItemTemplate>
@@ -275,6 +279,16 @@
                             </StackPanel>
                             <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
                                           IsChecked="{Binding Settings.Autosave}"/>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="Show help on startup" Foreground="#E8E9F0"/>
+                                <TextBlock Text="Opens the how-to-play guide when the game starts (also available any time via ❔ Help or F1)."
+                                           Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                          IsChecked="{Binding Settings.ShowHelpOnStartup}"/>
                         </Grid>
 
                         <StackPanel Spacing="4">

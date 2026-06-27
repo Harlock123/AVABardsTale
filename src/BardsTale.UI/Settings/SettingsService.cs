@@ -13,7 +13,8 @@ public static class SettingsService
     private sealed record Dto(bool ReducedMotion, bool Autosave, double UiScale, double SoundVolume, bool Muted,
         bool? MusicEnabled = null, double? MusicVolume = null, bool? CrossfadeMusic = null, bool? IronmanMode = null,
         int? Difficulty = null, bool? ColorblindMode = null,
-        int? MoveForwardKey = null, int? MoveBackwardKey = null, int? TurnLeftKey = null, int? TurnRightKey = null);
+        int? MoveForwardKey = null, int? MoveBackwardKey = null, int? TurnLeftKey = null, int? TurnRightKey = null,
+        bool? ShowHelpOnStartup = null);
 
     public static async Task LoadAsync(ISaveStore store, AppSettings into)
     {
@@ -37,6 +38,7 @@ public static class SettingsService
             if (dto.MoveBackwardKey is { } b) into.MoveBackwardKey = (Avalonia.Input.Key)b;
             if (dto.TurnLeftKey is { } l) into.TurnLeftKey = (Avalonia.Input.Key)l;
             if (dto.TurnRightKey is { } r) into.TurnRightKey = (Avalonia.Input.Key)r;
+            into.ShowHelpOnStartup = dto.ShowHelpOnStartup ?? true;
         }
         catch
         {
@@ -48,7 +50,7 @@ public static class SettingsService
     {
         var json = JsonSerializer.Serialize(new Dto(s.ReducedMotion, s.Autosave, s.UiScale, s.SoundVolume, s.Muted,
             s.MusicEnabled, s.MusicVolume, s.CrossfadeMusic, s.IronmanMode, (int)s.Difficulty, s.ColorblindMode,
-            (int)s.MoveForwardKey, (int)s.MoveBackwardKey, (int)s.TurnLeftKey, (int)s.TurnRightKey));
+            (int)s.MoveForwardKey, (int)s.MoveBackwardKey, (int)s.TurnLeftKey, (int)s.TurnRightKey, s.ShowHelpOnStartup));
         return store.SaveTextAsync(Key, json);
     }
 }

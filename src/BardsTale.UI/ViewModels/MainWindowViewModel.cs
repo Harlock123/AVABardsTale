@@ -54,6 +54,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         {
             Music.RefreshSettings();
             ApplyRunPreferences();
+            // New players (or anyone who's left it on) get the how-to-play guide on launch.
+            if (Settings.ShowHelpOnStartup)
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (!IsHelpOpen) ShowHelpCommand.Execute(null); });
         });
 
         ShowTown();

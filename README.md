@@ -294,8 +294,9 @@ dotnet build src/BardsTale.Desktop
   autosave, and the independent sound-effects / music volumes.
 - **Help (❔ / F1)** — an in-game **how-to-play overlay** that onboards the controls and
   systems: getting started, movement (showing your current — rebindable — keys), the town
-  buildings, dungeon exploration, combat, and survival tips. Open it any time from the top
-  bar or with **F1**; **Esc** closes it.
+  buildings, dungeon exploration, combat, and survival tips. It **opens automatically on a
+  first-ever launch** (a *"show this guide when the game starts"* checkbox lets you turn that
+  off — it's also a Settings toggle). Open it any time from the top bar or with **F1**; **Esc** closes it.
 - **Light** — conjure light (a Bard's *Watchwood Melody* for free, or a mage's
   *Mage Flame* for spell points) to see and map darkness for a number of steps.
 - **Save / Load** (top bar) — opens a slot picker with **three named save slots**

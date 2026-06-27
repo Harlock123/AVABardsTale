@@ -29,6 +29,11 @@ public static class MovementKeys
                 vm.CloseHelpCommand.Execute(null);
                 e.Handled = true;
             }
+            else if (vm.IsHistoryOpen)
+            {
+                vm.CloseHistoryCommand.Execute(null);
+                e.Handled = true;
+            }
             else if (vm.IsQuestLogOpen)
             {
                 vm.CloseQuestLogCommand.Execute(null);

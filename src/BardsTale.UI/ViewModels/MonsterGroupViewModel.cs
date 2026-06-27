@@ -32,6 +32,9 @@ public sealed partial class MonsterGroupViewModel : ViewModelBase
     [ObservableProperty] private IBrush _floatingBrush = Brushes.White;
     [ObservableProperty] private long _floatingPulse;
 
+    /// <summary>Bumped when the group is struck, to flash the card (combat juice).</summary>
+    [ObservableProperty] private long _hitFlashPulse;
+
     /// <summary>Shows a floating "-N" (damage, amber) or "+N" (heal, green) over this group.</summary>
     public void Pop(int delta)
     {
@@ -39,6 +42,7 @@ public sealed partial class MonsterGroupViewModel : ViewModelBase
         FloatingText = delta < 0 ? delta.ToString() : "+" + delta;
         FloatingBrush = delta < 0 ? FloatHit : FloatHeal;
         FloatingPulse++;
+        if (delta < 0) HitFlashPulse++; // a blow landed — flash the group
     }
 
     private static readonly IBrush FloatHit = new SolidColorBrush(Color.Parse("#E0A85A"));

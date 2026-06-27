@@ -18,7 +18,7 @@
             <ScaleTransform ScaleX="{Binding Settings.UiScale}" ScaleY="{Binding Settings.UiScale}"/>
         </LayoutTransformControl.LayoutTransform>
     <Grid Margin="12" RowDefinitions="Auto,*">
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="2,0,0,10">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="2,0,0,10">
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
                 <TextBlock Text="THE BARD'S TALE" FontSize="22" FontWeight="Bold" Foreground="#E8C56B"/>
                 <Border IsVisible="{Binding IsIronman}" Background="#3A1416" BorderBrush="#C0566B" BorderThickness="1"
@@ -45,12 +45,14 @@
             <Button Grid.Column="4" Content="📖 Bestiary (B)" Command="{Binding ShowBestiaryCommand}" Margin="0,0,6,0"/>
             <Button Grid.Column="5" Content="🔗 Sets (K)" Command="{Binding ShowSetCodexCommand}" Margin="0,0,6,0"/>
             <Button Grid.Column="6" Content="🎯 Daily" Command="{Binding ShowChallengeCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="7" Content="❔ Help" Command="{Binding ShowHelpCommand}" Margin="0,0,6,0"
+            <Button Grid.Column="7" Content="📊 Runs" Command="{Binding ShowHistoryCommand}" Margin="0,0,6,0"
+                    ToolTip.Tip="Run history &amp; lifetime totals"/>
+            <Button Grid.Column="8" Content="❔ Help" Command="{Binding ShowHelpCommand}" Margin="0,0,6,0"
                     ToolTip.Tip="How to play (F1)"/>
-            <Button Grid.Column="8" Content="⚙ Settings" Command="{Binding ShowSettingsCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="9" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"
+            <Button Grid.Column="9" Content="⚙ Settings" Command="{Binding ShowSettingsCommand}" Margin="0,0,6,0"/>
+            <Button Grid.Column="10" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"
                     IsEnabled="{Binding ManualSavesAllowed}"/>
-            <Button Grid.Column="10" Content="Load" Command="{Binding ShowLoadSlotsCommand}"
+            <Button Grid.Column="11" Content="Load" Command="{Binding ShowLoadSlotsCommand}"
                     IsEnabled="{Binding ManualSavesAllowed}"/>
         </Grid>
 
@@ -193,6 +195,42 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Border>
+
+            <!-- Run history dashboard -->
+            <Border IsVisible="{Binding IsHistoryOpen}" Background="#E60B0D14">
+                <Border Width="640" MaxHeight="660" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="#161A24" BorderBrush="#8FB7FF" BorderThickness="2" CornerRadius="8" Padding="22">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+                            <TextBlock Grid.Column="0" Text="📊 Run History" FontSize="20" FontWeight="Bold"
+                                       Foreground="#E8C56B" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Close (Esc)" Command="{Binding CloseHistoryCommand}"/>
+                        </Grid>
+                        <TextBlock DockPanel.Dock="Top" Text="{Binding History.Totals}" Foreground="#8FB7FF"
+                                   FontSize="12" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                        <ScrollViewer>
+                            <ItemsControl ItemsSource="{Binding History.Runs}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:RunRecordViewModel">
+                                        <Border Margin="0,0,0,8" Padding="12,8" CornerRadius="4" Background="#222634">
+                                            <StackPanel Spacing="2">
+                                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                                    <TextBlock Grid.Column="0" Text="{Binding OutcomeText}" FontWeight="Bold"
+                                                               Foreground="{Binding OutcomeBrush}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Summary}" Foreground="#E8E9F0"
+                                                               FontWeight="Bold" Margin="12,0,0,0"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Date}" Foreground="#7E879B" FontSize="11"/>
+                                                </Grid>
+                                                <TextBlock Text="{Binding Tags}" Foreground="#9AA0B5" FontSize="11" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>

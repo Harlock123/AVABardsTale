@@ -93,6 +93,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private bool _isSetCodexOpen;
     [ObservableProperty] private SetCodexViewModel? _setCodex;
     [ObservableProperty] private bool _isHelpOpen;
+    [ObservableProperty] private bool _isHistoryOpen;
+    [ObservableProperty] private HistoryViewModel? _history;
 
     /// <summary>The help/tutorial overlay sections — rebuilt on open so the control list reflects current key bindings.</summary>
     public System.Collections.ObjectModel.ObservableCollection<HelpSectionViewModel> HelpSections { get; } = new();
@@ -213,6 +215,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void CloseHelp() => IsHelpOpen = false;
+
+    /// <summary>Opens the run-history dashboard, loading the recorded runs from the save store.</summary>
+    [RelayCommand]
+    private async Task ShowHistory()
+    {
+        History = new HistoryViewModel(await RunHistory.LoadAsync(_saves));
+        IsHistoryOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseHistory() => IsHistoryOpen = false;
 
     /// <summary>F1 / the ❔ button toggles the help overlay.</summary>
     public void ToggleHelp()
@@ -414,6 +427,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Sfx.Play(GameSound.Victory);
         Music.Play(GameMusic.Victory);
         RecordChallengeResult();
+        _ = RecordRun("Victory");
+    }
+
+    /// <summary>Logs a finished run to the history dashboard (a win, or an Ironman death).</summary>
+    private async Task RecordRun(string outcome)
+    {
+        var stats = _session.Stats;
+        var record = new RunRecord(outcome, stats.DeepestDepth, stats.Score, _session.Ironman,
+            _session.Ascension, (int)_session.Difficulty, _session.ChallengeSeed ?? -1,
+            stats.MonstersSlain, stats.GoldEarned, System.DateTime.Now.Ticks);
+        try { await RunHistory.AppendAsync(_saves, record); } catch { /* history is non-essential */ }
     }
 
     [RelayCommand]
@@ -556,6 +580,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         StatusMessage = "The Ironman run ends here.";
         IsGameOver = true;
         RecordChallengeResult(); // a challenge run is scored even when it ends in death
+        await RecordRun("Defeat");
     }
 
     /// <summary>Returning to town is a safe checkpoint, so the game autosaves there (if enabled).</summary>

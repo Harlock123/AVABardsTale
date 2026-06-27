@@ -101,6 +101,9 @@ public sealed partial class CombatViewModel : ViewModelBase
     [ObservableProperty] private string _actorTunesText = "";
     [ObservableProperty] private bool _hasActorTunes;
 
+    /// <summary>Bumped when the party takes a blow, to shake the combat view (combat juice).</summary>
+    [ObservableProperty] private long _shakePulse;
+
     private void UpdateActorSp(Character actor)
     {
         var combatSpells = actor.KnownSpells.Select(Spells.Get).Where(s => s.UsableInCombat).ToList();
@@ -392,6 +395,9 @@ public sealed partial class CombatViewModel : ViewModelBase
             .Where(m => memberHpBefore.TryGetValue(m, out var b) && m.HitPoints != b)
             .Select(m => (m, m.HitPoints - memberHpBefore[m]))
             .ToList();
+
+        // Combat juice: shake the screen when the party actually took a hit this round.
+        if (PartyHpDeltas.Any(d => d.Delta < 0)) ShakePulse++;
 
         // A character who fired their item power this round can't do so again this fight.
         foreach (var cmd in resolved)

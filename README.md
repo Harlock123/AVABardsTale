@@ -292,6 +292,10 @@ dotnet build src/BardsTale.Desktop
 - **Quest journal (J)**, **Bestiary (B)** and the **accessory-set codex (K)** — open from
   anywhere (also top-bar buttons). **Settings (⚙)** holds reduced-motion, interface size,
   autosave, and the independent sound-effects / music volumes.
+- **Run history (📊 Runs)** — a dashboard of your completed runs (wins and Ironman deaths):
+  each shows the outcome, deepest floor and score, with tags (Ironman / New Game+ / difficulty /
+  daily-challenge seed) and date — above **lifetime totals** (runs, victories, deepest floor,
+  best score, monsters slain). Stored outside the save slots, so it survives an Ironman wipe.
 - **Help (❔ / F1)** — an in-game **how-to-play overlay** that onboards the controls and
   systems: getting started, movement (showing your current — rebindable — keys), the town
   buildings, dungeon exploration, combat, and survival tips. It **opens automatically on a
@@ -674,7 +678,9 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
   monster groups, fleeing, and XP/gold rewards. The **combat log is colour-coded and
   iconed** by event — blows you land vs. blows taken, heals/regen (green), wards & saves
   (cyan), kills, deaths, misses, status and casts — so a busy round reads at a glance, and
-  **floating damage/heal numbers** pop over each struck enemy group and wounded hero.
+  **floating damage/heal numbers** pop over each struck enemy group and wounded hero,
+  with **combat juice** to match — a struck foe **flashes** on impact and the screen gives a
+  brief **shake** when the party takes a blow (both suppressed by the Reduced-motion setting).
 - A **twenty-floor dungeon** with a **bestiary of 120 monsters** across ten toughness
   tiers, depth-banded so each floor draws from a tougher pool than the last, plus a
   **distinct named boss lair on every floor** (twenty in all) down to Mangar. **XP

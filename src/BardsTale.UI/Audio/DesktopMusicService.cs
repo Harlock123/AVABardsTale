@@ -25,6 +25,14 @@ public sealed class DesktopMusicService : IMusicService
     private GameMusic? _current;
     private double _volume = 0.45;
 
+    public DesktopMusicService()
+    {
+        // afplay runs as a child process; on Unix it would otherwise be orphaned (and keep
+        // playing) when the game exits. Stop it on process exit and Ctrl-C so nothing lingers.
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => Stop();
+        Console.CancelKeyPress += (_, _) => Stop();
+    }
+
     public void Play(GameMusic track)
     {
         if (!OperatingSystem.IsMacOS()) return;

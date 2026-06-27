@@ -9,7 +9,8 @@
              x:DataType="vm:CombatViewModel">
 
     <Border Margin="16" Padding="16" CornerRadius="6"
-            Background="#141824" BorderBrush="#7A2E2E" BorderThickness="2">
+            Background="#141824" BorderBrush="#7A2E2E" BorderThickness="2"
+            controls:Shake.Pulse="{Binding ShakePulse}">
         <Grid RowDefinitions="Auto,*,Auto">
 
             <TextBlock Grid.Row="0" Text="⚔  COMBAT" FontSize="20" FontWeight="Bold"
@@ -28,6 +29,9 @@
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:MonsterGroupViewModel">
                                     <Panel>
+                                        <!-- Hit-flash overlay (amber impact when the group is struck) -->
+                                        <Border Background="#E0A85A" CornerRadius="3" Opacity="0" IsHitTestVisible="False"
+                                                Margin="-4" controls:Flash.Pulse="{Binding HitFlashPulse}"/>
                                         <StackPanel>
                                             <TextBlock Text="{Binding Label}" FontWeight="Bold" Foreground="{Binding LabelBrush}"/>
                                             <TextBlock Text="{Binding HealthText}" FontSize="11" Foreground="#9AA0B5"/>

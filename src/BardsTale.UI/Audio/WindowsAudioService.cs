@@ -43,7 +43,7 @@ public sealed class WindowsAudioService : IAudioService
                 var path = FileFor(sound, volume); // volume baked into the WAV (MCI can't set it live)
                 var alias = $"btsfx{_counter++}";
                 if (!WinMm.Open(path, alias)) return;
-                WinMm.Play(alias, loop: false);
+                WinMm.Play(alias);
                 _active.Add(alias);
             }
             catch { /* audio is non-essential */ }

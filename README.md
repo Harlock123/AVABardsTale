@@ -61,7 +61,7 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 | `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime, as an installable PWA with IndexedDB saves. (Kept out of the default solution; see below.) |
 | `src/BardsTale.Android` | Thin Android head (tablet, landscape) — a launcher `Activity` + an `AudioTrack` sound backend, wrapping `MainView` via the single-view lifetime. |
 | `src/BardsTale.iOS` | Thin iOS head (iPad, landscape) — an `AvaloniaAppDelegate` entry point + an `AVAudioPlayer` sound backend. |
-| `tests/BardsTale.Tests` | xUnit suite (**425 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, monster morale, front/back ranks, sustained Bard songs), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, dungeon events, town services & tavern rumours, the bestiary & lore, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
+| `tests/BardsTale.Tests` | xUnit suite (**433 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, monster morale, front/back ranks, sustained Bard songs), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, dungeon events, town services & tavern rumours, the bestiary & lore, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
 
 The split follows Avalonia's standard cross-platform layout: a shared UI library plus
 one thin "head" project per platform. Every head reuses `BardsTale.UI` unchanged —
@@ -700,8 +700,15 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
   abilities and elemental affinities, fold into that creature's bestiary entry, and stand
   out in gold on the combat screen.
 - Per-school spell lists (Conjurer / Magician / Sorcerer / Wizard) that grow with
-  caster level, Bard songs, and encounter-long party buffs from protective spells
-  and songs.
+  caster level — from level-1 cantrips up to **level-5 capstones** like *Resurrection
+  Field* (revive the whole party at once), *Meteor Swarm*, *Temporal Surge* and
+  *Annihilation* — plus Bard songs and encounter-long party buffs from protective
+  spells and songs.
+- **Bard songs** — sustained party effects a Bard keeps playing round to round, from
+  warding/emboldening war-chants and a healing ballad to the *Hymn of Renewal*
+  (per-round regen), the *Cantata of Mana* (per-round party SP), and the *Dirge of the
+  Doomed* (a battle dirge that withers every foe each round). Striking up a new tune
+  spends one of the Bard's limited daily tunes; resting refills them.
 - Level-gated spell/song learning at the Review Board.
 - Item drops from defeated foes into a shared party stash, consumable potions
   usable on a chosen ally mid-combat, potions for sale at Garth's, and equipping
@@ -717,6 +724,11 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
   party heal/regen/haste/cleanse/mana, armour & attack buffs, or raising the fallen).
   Every power is mirrored by a **learnable spell** across the casting schools. See
   *Item powers & the Forge*.
+- **Signature legendaries** — four named lair bosses each guard a **boss-exclusive
+  legendary weapon** (the Demon Lord's *Hellbrand*, the Lich King's *Staff of the
+  Archmagi*, the Death Tyrant's *Soulreaver*, and the Dragon Tyrant's *Wyrmslayer*) —
+  a mighty weapon in its own right that also carries a **devastating once-per-fight
+  power**. Mangar's Staff is the twentieth, granted on his defeat.
 - **The Forge (smithy)** — upgrade a weapon, armour, shield or **accessory's**
   enchantment "+N" up to **+3** for **gold + forge embers**, a crafting material
   that drops from deep-floor fights and bosses (a warding ring keeps its element

@@ -343,13 +343,46 @@ public static class Items
             WandOfLeeching, RodOfResurrection
         };
 
+    // --- Signature legendaries: a guaranteed drop from a specific lair boss. Each is a mighty
+    //     weapon in its own right AND carries a devastating once-per-fight power. Boss-exclusive,
+    //     never in the common drop pool. (Mangar's Staff is the twentieth, granted on his defeat.) ---
+    public static readonly Item Hellbrand = new("Hellbrand", ItemSlot.Weapon, DamageDice: 2, DamageSides: 6,
+        DamageBonus: 2, Value: 4000, MagicBonus: 3,
+        ItemPower: new Spell("LEG_HELL", "HELL", "Cataclysm", MagicSchool.Wizard, 0, 0,
+            SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 24, "The blade erupts, scouring every foe in hellfire.", Element.Fire));
+    public static readonly Item StaffOfTheArchmagi = new("Staff of the Archmagi", ItemSlot.Weapon, DamageDice: 2, DamageSides: 6,
+        DamageBonus: 3, Value: 5500, MagicBonus: 4,
+        ItemPower: new Spell("LEG_ARCH", "ARCH", "Arcane Devastation", MagicSchool.Wizard, 0, 0,
+            SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 50, "Raw magic detonates, unmaking a single foe."));
+    public static readonly Item Soulreaver = new("Soulreaver", ItemSlot.Weapon, DamageDice: 2, DamageSides: 8,
+        DamageBonus: 3, Value: 6000, MagicBonus: 4,
+        ItemPower: new Spell("LEG_SOUL", "SOUL", "Reap", MagicSchool.Sorcerer, 0, 0,
+            SpellEffect.DrainEnemy, SpellTarget.SingleEnemy, 40, "The scythe drinks a foe's life and pours it into the wielder."));
+    public static readonly Item Wyrmslayer = new("Wyrmslayer", ItemSlot.Weapon, DamageDice: 3, DamageSides: 6,
+        DamageBonus: 4, Value: 7000, MagicBonus: 5,
+        ItemPower: new Spell("LEG_WYRM", "WYRM", "Dragonfire", MagicSchool.Wizard, 0, 0,
+            SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 32, "A torrent of dragonfire engulfs the entire enemy host.", Element.Fire));
+
+    public static readonly IReadOnlyList<Item> Legendaries =
+        new[] { Hellbrand, StaffOfTheArchmagi, Soulreaver, Wyrmslayer };
+
+    /// <summary>The signature legendary a given lair boss is guaranteed to drop, or null.</summary>
+    public static Item? LegendaryForBoss(string bossName) => bossName switch
+    {
+        "Demon Lord" => Hellbrand,
+        "Lich King" => StaffOfTheArchmagi,
+        "Death Tyrant" => Soulreaver,
+        "Dragon Tyrant" => Wyrmslayer,
+        _ => null
+    };
+
     /// <summary>Every known item, keyed by name — used to resolve items when loading a save.</summary>
     public static readonly IReadOnlyDictionary<string, Item> ByName = new[]
     {
         Fists, Dagger, ShortSword, LongSword, BattleAxe, Staff,
         Robes, LeatherArmor, ChainMail, PlateMail, SmallShield,
         HealingPotion, ManaDraught, Antidote, ResurrectionDust, MangarsStaff, ForgeEmber
-    }.Concat(MagicItems).Concat(PowerItems).Concat(Accessories).Concat(EnchantedAccessories)
+    }.Concat(MagicItems).Concat(PowerItems).Concat(Legendaries).Concat(Accessories).Concat(EnchantedAccessories)
         .ToDictionary(i => i.Name);
 
     public static Item? Find(string? name)

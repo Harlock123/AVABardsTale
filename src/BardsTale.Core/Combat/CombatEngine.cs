@@ -52,6 +52,8 @@ public sealed class CombatEngine
     private int _songAttackBonus;
     private int _songArmorBonus;
     private int _songRegen;
+    private int _songSpRegen;     // Cantata of Mana: SP restored to the party each round
+    private int _songEnemyDamage; // Dirge of the Doomed: damage to every foe each round
     private readonly Dictionary<Character, string> _activeSongBy = new(); // bard -> song id currently playing
     private readonly HashSet<Character> _sangThisRound = new();
 
@@ -116,7 +118,7 @@ public sealed class CombatEngine
 
         // Songs are sustained per round: clear last round's song bonuses; ResolveSong re-applies
         // them only for bards who keep playing this round.
-        _songAttackBonus = _songArmorBonus = _songRegen = 0;
+        _songAttackBonus = _songArmorBonus = _songRegen = _songSpRegen = _songEnemyDamage = 0;
         _sangThisRound.Clear();
 
         // On a surprise round the caught-off-guard side does nothing.
@@ -176,6 +178,18 @@ public sealed class CombatEngine
                 _activeSongBy.Remove(bard);
             }
 
+        // A sustained Dirge of the Doomed withers every foe at round's end.
+        if (_songEnemyDamage > 0 && !_encounter.IsCleared)
+        {
+            foreach (var group in _encounter.LivingGroups)
+                foreach (var m in group.Monsters.Where(m => !m.IsDead))
+                {
+                    m.HitPoints -= _songEnemyDamage;
+                    if (m.IsDead) round.Log.Add($"{m.Name} is slain!");
+                }
+            round.Log.Add($"The dirge withers the enemy for {_songEnemyDamage}.");
+        }
+
         // End-of-round mending: an Aura of Renewal and a sustained Hymn of Renewal heal the party...
         var regen = _partyRegen + _songRegen;
         if (regen > 0 && _party.Members.Any(m => !m.IsDead))
@@ -183,6 +197,14 @@ public sealed class CombatEngine
             foreach (var m in _party.Members.Where(m => !m.IsDead))
                 m.Heal(regen);
             round.Log.Add($"A restoring aura mends the party for {regen}.");
+        }
+
+        // A sustained Cantata of Mana feeds the party's spell points back each round.
+        if (_songSpRegen > 0 && _party.Members.Any(m => !m.IsDead && m.SpellPoints < m.EffectiveMaxSpellPoints))
+        {
+            foreach (var m in _party.Members.Where(m => !m.IsDead))
+                m.SpellPoints = Math.Min(m.EffectiveMaxSpellPoints, m.SpellPoints + _songSpRegen);
+            round.Log.Add($"The cantata restores {_songSpRegen} spell points to the party.");
         }
 
         // ...and any hero with a regenerative accessory mends a little more, noted when it heals.
@@ -523,6 +545,23 @@ public sealed class CombatEngine
                 }
                 break;
             }
+            case SpellEffect.ReviveParty:
+            {
+                var fallen = _party.Members.Where(m => m.IsDead).ToList();
+                if (fallen.Count == 0)
+                {
+                    round.Log.Add($"{caster.Name}'s {spell.Name} finds no fallen ally.");
+                    break;
+                }
+                round.Log.Add($"{caster.Name} casts {spell.Name}!");
+                foreach (var ally in fallen)
+                {
+                    ally.Status &= ~StatusEffect.Dead;
+                    ally.HitPoints = spell.Power;
+                    round.Log.Add($"{ally.Name} is revived!");
+                }
+                break;
+            }
             case SpellEffect.CureStatus:
             {
                 var ally = ResolveAlly(cmd.TargetAllyIndex) ?? caster;
@@ -596,6 +635,14 @@ public sealed class CombatEngine
             case SongEffect.RegenParty:
                 _songRegen = Math.Max(_songRegen, song.Power);
                 round.Log.Add($"{bard.Name} {verb} {song.Name}; a mending refrain wraps the party.");
+                break;
+            case SongEffect.RestoreParty:
+                _songSpRegen = Math.Max(_songSpRegen, song.Power);
+                round.Log.Add($"{bard.Name} {verb} {song.Name}; arcane vigour flows back to the party.");
+                break;
+            case SongEffect.HarmEnemies:
+                _songEnemyDamage = Math.Max(_songEnemyDamage, song.Power);
+                round.Log.Add($"{bard.Name} {verb} {song.Name}; a dread refrain withers the enemy.");
                 break;
             case SongEffect.HealParty:
                 round.Log.Add($"{bard.Name} {verb} {song.Name}.");

@@ -24,7 +24,9 @@ public enum SpellEffect
     /// <summary>Restores spell points to the whole party (Power = SP).</summary>
     RestorePartySpellPoints,
     /// <summary>Damages one enemy and heals the caster for part of the harm done.</summary>
-    DrainEnemy
+    DrainEnemy,
+    /// <summary>Calls every fallen ally back to life at once (Power = HP each is revived with).</summary>
+    ReviveParty
 }
 
 public enum SpellTarget
@@ -62,7 +64,7 @@ public sealed record Spell(
 
     /// <summary>Restorative spells the party can cast on themselves between fights, in town.</summary>
     public bool UsableInTown => Effect is SpellEffect.HealAlly or SpellEffect.HealParty
-        or SpellEffect.CureStatus or SpellEffect.Revive;
+        or SpellEffect.CureStatus or SpellEffect.Revive or SpellEffect.ReviveParty;
 
     public string Summary => Effect switch
     {
@@ -76,6 +78,7 @@ public sealed record Spell(
         SpellEffect.HasteParty => $"{Cost} SP · party +{Power} attack/round",
         SpellEffect.RegenParty => $"{Cost} SP · party regen {Power}/round",
         SpellEffect.RestorePartySpellPoints => $"{Cost} SP · party +{Power} SP",
+        SpellEffect.ReviveParty => $"{Cost} SP · revive all fallen",
         SpellEffect.Identify => $"{Cost} SP · identify an item",
         _ => $"{Cost} SP"
     };
@@ -100,6 +103,10 @@ public static class Spells
             "A tide of life washes the party each round of the fight."),
         new Spell("MACL", "MACL", "Mass Cleansing", MagicSchool.Conjurer, 3, 5, SpellEffect.CleanseParty, SpellTarget.Party, 0,
             "Purges poison, sleep and paralysis from the whole party."),
+        new Spell("SANC", "SANC", "Sanctuary", MagicSchool.Conjurer, 4, 9, SpellEffect.HealParty, SpellTarget.Party, 16,
+            "A blaze of holy light closes the party's every wound."),
+        new Spell("RESF", "RESF", "Resurrection Field", MagicSchool.Conjurer, 5, 16, SpellEffect.ReviveParty, SpellTarget.Party, 12,
+            "Life surges through the dead — every fallen companion rises at once."),
 
         // --- Magician: fire & utility ---
         new Spell("MAFL", "MAFL", "Mage Flame", MagicSchool.Magician, 1, 1, SpellEffect.RestoreLight, SpellTarget.None, 0,
@@ -114,6 +121,10 @@ public static class Spells
             "A lance of cold transfixes an enemy.", Element.Cold),
         new Spell("FIHO", "FIHO", "Fire Horn", MagicSchool.Magician, 3, 5, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 8,
             "Looses a blast of flame across an enemy group.", Element.Fire),
+        new Spell("FIST", "FIST", "Firestorm", MagicSchool.Magician, 4, 8, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 14,
+            "A roaring tempest of fire engulfs an enemy group.", Element.Fire),
+        new Spell("METE", "METE", "Meteor Swarm", MagicSchool.Magician, 5, 12, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 22,
+            "Burning stones rain from the dark, hammering every foe.", Element.Fire),
 
         // --- Sorcerer: force & mind ---
         new Spell("FOFO", "FOFO", "Force Focus", MagicSchool.Sorcerer, 1, 3, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 12,
@@ -128,6 +139,10 @@ public static class Spells
             "A spike of pure thought lances an enemy's mind."),
         new Spell("PSST", "PSST", "Psychic Storm", MagicSchool.Sorcerer, 3, 7, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 10,
             "Tears through an enemy group with raw psychic force."),
+        new Spell("EGOW", "EGOW", "Ego Whip", MagicSchool.Sorcerer, 4, 7, SpellEffect.DrainEnemy, SpellTarget.SingleEnemy, 26,
+            "Flays a foe's mind, feeding the stolen vigour to the caster."),
+        new Spell("TEMP", "TEMP", "Temporal Surge", MagicSchool.Sorcerer, 5, 14, SpellEffect.HasteParty, SpellTarget.Party, 2,
+            "Time bends to the party's will — two extra strikes each round."),
 
         // --- Wizard: raw destruction ---
         new Spell("MABL", "MABL", "Mage's Bolt", MagicSchool.Wizard, 1, 3, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 14,
@@ -138,6 +153,10 @@ public static class Spells
             "Wrenches a fallen ally back to life."),
         new Spell("DETH", "DETH", "Death Strike", MagicSchool.Wizard, 3, 9, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 30,
             "Annihilating force obliterates a single foe."),
+        new Spell("CHLI", "CHLI", "Chain Lightning", MagicSchool.Wizard, 4, 9, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 14,
+            "Arcs of lightning leap from foe to foe across the group.", Element.Lightning),
+        new Spell("ANNI", "ANNI", "Annihilation", MagicSchool.Wizard, 5, 14, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 46,
+            "A word of unmaking erases a single foe from existence."),
     };
 
     private static readonly Dictionary<string, Spell> ById = All.ToDictionary(s => s.Id);

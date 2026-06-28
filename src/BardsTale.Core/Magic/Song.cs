@@ -7,7 +7,11 @@ public enum SongEffect
     HealParty,
     Light,
     /// <summary>While sustained, mends a little of the whole party's wounds every round.</summary>
-    RegenParty
+    RegenParty,
+    /// <summary>While sustained, restores a little of the party's spell points every round.</summary>
+    RestoreParty,
+    /// <summary>While sustained, harms every enemy a little every round — a battle dirge.</summary>
+    HarmEnemies
 }
 
 /// <summary>
@@ -29,6 +33,8 @@ public sealed record Song(
         SongEffect.BuffPartyAttack => $"sustained · party hits +{Power}",
         SongEffect.HealParty => $"heal party ~{Power}",
         SongEffect.RegenParty => $"sustained · party regen {Power}/round",
+        SongEffect.RestoreParty => $"sustained · party +{Power} SP/round",
+        SongEffect.HarmEnemies => $"sustained · {Power} dmg to all foes/round",
         SongEffect.Light => "light",
         _ => ""
     };
@@ -48,6 +54,10 @@ public static class Songs
             "A soothing ballad that knits the party's wounds."),
         new Song("RENE", "Hymn of Renewal", 5, SongEffect.RegenParty, 3,
             "An enduring hymn that mends the party a little each round it is sustained."),
+        new Song("MANA", "Cantata of Mana", 7, SongEffect.RestoreParty, 4,
+            "A resonant cantata that feeds arcane vigour back to the party each round it is sung."),
+        new Song("DIRG", "Dirge of the Doomed", 9, SongEffect.HarmEnemies, 6,
+            "A dread dirge that withers every foe a little each round it is held."),
     };
 
     private static readonly Dictionary<string, Song> ById = All.ToDictionary(s => s.Id);

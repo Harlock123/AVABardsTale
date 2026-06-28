@@ -57,6 +57,10 @@ public static class Loot
             var bossName = encounter.Groups[0].Template.Name;
             if (AccessorySets.RewardForBoss(bossName) is { } set)
                 drops.AddRange(AccessorySets.PiecesOf(set));
+
+            // Four named bosses guard a signature legendary — a guaranteed, identified drop.
+            if (Items.LegendaryForBoss(bossName) is { } legendary)
+                drops.Add(legendary);
         }
 
         return drops;

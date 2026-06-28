@@ -61,7 +61,7 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 | `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime, as an installable PWA with IndexedDB saves. (Kept out of the default solution; see below.) |
 | `src/BardsTale.Android` | Thin Android head (tablet, landscape) — a launcher `Activity` + an `AudioTrack` sound backend, wrapping `MainView` via the single-view lifetime. |
 | `src/BardsTale.iOS` | Thin iOS head (iPad, landscape) — an `AvaloniaAppDelegate` entry point + an `AVAudioPlayer` sound backend. |
-| `tests/BardsTale.Tests` | xUnit suite (**255 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, town services, save/load round-trips, and per-depth map persistence. |
+| `tests/BardsTale.Tests` | xUnit suite (**425 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, monster morale, front/back ranks, sustained Bard songs), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, dungeon events, town services & tavern rumours, the bestiary & lore, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
 
 The split follows Avalonia's standard cross-platform layout: a shared UI library plus
 one thin "head" project per platform. Every head reuses `BardsTale.UI` unchanged —
@@ -291,7 +291,7 @@ dotnet build src/BardsTale.Desktop
   Quick Party in the Adventurers Guild.
 - **Quest journal (J)**, **Bestiary (B)** and the **accessory-set codex (K)** — open from
   anywhere (also top-bar buttons). **Settings (⚙)** holds reduced-motion, interface size,
-  autosave, and the independent sound-effects / music volumes.
+  autosave, audio, difficulty, Ironman, run modifiers and the accessibility options.
 - **Run history (📊 Runs)** — a dashboard of your completed runs (wins and Ironman deaths):
   each shows the outcome, deepest floor and score, with tags (Ironman / New Game+ / difficulty /
   daily-challenge seed) and date — above **lifetime totals** (runs, victories, deepest floor,
@@ -745,11 +745,18 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
 - A **discoverable bestiary (B)** that fills in as you face each of the 120 monsters
   (plus the mimic), recording stats, abilities, kill tallies and the floor first met;
   persisted in saves.
-- **Procedural music & sound** — code-synthesised sound effects and four looping music
-  tracks (town / dungeon / combat / victory) that switch with game state, with a
-  per-platform audio backend on every head and independent SFX/music volume settings.
-- A **Settings** screen (reduced motion, interface scale, autosave, mute, and separate
-  sound-effects and music volumes), persisted across sessions.
+- **Procedural music & sound** — code-synthesised sound effects and looping music that
+  switches with game state: town, combat and victory themes plus **three catacomb themes
+  that darken as you descend** (floors 1–6 / 7–13 / 14+), with a per-platform audio backend
+  on every head and a smooth **crossfade** between scenes (where the backend supports it).
+- A **discoverable bestiary (B)** with **per-monster lore** (curated for the bosses, generated
+  from the creature's nature for the rest) and drop hints; a **run-history dashboard (📊 Runs)**
+  of past runs and lifetime totals; **tavern rumours** that hint at the next floor's boss and
+  unclaimed secrets; and an in-game **help/tutorial overlay (❔ / F1)** that auto-opens for new players.
+- A **Settings** screen, persisted across sessions: reduced motion, interface scale, autosave,
+  mute, separate sound-effects / music volumes, music on/off and **crossfade**; **difficulty**,
+  **Ironman**, and **run modifiers** for a new run; and an **accessibility** group — a
+  **colourblind-friendly combat-log palette** and **rebindable movement keys**.
 - **Per-depth dungeon persistence**: every level you descend into keeps its own
   layout and revealed auto-map, so climbing back up (or re-descending) finds each
   floor exactly as you left it rather than a freshly generated maze.
@@ -760,24 +767,25 @@ running clip's volume, falls back to a clean cut. Crossfade can be turned off in
 
 ## Roadmap toward a fuller remake
 
-The core game loop is complete and winnable, with a 120-monster bestiary, side quests,
-a smithy, item powers, accessories with elemental wards, trapped treasure chests, and
-procedural music & sound all in. Natural next steps toward a fuller recreation of the
-original:
+The game is feature-rich and well past the original's core loop: a 120-monster bestiary with
+lore, named floor bosses, side quests, a smithy and item powers, accessories with elemental
+wards and set bonuses, trapped chests & mimics, a full suite of **dungeon puzzles** (search &
+secret doors, riddles, levers & gates, keys & locked doors, non-combat events), front/back rank
+tactics, sustained Bard songs, monster morale, **difficulty modes, New Game+, Ironman, run
+modifiers and a seeded daily challenge**, a light main-quest thread, a run-history dashboard,
+tiered crossfading music, an accessibility pass, and an in-game help overlay — all on desktop,
+**browser (PWA)**, **Android** and **iOS** heads.
 
-- **Hand-designed dungeons** — author some of the original's multi-level maps and
-  riddles alongside the procedural generator, with stairs that link specific levels.
-- **More special tiles** — one-way doors, portcullises, levers, hidden doors you
-  *search* for, and scripted message/event tiles.
-- **Persistent per-level state** — remember which wandering monsters and loot a floor
-  has yielded so a cleared level stays cleared on revisit.
-- **Class change & deeper magic** — retire a maxed hero into a new class, the full
-  original per-school spell lists, and more Bard song effects.
-- **Achievements & renown** — tie rewards to filling the bestiary, finishing quest
-  lines, and beating each floor.
-- **Polish** — a full-screen map, dungeon camping, richer combat animation, and a
-  controller / keyboard-remap pass.
+Natural next steps toward an even fuller recreation:
 
-The desktop, **browser (PWA)**, **Android** and **iOS** heads are all implemented —
-see **Platform setup & build** above. The engine stays UI-agnostic, so further targets
-remain a thin entry-point project away.
+- **Hand-designed dungeons** — author some of the original's multi-level maps alongside the
+  procedural generator, with stairs that link specific levels.
+- **Persistent per-level state** — remember which wandering monsters and loot a floor has
+  yielded so a cleared level stays cleared on revisit (the *map* already persists per depth).
+- **Deeper magic** — the full original per-school spell lists, more Bard song effects, and
+  signature legendaries with active powers.
+- **Controller / gamepad support** and **localization** scaffolding (the movement keys are
+  already rebindable; UI strings would need extracting into a resource table).
+- **Polish** — a full-screen map, richer combat animation, and more music/ambience variety.
+
+The engine stays UI-agnostic, so further platform targets remain a thin entry-point project away.

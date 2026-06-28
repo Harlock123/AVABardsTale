@@ -22,18 +22,26 @@ public partial class App : Application
     public static System.Func<ISaveStore> SaveStoreFactory { get; set; } = () => new SaveService();
 
     /// <summary>
-    /// How the app obtains its audio backend. Defaults to macOS desktop audio (silent
-    /// elsewhere); the browser head overrides this with a Web Audio backend.
+    /// How the app obtains its sound-effects backend — a native player per desktop OS (macOS
+    /// afplay, Windows MCI, Linux ffplay/mpv/paplay/aplay), silent if none applies. The browser
+    /// head overrides this with a Web Audio backend.
     /// </summary>
-    public static System.Func<IAudioService> AudioFactory { get; set; } =
-        () => System.OperatingSystem.IsMacOS() ? new DesktopAudioService() : new NullAudioService();
+    public static System.Func<IAudioService> AudioFactory { get; set; } = () =>
+        System.OperatingSystem.IsMacOS()   ? new DesktopAudioService() :
+        System.OperatingSystem.IsWindows() ? new WindowsAudioService() :
+        System.OperatingSystem.IsLinux()   ? new LinuxAudioService() :
+        new NullAudioService();
 
     /// <summary>
-    /// How the app obtains its background-music backend. Defaults to macOS desktop music
-    /// (silent elsewhere); each head overrides this with its own looping backend.
+    /// How the app obtains its background-music backend — a native looping player per desktop OS
+    /// (macOS afplay, Windows MCI, Linux ffplay/mpv/paplay/aplay), silent if none applies. Each
+    /// other head overrides this with its own looping backend.
     /// </summary>
-    public static System.Func<IMusicService> MusicFactory { get; set; } =
-        () => System.OperatingSystem.IsMacOS() ? new DesktopMusicService() : new NullMusicService();
+    public static System.Func<IMusicService> MusicFactory { get; set; } = () =>
+        System.OperatingSystem.IsMacOS()   ? new DesktopMusicService() :
+        System.OperatingSystem.IsWindows() ? new WindowsMusicService() :
+        System.OperatingSystem.IsLinux()   ? new LinuxMusicService() :
+        new NullMusicService();
 
     public override void Initialize()
     {

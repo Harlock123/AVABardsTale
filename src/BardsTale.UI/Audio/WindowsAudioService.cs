@@ -1,0 +1,86 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using BardsTale.UI.Settings;
+
+namespace BardsTale.UI.Audio;
+
+/// <summary>
+/// Windows desktop sound effects: plays each synthesized sound through the Multimedia (MCI)
+/// API under its own alias, so several effects can overlap and none interrupts the music
+/// (which uses a separate alias). Finished aliases are closed lazily on the next play, with a
+/// hard cap so concurrent voices can't grow without bound. No audio NuGet dependency.
+/// </summary>
+public sealed class WindowsAudioService : IAudioService
+{
+    private const int MaxConcurrent = 8;
+    private readonly object _gate = new();
+    private readonly Dictionary<GameSound, string> _files = new();
+    private readonly List<string> _active = new(); // live MCI aliases, oldest first
+    private int _counter;
+
+    public WindowsAudioService()
+    {
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => CloseAll();
+    }
+
+    public void Play(GameSound sound)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        if (AppSettings.Current.Muted) return;
+        var volume = AppSettings.Current.SoundVolume;
+        if (volume <= 0) return;
+
+        lock (_gate)
+        {
+            try
+            {
+                Reap();
+                if (_active.Count >= MaxConcurrent) CloseAt(0); // drop the oldest to make room
+
+                var path = FileFor(sound);
+                var alias = $"btsfx{_counter++}";
+                if (!WinMm.Open(path, alias)) return;
+                WinMm.SetVolume(alias, volume);
+                WinMm.Play(alias, loop: false);
+                _active.Add(alias);
+            }
+            catch { /* audio is non-essential */ }
+        }
+    }
+
+    // Close any aliases whose sound has finished.
+    private void Reap()
+    {
+        for (var i = _active.Count - 1; i >= 0; i--)
+            if (WinMm.IsStopped(_active[i]))
+            {
+                WinMm.Close(_active[i]);
+                _active.RemoveAt(i);
+            }
+    }
+
+    private void CloseAt(int index)
+    {
+        WinMm.Close(_active[index]);
+        _active.RemoveAt(index);
+    }
+
+    private void CloseAll()
+    {
+        lock (_gate)
+        {
+            foreach (var a in _active) WinMm.Close(a);
+            _active.Clear();
+        }
+    }
+
+    private string FileFor(GameSound sound)
+    {
+        if (_files.TryGetValue(sound, out var existing) && File.Exists(existing)) return existing;
+        var path = Path.Combine(Path.GetTempPath(), $"bardstale_{sound}.wav");
+        File.WriteAllBytes(path, ToneSynth.BuildWav(sound));
+        _files[sound] = path;
+        return path;
+    }
+}

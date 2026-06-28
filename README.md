@@ -622,13 +622,15 @@ All audio is **synthesised procedurally** — no asset files. Short **sound effe
 game state are generated in code: a warm town theme, a driving combat theme, a victory
 fanfare, and **three catacomb themes that darken as you descend** — an ominous upper-crypt
 ambience (floors 1–6), a brooding lower-crypt theme (7–13), and a slow, dissonant dread for
-the abyss (14+). Each plays through a per-platform backend on every head (macOS `afplay`,
-browser Web Audio, Android `AudioTrack`, iOS `AVAudioPlayer`), crossfading at the boundaries.
+the abyss (14+). Each plays through a per-platform backend on every head — **desktop**:
+macOS `afplay`, Windows Multimedia (MCI), and on Linux a detected CLI player
+(`ffplay` / `mpv` / `paplay` / `aplay`); **mobile/web**: Android `AudioTrack`, iOS
+`AVAudioPlayer`, browser Web Audio — crossfading at the tier boundaries.
 
 When the scene changes, tracks **crossfade** into one another (a smooth dip through
 silence — fade the old track out, swap, fade the new one in) on backends that can ramp
-volume live (iOS, Android, browser); the macOS `afplay` backend, which can't change a
-running clip's volume, falls back to a clean cut. Crossfade can be turned off in Settings.
+volume live (iOS, Android, browser, **Windows**); backends that can't (macOS `afplay`,
+Linux's CLI players) fall back to a clean cut. Crossfade can be turned off in Settings.
 
 ## What's implemented
 

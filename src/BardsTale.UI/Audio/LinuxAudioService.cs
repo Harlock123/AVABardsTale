@@ -1,34 +1,32 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using BardsTale.UI.Settings;
 
 namespace BardsTale.UI.Audio;
 
 /// <summary>
-/// macOS desktop sound effects: writes each synthesized sound to a temp WAV once and plays it
-/// with the built-in <c>afplay</c> tool (one process per effect, so they overlap). A no-op off
-/// macOS — Windows and Linux have their own backends (<see cref="WindowsAudioService"/>,
-/// <see cref="LinuxAudioService"/>).
+/// Linux desktop sound effects: writes each synthesized sound to a temp WAV once and plays it
+/// on a detected command-line player (ffplay / mpv / paplay / aplay). Each effect spawns its
+/// own short-lived process, so they can overlap. Silent if no player is installed.
 /// </summary>
-public sealed class DesktopAudioService : IAudioService
+public sealed class LinuxAudioService : IAudioService
 {
     private readonly Dictionary<GameSound, string> _files = new();
 
     public void Play(GameSound sound)
     {
-        if (!OperatingSystem.IsMacOS()) return;
+        if (!OperatingSystem.IsLinux()) return;
         if (AppSettings.Current.Muted) return;
         var volume = AppSettings.Current.SoundVolume;
         if (volume <= 0) return;
+        if (LinuxPlayer.Detect() is not { } player) return;
 
         try
         {
             var path = FileFor(sound);
-            Process.Start(new ProcessStartInfo("afplay",
-                $"-v {volume.ToString("0.00", CultureInfo.InvariantCulture)} \"{path}\"")
+            Process.Start(new ProcessStartInfo(player.Command, player.OneShotArgs(path, volume))
             {
                 UseShellExecute = false,
                 CreateNoWindow = true

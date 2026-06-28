@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,18 +8,13 @@ using System.Threading.Tasks;
 namespace BardsTale.UI.Audio;
 
 /// <summary>
-/// macOS desktop music: writes each track's loop to a temp WAV once and plays it on a
-/// repeat with <c>afplay</c> (which has no native loop). We re-arm the next <c>afplay</c>
-/// one loop-length after the previous one started, so its audio begins exactly as the
-/// previous loop ends. <c>afplay</c>'s start-up latency doesn't need compensating — every
-/// launch incurs the same latency, so it cancels between consecutive loops; only the small
-/// run-to-run <em>variance</em> in that latency (and timer jitter) could open a gap, so we
-/// re-arm a hair early by <see cref="OverlapMs"/>. That margin sits in the loop's faded,
-/// near-silent boundary, so it's inaudible — unlike a large overlap, which reaches into the
-/// loud part of the tune and makes the loop audibly "step on itself".
-/// A no-op on non-macOS desktops for now. Volume changes apply on the next loop.
+/// Linux desktop music: loops each synthesized track on a detected command-line player. Players
+/// that can loop natively (ffplay, mpv) run a single seamless process; the rest (paplay, aplay)
+/// are re-spawned per loop, re-armed a hair early to bridge launch jitter without a gap — the
+/// same approach the macOS afplay backend uses. Silent if no player is installed. Volume changes
+/// apply on the next loop (or the next track), so this reports no live-volume support.
 /// </summary>
-public sealed class DesktopMusicService : IMusicService
+public sealed class LinuxMusicService : IMusicService
 {
     private readonly object _gate = new();
     private readonly List<Process> _procs = new();
@@ -28,24 +22,18 @@ public sealed class DesktopMusicService : IMusicService
     private GameMusic? _current;
     private double _volume = 0.45;
 
-    /// <summary>
-    /// How far before a loop ends we re-arm the next play — just enough to absorb launch
-    /// jitter and afplay's start-up variance without falling silent. Kept small so the
-    /// overlap stays within the loop's faded boundary and never doubles the audible tune.
-    /// </summary>
     private const int OverlapMs = 45;
 
-    public DesktopMusicService()
+    public LinuxMusicService()
     {
-        // afplay runs as a child process; on Unix it would otherwise be orphaned (and keep
-        // playing) when the game exits. Stop it on process exit and Ctrl-C so nothing lingers.
         AppDomain.CurrentDomain.ProcessExit += (_, _) => Stop();
         Console.CancelKeyPress += (_, _) => Stop();
     }
 
     public void Play(GameMusic track)
     {
-        if (!OperatingSystem.IsMacOS()) return;
+        if (!OperatingSystem.IsLinux()) return;
+        if (LinuxPlayer.Detect() is null) return;
         lock (_gate)
         {
             if (_current == track && _cts is { IsCancellationRequested: false }) return;
@@ -78,25 +66,31 @@ public sealed class DesktopMusicService : IMusicService
 
     private void Loop(string path, long durationMs, CancellationToken ct)
     {
-        // Re-arm a hair before the current loop ends, covering launch/latency jitter without
-        // a gap. Small enough to land in the faded loop boundary (clamped for short clips).
+        var player = LinuxPlayer.Detect();
+        if (player is null) return;
+
+        // A player that loops natively just runs once and repeats itself — seamless, no re-spawn.
+        if (player is { CanLoop: true, LoopArgs: { } loopArgs })
+        {
+            Spawn(player.Command, loopArgs(path, _volume), ct);
+            return;
+        }
+
+        // Otherwise re-spawn each loop, re-arming a touch before it ends to cover launch jitter.
         var overlapMs = (int)Math.Min(OverlapMs, durationMs / 8);
         var waitMs = (int)Math.Max(1, durationMs - overlapMs);
-
         while (!ct.IsCancellationRequested)
         {
-            if (!StartAfplay(path, ct)) return;
-            // Sleep until just before this play ends — waking early if music is stopped.
+            if (!Spawn(player.Command, player.OneShotArgs(path, _volume), ct)) return;
             if (ct.WaitHandle.WaitOne(waitMs)) return;
         }
     }
 
-    private bool StartAfplay(string path, CancellationToken ct)
+    private bool Spawn(string command, string args, CancellationToken ct)
     {
         try
         {
-            var vol = _volume.ToString("0.00", CultureInfo.InvariantCulture);
-            var proc = Process.Start(new ProcessStartInfo("afplay", $"-v {vol} \"{path}\"")
+            var proc = Process.Start(new ProcessStartInfo(command, args)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -106,14 +100,14 @@ public sealed class DesktopMusicService : IMusicService
             lock (_gate)
             {
                 if (ct.IsCancellationRequested) { try { proc.Kill(); } catch { } return false; }
-                _procs.RemoveAll(HasExited);   // drop the just-finished previous loop
+                _procs.RemoveAll(HasExited);
                 _procs.Add(proc);
             }
             return true;
         }
         catch
         {
-            return false; // afplay missing or failed — give up quietly
+            return false; // player missing or failed — give up quietly
         }
     }
 

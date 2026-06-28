@@ -27,9 +27,13 @@ public sealed class CharacterFactory
             Attributes = attrs,
         };
 
-        // Starting health: one hit die plus constitution bonus, minimum 1.
+        // Starting health: a full hit die at first level (so there are no unlucky 1-HP heroes),
+        // plus the constitution bonus, with a survivability floor so even d4 casters can take a hit.
+        // We still advance the RNG by one hit-die roll so this rule changes only starting HP and
+        // leaves every other seeded outcome (loot, combat) byte-for-byte identical.
         var conBonus = (attrs.Constitution - 12) / 4;
-        character.MaxHitPoints = Math.Max(1, _rng.Roll(1, def.HitDieSides, def.BaseHitBonus + conBonus));
+        _ = _rng.Roll(1, def.HitDieSides);
+        character.MaxHitPoints = Math.Max(6, def.HitDieSides + def.BaseHitBonus + conBonus);
         character.HitPoints = character.MaxHitPoints;
 
         if (def.IsSpellcaster)

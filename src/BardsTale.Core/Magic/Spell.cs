@@ -26,7 +26,11 @@ public enum SpellEffect
     /// <summary>Damages one enemy and heals the caster for part of the harm done.</summary>
     DrainEnemy,
     /// <summary>Calls every fallen ally back to life at once (Power = HP each is revived with).</summary>
-    ReviveParty
+    ReviveParty,
+    /// <summary>Lulls an enemy group to sleep — they skip turns until they wake or are struck (Power = rounds).</summary>
+    SleepEnemies,
+    /// <summary>Poisons an enemy group, sapping their health each round (Power = rounds).</summary>
+    PoisonEnemies
 }
 
 public enum SpellTarget
@@ -79,6 +83,8 @@ public sealed record Spell(
         SpellEffect.RegenParty => $"{Cost} SP · party regen {Power}/round",
         SpellEffect.RestorePartySpellPoints => $"{Cost} SP · party +{Power} SP",
         SpellEffect.ReviveParty => $"{Cost} SP · revive all fallen",
+        SpellEffect.SleepEnemies => $"{Cost} SP · sleep a foe group",
+        SpellEffect.PoisonEnemies => $"{Cost} SP · poison a foe group",
         SpellEffect.Identify => $"{Cost} SP · identify an item",
         _ => $"{Cost} SP"
     };
@@ -119,6 +125,8 @@ public static class Spells
             "Channels arcane vigour, restoring spell points to the whole party."),
         new Spell("FROS", "FROS", "Frost Blast", MagicSchool.Magician, 2, 3, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 13,
             "A lance of cold transfixes an enemy.", Element.Cold),
+        new Spell("VESP", "VESP", "Venom Spray", MagicSchool.Magician, 2, 4, SpellEffect.PoisonEnemies, SpellTarget.SingleEnemy, 4,
+            "A cloud of venom engulfs a foe group, rotting them from within.", Element.Poison),
         new Spell("FIHO", "FIHO", "Fire Horn", MagicSchool.Magician, 3, 5, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 8,
             "Looses a blast of flame across an enemy group.", Element.Fire),
         new Spell("FIST", "FIST", "Firestorm", MagicSchool.Magician, 4, 8, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 14,
@@ -137,6 +145,8 @@ public static class Spells
             "Hastens the party's blood, granting an extra strike each round."),
         new Spell("MIJA", "MIJA", "Mind Jab", MagicSchool.Sorcerer, 2, 5, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 17,
             "A spike of pure thought lances an enemy's mind."),
+        new Spell("MIFO", "MIFO", "Mind Fog", MagicSchool.Sorcerer, 3, 6, SpellEffect.SleepEnemies, SpellTarget.SingleEnemy, 3,
+            "A smothering fog lulls a foe group into helpless slumber."),
         new Spell("PSST", "PSST", "Psychic Storm", MagicSchool.Sorcerer, 3, 7, SpellEffect.DamageAllEnemies, SpellTarget.AllEnemies, 10,
             "Tears through an enemy group with raw psychic force."),
         new Spell("EGOW", "EGOW", "Ego Whip", MagicSchool.Sorcerer, 4, 7, SpellEffect.DrainEnemy, SpellTarget.SingleEnemy, 26,

@@ -22,6 +22,21 @@ public sealed partial class MonsterGroupViewModel : ViewModelBase
     public bool IsDefeated => Group.IsDefeated;
     public string Label => $"{Index + 1}. {Name} ×{Group.LivingCount}";
 
+    /// <summary>Status glyphs for the group — 💤 if any are asleep, ☠ if any are poisoned.</summary>
+    public string StatusGlyph
+    {
+        get
+        {
+            var live = Group.Monsters.Where(m => !m.IsDead).ToList();
+            var glyph = "";
+            if (live.Any(m => m.IsAsleep)) glyph += "💤";
+            if (live.Any(m => m.IsPoisoned)) glyph += "☠";
+            return glyph;
+        }
+    }
+
+    public bool HasStatus => StatusGlyph.Length > 0;
+
     /// <summary>Elite groups read in gold to stand out from the rabble.</summary>
     public IBrush LabelBrush => IsElite
         ? new SolidColorBrush(Color.Parse("#E8C56B"))
@@ -64,5 +79,7 @@ public sealed partial class MonsterGroupViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsDefeated));
         OnPropertyChanged(nameof(Label));
         OnPropertyChanged(nameof(HealthText));
+        OnPropertyChanged(nameof(StatusGlyph));
+        OnPropertyChanged(nameof(HasStatus));
     }
 }

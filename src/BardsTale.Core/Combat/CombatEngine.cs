@@ -130,8 +130,9 @@ public sealed class CombatEngine
             commands = System.Array.Empty<CombatCommand>();
 
         // Ongoing afflictions tick before anyone acts: poison bites, sleepers may
-        // rouse, the paralysed may shake free.
+        // rouse, the paralysed may shake free — for the party and for afflicted monsters alike.
         ProcessAfflictions(round);
+        ProcessMonsterAfflictions(round);
 
         // A single flee attempt for the whole party short-circuits the round.
         if (commands.Any(c => c.Action == CombatActionType.Flee))
@@ -263,6 +264,36 @@ public sealed class CombatEngine
         }
     }
 
+    /// <summary>Ticks poison damage on afflicted monsters and counts down their sleep/poison.</summary>
+    private void ProcessMonsterAfflictions(CombatRound round)
+    {
+        foreach (var group in _encounter.Groups)
+            foreach (var m in group.Monsters.Where(m => !m.IsDead))
+            {
+                if (m.IsPoisoned)
+                {
+                    var dmg = _rng.Roll(1, 4);
+                    m.HitPoints -= dmg;
+                    m.PoisonTurns--;
+                    round.Log.Add(m.IsDead
+                        ? $"Poison wracks {m.Name} for {dmg} — it succumbs!"
+                        : $"Poison wracks {m.Name} for {dmg}.");
+                }
+                if (m.IsAsleep) m.SleepTurns--; // a round of slumber passes
+            }
+    }
+
+    /// <summary>
+    /// A monster's chance to resist a control affliction (sleep). Tougher creatures throw it off
+    /// more often; bosses and elites are highly resistant, so crowd-control rewards picking on the rabble.
+    /// </summary>
+    private bool ResistsControl(Monster m)
+    {
+        var resist = Math.Min(0.85, m.Template.MaxHitPoints / 120.0); // bulk ⇒ willpower
+        if (_enrageable.Contains(m)) resist = Math.Max(resist, 0.8);  // bosses & elites shrug it off
+        return _rng.Chance(resist);
+    }
+
     /// <summary>Sleep ends when the fight does — rouse anyone still slumbering.</summary>
     private void WakeAll()
     {
@@ -339,7 +370,8 @@ public sealed class CombatEngine
         if (!skipMonsters)
             foreach (var group in _encounter.Groups)
             {
-                foreach (var monster in group.Monsters.Where(m => !m.IsDead))
+                // A sleeping monster takes no turn this round (it ticked down in afflictions).
+                foreach (var monster in group.Monsters.Where(m => !m.IsDead && !m.IsAsleep))
                 {
                     var captured = monster;
                     var init = captured.Template.Speed + _rng.Next(1, 11);
@@ -451,11 +483,15 @@ public sealed class CombatEngine
                 var raw = Math.Max(1, _rng.Roll(weapon.DamageDice, weapon.DamageSides,
                     weapon.DamageBonus + attacker.StrengthBonus + atkBonus + attacker.GearDamageBonus));
                 var dmg = ScaleByElement(target.Name, raw, Element.Physical, out var note);
+                var wasAsleep = target.IsAsleep;
                 target.HitPoints -= dmg;
+                target.Wake(); // a blow jolts a sleeping foe awake
                 var verb = weapon.Ranged ? "shoots" : "hits";
                 round.Log.Add($"{attacker.Name} {verb} {target.Name} for {dmg}{note}.");
                 if (target.IsDead)
                     round.Log.Add($"{target.Name} is slain!");
+                else if (wasAsleep)
+                    round.Log.Add($"{target.Name} jolts awake!");
             }
             else
             {
@@ -486,6 +522,7 @@ public sealed class CombatEngine
                 if (target is null) break;
                 var dmg = ScaleByElement(target.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out var note);
                 target.HitPoints -= dmg;
+                target.Wake();
                 round.Log.Add($"{caster.Name} casts {spell.Name}, blasting {target.Name} for {dmg}{note}.");
                 if (target.IsDead) round.Log.Add($"{target.Name} is slain!");
                 break;
@@ -497,6 +534,7 @@ public sealed class CombatEngine
                 if (target is null) break;
                 var dmg = ScaleByElement(target.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out var note);
                 target.HitPoints -= dmg;
+                target.Wake();
                 var healed = Math.Max(1, dmg / 2);
                 caster.Heal(healed);
                 round.Log.Add($"{caster.Name} casts {spell.Name}, draining {dmg} from {target.Name} and healing {healed}{note}.");
@@ -511,8 +549,34 @@ public sealed class CombatEngine
                     {
                         var dmg = ScaleByElement(m.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out _);
                         m.HitPoints -= dmg;
+                        m.Wake();
                         if (m.IsDead) round.Log.Add($"{m.Name} is slain!");
                     }
+                break;
+            }
+            case SpellEffect.SleepEnemies:
+            {
+                var group = GetTargetGroup(cmd.TargetGroup);
+                if (group is null) break;
+                round.Log.Add($"{caster.Name} casts {spell.Name} over the {group.Name}!");
+                var slept = 0; var resisted = 0;
+                foreach (var m in group.Monsters.Where(m => !m.IsDead && !m.IsAsleep))
+                {
+                    if (ResistsControl(m)) resisted++;
+                    else { m.Sleep(spell.Power); slept++; }
+                }
+                if (slept > 0) round.Log.Add(slept == 1 ? $"A {group.Name} falls asleep!" : $"{slept} {group.Name} fall asleep!");
+                if (resisted > 0) round.Log.Add($"{(resisted == 1 ? "One" : $"{resisted}")} of the {group.Name} shrug off the slumber.");
+                break;
+            }
+            case SpellEffect.PoisonEnemies:
+            {
+                var group = GetTargetGroup(cmd.TargetGroup);
+                if (group is null) break;
+                round.Log.Add($"{caster.Name} casts {spell.Name}, fouling the air around the {group.Name}!");
+                foreach (var m in group.Monsters.Where(m => !m.IsDead))
+                    m.Poison(spell.Power);
+                round.Log.Add($"The {group.Name} are poisoned!");
                 break;
             }
             case SpellEffect.HealAlly:

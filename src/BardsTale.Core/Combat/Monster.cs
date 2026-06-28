@@ -144,6 +144,22 @@ public sealed class Monster
     /// </summary>
     public bool Enraged { get; set; }
 
+    // --- Status afflictions the party can inflict on a monster (rounds remaining) ---
+    /// <summary>Rounds of poison left; the monster takes damage at the start of each.</summary>
+    public int PoisonTurns { get; set; }
+    /// <summary>Rounds of sleep left; the monster skips its turn until it wakes (or is struck).</summary>
+    public int SleepTurns { get; set; }
+
+    public bool IsPoisoned => PoisonTurns > 0;
+    public bool IsAsleep => !IsDead && SleepTurns > 0;
+
+    /// <summary>Inflicts (or refreshes) an affliction for at least <paramref name="turns"/> rounds.</summary>
+    public void Poison(int turns) => PoisonTurns = Math.Max(PoisonTurns, turns);
+    public void Sleep(int turns) => SleepTurns = Math.Max(SleepTurns, turns);
+
+    /// <summary>A struck monster snaps awake (sleep ends the instant it takes a blow).</summary>
+    public void Wake() => SleepTurns = 0;
+
     public string Name => Template.Name;
     public int ArmorClass => Template.ArmorClass;
     public bool IsDead => HitPoints <= 0;

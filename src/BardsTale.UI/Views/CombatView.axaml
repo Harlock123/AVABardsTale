@@ -33,7 +33,10 @@
                                         <Border Background="#E0A85A" CornerRadius="3" Opacity="0" IsHitTestVisible="False"
                                                 Margin="-4" controls:Flash.Pulse="{Binding HitFlashPulse}"/>
                                         <StackPanel>
-                                            <TextBlock Text="{Binding Label}" FontWeight="Bold" Foreground="{Binding LabelBrush}"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock Text="{Binding Label}" FontWeight="Bold" Foreground="{Binding LabelBrush}"/>
+                                                <TextBlock Text="{Binding StatusGlyph}" IsVisible="{Binding HasStatus}" FontSize="11"/>
+                                            </StackPanel>
                                             <TextBlock Text="{Binding HealthText}" FontSize="11" Foreground="#9AA0B5"/>
                                         </StackPanel>
                                         <TextBlock Text="{Binding FloatingText}" Foreground="{Binding FloatingBrush}"

@@ -67,12 +67,14 @@ public sealed class CombatLogLineViewModel
         // Damage. "X takes N damage" is always a party member being hurt; "X hits Y for N"
         // / "blasting Y for N" depends on whether X is one of ours.
         if (Has(" takes ") && Has("damage")) return ("✸", LogCategory.EnemyHit);
-        if ((Has(" hits ") || Has(" shoots ") || Has("blasting ")) && Has(" for "))
+        if ((Has(" hits ") || Has(" shoots ") || Has("blasting ")
+             || Has("cleaves") || Has("smites") || Has("backstabs") || Has("fells")) && Has(" for "))
             return ByParty() ? ("⚔", LogCategory.PartyHit) : ("✸", LogCategory.EnemyHit);
+        if (Has("called shot fells") || Has("sweeps through")) return ("⚔", LogCategory.PartyHit);
 
         // Status & stat-drain riders.
-        if (Has("falls asleep") || Has("poison") || Has("paraly") || Has("withers")
-            || Has("drains the life") || Has("lulls"))
+        if (Has("falls asleep") || Has("fall asleep") || Has("poison") || Has("paraly") || Has("withers")
+            || Has("drains the life") || Has("lulls") || Has("stunned"))
             return ("✦", LogCategory.Status);
 
         // Casting, singing, buffs, summons.

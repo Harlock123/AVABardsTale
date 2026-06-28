@@ -10,7 +10,7 @@ public sealed class CombatActionOptionViewModel : ViewModelBase
 {
     private CombatActionOptionViewModel(string label, string detail, CombatActionType action,
         Spell? spell, Song? song, Item? item, bool needsEnemyTarget, bool isItemPower = false,
-        int spellCost = 0, bool canAfford = true)
+        int spellCost = 0, bool canAfford = true, MartialAbility ability = MartialAbility.None)
     {
         Label = label;
         Detail = detail;
@@ -22,7 +22,11 @@ public sealed class CombatActionOptionViewModel : ViewModelBase
         IsItemPower = isItemPower;
         SpellCost = spellCost;
         CanAfford = canAfford;
+        Ability = ability;
     }
+
+    /// <summary>The martial manoeuvre this option fires, if it's an ability option.</summary>
+    public MartialAbility Ability { get; }
 
     /// <summary>True when this action is a once-per-fight power from a wielded item.</summary>
     public bool IsItemPower { get; }
@@ -68,6 +72,11 @@ public sealed class CombatActionOptionViewModel : ViewModelBase
     /// <summary>A back-rank attack with a ranged weapon — resolves like Attack, reaching past the front line.</summary>
     public static CombatActionOptionViewModel Shoot() =>
         new("Shoot", "loose a ranged shot at the selected enemy group", CombatActionType.Attack, null, null, null, true);
+
+    /// <summary>A martial class's once-per-fight signature manoeuvre, aimed at the selected enemy group.</summary>
+    public static CombatActionOptionViewModel MartialAbilityOption(MartialAbility ability) =>
+        new($"⚔ {MartialAbilities.Name(ability)}", MartialAbilities.Detail(ability),
+            CombatActionType.Ability, null, null, null, needsEnemyTarget: true, ability: ability);
 
     public static CombatActionOptionViewModel Defend() =>
         new("Defend", "brace for blows (harder to hit)", CombatActionType.Defend, null, null, null, false);

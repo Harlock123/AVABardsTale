@@ -29,6 +29,7 @@ public sealed partial class CombatViewModel : ViewModelBase
     private readonly List<CombatCommand> _queued = new();
     private readonly List<Item> _reservedItems = new();
     private readonly HashSet<Character> _powerUsed = new(); // wielded-item powers fire once per fight
+    private readonly HashSet<Character> _abilityUsed = new(); // martial signature abilities fire once per fight
     private int _orderIndex;
     private CombatActionOptionViewModel? _pendingOption;
 
@@ -176,6 +177,12 @@ public sealed partial class CombatViewModel : ViewModelBase
         else if (actor.HasRangedWeapon)
             Options.Add(CombatActionOptionViewModel.Shoot());
 
+        // A martial class's once-per-fight signature manoeuvre (physical — works even in anti-magic).
+        var ability = MartialAbilities.For(actor.Class);
+        if (ability != MartialAbility.None && !_abilityUsed.Contains(actor)
+            && (frontRank.Contains(actor) || MartialAbilities.IsRanged(ability)))
+            Options.Add(CombatActionOptionViewModel.MartialAbilityOption(ability));
+
         if (!_magicSuppressed)
         {
             // Show the whole combat repertoire (affordable first), dimming spells the
@@ -235,6 +242,7 @@ public sealed partial class CombatViewModel : ViewModelBase
             CombatActionType.Attack => new CombatCommand(actor, CombatActionType.Attack, target),
             CombatActionType.CastSpell => new CombatCommand(actor, CombatActionType.CastSpell, target, Spell: option.Spell),
             CombatActionType.Sing => new CombatCommand(actor, CombatActionType.Sing, Song: option.Song),
+            CombatActionType.Ability => new CombatCommand(actor, CombatActionType.Ability, target, Ability: option.Ability),
             _ => new CombatCommand(actor, CombatActionType.Defend)
         };
         QueueAndAdvance(command, $"{actor.Name}: {DescribeOrder(option, target)}");
@@ -404,6 +412,10 @@ public sealed partial class CombatViewModel : ViewModelBase
             if (cmd.Action == CombatActionType.CastSpell && cmd.Spell is { } sp
                 && cmd.Actor.Weapon is { } w && ReferenceEquals(w.ItemPower, sp))
                 _powerUsed.Add(cmd.Actor);
+        // ...and a martial signature ability is likewise once per fight.
+        foreach (var cmd in resolved)
+            if (cmd.Action == CombatActionType.Ability)
+                _abilityUsed.Add(cmd.Actor);
         foreach (var line in round.Log)
             AddLog(line);
 
@@ -455,6 +467,7 @@ public sealed partial class CombatViewModel : ViewModelBase
         return option.Action switch
         {
             CombatActionType.Attack => $"{(option.Label == "Shoot" ? "shoot" : "attack")} {groupName}",
+            CombatActionType.Ability => $"{MartialAbilities.Name(option.Ability)} on {groupName}",
             CombatActionType.CastSpell when option.Spell!.TargetsEnemies => $"cast {option.Spell.Name} at {groupName}",
             CombatActionType.CastSpell => $"cast {option.Spell!.Name}",
             CombatActionType.Sing => $"sing {option.Song!.Name}",

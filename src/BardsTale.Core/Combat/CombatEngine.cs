@@ -5,7 +5,7 @@ using BardsTale.Core.Util;
 
 namespace BardsTale.Core.Combat;
 
-public enum CombatActionType { Attack, Defend, CastSpell, Sing, UseItem, Flee }
+public enum CombatActionType { Attack, Defend, CastSpell, Sing, UseItem, Flee, Ability }
 
 public enum CombatOutcome { Ongoing, Victory, Defeat, Fled }
 
@@ -20,7 +20,8 @@ public sealed record CombatCommand(
     Spell? Spell = null,
     Song? Song = null,
     Item? Item = null,
-    int TargetAllyIndex = -1);
+    int TargetAllyIndex = -1,
+    MartialAbility Ability = MartialAbility.None);
 
 /// <summary>The narrated result of resolving one combat round.</summary>
 public sealed class CombatRound
@@ -402,7 +403,107 @@ public sealed class CombatEngine
             case CombatActionType.UseItem when cmd.Item is not null:
                 ResolveUseItem(cmd, round);
                 break;
+            case CombatActionType.Ability when cmd.Ability != MartialAbility.None:
+                ResolveAbility(cmd, round);
+                break;
         }
+    }
+
+    /// <summary>Resolves a martial class's once-per-fight signature manoeuvre.</summary>
+    private void ResolveAbility(CombatCommand cmd, CombatRound round)
+    {
+        var actor = cmd.Actor;
+        var group = GetTargetGroup(cmd.TargetGroup);
+        if (group is null) return;
+
+        switch (cmd.Ability)
+        {
+            case MartialAbility.Cleave:
+            {
+                round.Log.Add($"{actor.Name} sweeps through the {group.Name} with a mighty cleave!");
+                foreach (var m in group.Monsters.Where(m => !m.IsDead).ToList())
+                {
+                    if (RollToHit(AbilityHitBonus(actor), m.ArmorClass))
+                        StrikeMonster(actor, m, WeaponDamageRoll(actor), "cleaves", round);
+                    else
+                        round.Log.Add($"{actor.Name}'s cleave misses {m.Name}.");
+                }
+                break;
+            }
+            case MartialAbility.Smite:
+            {
+                var target = group.FirstAlive();
+                if (target is null) break;
+                StrikeMonster(actor, target, WeaponDamageRoll(actor) * 2, "smites", round);
+                break;
+            }
+            case MartialAbility.Backstab:
+            {
+                var target = group.FirstAlive();
+                if (target is null) break;
+                StrikeMonster(actor, target, WeaponDamageRoll(actor) * 3, "backstabs", round);
+                break;
+            }
+            case MartialAbility.CalledShot:
+            {
+                var target = group.FirstAlive();
+                if (target is null) break;
+                // A lesser foe (not a boss/elite) can be felled outright by a perfect shot.
+                if (!_enrageable.Contains(target) && _rng.Chance(0.30))
+                {
+                    target.HitPoints = 0;
+                    round.Log.Add($"{actor.Name}'s called shot fells {target.Name} with a single arrow!");
+                }
+                else
+                {
+                    StrikeMonster(actor, target, WeaponDamageRoll(actor) * 2, "shoots", round);
+                }
+                break;
+            }
+            case MartialAbility.StunningStrike:
+            {
+                var target = group.FirstAlive();
+                if (target is null) break;
+                StrikeMonster(actor, target, WeaponDamageRoll(actor), "hits", round);
+                if (!target.IsDead)
+                {
+                    if (ResistsControl(target))
+                        round.Log.Add($"{target.Name} shrugs off the stunning blow.");
+                    else
+                    {
+                        target.Sleep(2);
+                        round.Log.Add($"{target.Name} is stunned!");
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    /// <summary>Applies ability damage to a monster (waking it), with a "{verb}" narration.</summary>
+    private void StrikeMonster(Character actor, Monster target, int rawDamage, string verb, CombatRound round)
+    {
+        var dmg = ScaleByElement(target.Name, rawDamage, Element.Physical, out var note);
+        target.HitPoints -= dmg;
+        target.Wake();
+        round.Log.Add($"{actor.Name} {verb} {target.Name} for {dmg}{note}!");
+        if (target.IsDead) round.Log.Add($"{target.Name} is slain!");
+    }
+
+    /// <summary>The to-hit bonus for an ability swing — mirrors a normal melee attack.</summary>
+    private int AbilityHitBonus(Character a)
+    {
+        var atkBonus = _partyAttackBonus + _songAttackBonus;
+        return a.StrengthBonus + (a.Level - 1) / 2
+            + a.Definition.BaseHitBonus + atkBonus + a.EffectiveWeapon.MagicBonus + a.GearHitBonus;
+    }
+
+    /// <summary>One weapon swing's raw damage for an ability — mirrors a normal melee attack.</summary>
+    private int WeaponDamageRoll(Character a)
+    {
+        var atkBonus = _partyAttackBonus + _songAttackBonus;
+        var w = a.EffectiveWeapon;
+        return Math.Max(1, _rng.Roll(w.DamageDice, w.DamageSides, w.DamageBonus + a.StrengthBonus + atkBonus + a.GearDamageBonus));
     }
 
     private void ResolveUseItem(CombatCommand cmd, CombatRound round)

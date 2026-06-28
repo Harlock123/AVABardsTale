@@ -153,9 +153,11 @@ dotnet publish src/BardsTale.Desktop -c Release -r win-x64 --self-contained -p:P
 
 `scripts/publish.sh` writes a self-contained **single executable** per runtime to
 `dist/<rid>/` — each bundles the .NET runtime and Avalonia's native libraries, so it runs
-with no .NET install. .NET cross-publishes from any host, so all six come off one machine.
-The `dist/` folder is git-ignored (the binaries are ~90–110&nbsp;MB each). The iOS and
-Android heads aren't covered here — they build through their own SDK workloads (see below).
+with no .NET install — and a matching **zip** at `dist/<rid>_BardsTale.desktop.zip`
+(the executable keeps its name inside, with its execute bit preserved). .NET cross-publishes
+from any host, so all six come off one machine. The `dist/` folder is git-ignored (the binaries
+are ~90–110&nbsp;MB each, the zips ~40&nbsp;MB). The iOS and Android heads aren't covered here —
+they build through their own SDK workloads (see below).
 
 The build **version** is set once in [`Directory.Build.props`](Directory.Build.props)
 (`<Version>`) at the repo root and applies to every project; bump it there for a release.

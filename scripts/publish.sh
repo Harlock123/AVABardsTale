@@ -3,6 +3,8 @@
 # Publishes self-contained, single-file desktop builds into ./dist, one folder per
 # runtime identifier (RID). Each build bundles the .NET runtime and Avalonia's native
 # libraries, so the result is a single executable that runs without a .NET install.
+# Each build is also zipped to ./dist/<rid>_BardsTale.desktop.zip (the executable keeps
+# its name — BardsTale.Desktop or BardsTale.Desktop.exe — inside the archive).
 #
 # Desktop RIDs covered (Windows / macOS / Linux, x64 + arm64):
 #   win-x64  win-arm64  osx-x64  osx-arm64  linux-x64  linux-arm64
@@ -60,7 +62,17 @@ for RID in "${RIDS[@]}"; do
     BIN="$(find "$OUT" -maxdepth 1 -name 'BardsTale.Desktop*' ! -name '*.pdb' -type f | head -1)"
     if [ -n "$BIN" ]; then
       SIZE="$(du -h "$BIN" | cut -f1)"
-      SUMMARY+=("  ✓ $RID  →  ${BIN#"$(pwd)/"}  ($SIZE)")
+      # Zip the binary on its own (keeping its name) into dist/<rid>_BardsTale.desktop.zip.
+      ZIP="$DIST/${RID}_BardsTale.desktop.zip"
+      rm -f "$ZIP"
+      if command -v zip >/dev/null 2>&1; then
+        # -j junks the directory path so the archive holds just the executable (perms preserved).
+        ( cd "$OUT" && zip -j -q "$ZIP" "$(basename "$BIN")" )
+        ZSIZE="$(du -h "$ZIP" | cut -f1)"
+        SUMMARY+=("  ✓ $RID  →  ${BIN#"$(pwd)/"}  ($SIZE)   ·   zip ${ZIP#"$(pwd)/"}  ($ZSIZE)")
+      else
+        SUMMARY+=("  ✓ $RID  →  ${BIN#"$(pwd)/"}  ($SIZE)   ·   (zip skipped — 'zip' not installed)")
+      fi
     else
       SUMMARY+=("  ✓ $RID  →  $OUT  (built; executable name not matched)")
     fi

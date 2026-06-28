@@ -1,0 +1,21 @@
+<Project>
+
+  <!--
+    Shared metadata for every project in the solution (Core, UI, and all heads).
+    This is the single source of truth for the build version: bump <Version> here
+    for a release. Any build can still override it on the command line, e.g.
+        dotnet publish ... -p:Version=1.2.0
+    (scripts/publish.sh honours a VERSION env var for exactly this.)
+  -->
+
+  <PropertyGroup>
+    <!-- Semantic version stamped into AssemblyVersion, FileVersion and the product info. -->
+    <Version>1.0.0</Version>
+
+    <Product>The Bard's Tale — Avalonia Remake</Product>
+    <Authors>Harlock123</Authors>
+    <Company>Harlock123</Company>
+    <Copyright>Copyright © 2026 Harlock123. A fan re-implementation; original game by Interplay Productions.</Copyright>
+  </PropertyGroup>
+
+</Project>

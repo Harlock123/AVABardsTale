@@ -157,6 +157,11 @@ with no .NET install. .NET cross-publishes from any host, so all six come off on
 The `dist/` folder is git-ignored (the binaries are ~90–110&nbsp;MB each). The iOS and
 Android heads aren't covered here — they build through their own SDK workloads (see below).
 
+The build **version** is set once in [`Directory.Build.props`](Directory.Build.props)
+(`<Version>`) at the repo root and applies to every project; bump it there for a release.
+Any build can override it on the fly — `dotnet … -p:Version=1.2.0`, or `VERSION=1.2.0
+scripts/publish.sh`.
+
 ### Browser (WebAssembly / PWA)
 
 The `BardsTale.Browser` head (`net9.0-browser`, RID `browser-wasm`) runs the exact

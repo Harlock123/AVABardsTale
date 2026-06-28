@@ -1,5 +1,7 @@
 # The Bard's Tale — Avalonia Remake
 
+[![CI](https://github.com/Harlock123/AVABardsTale/actions/workflows/ci.yml/badge.svg)](https://github.com/Harlock123/AVABardsTale/actions/workflows/ci.yml)
+
 A cross-platform .NET 9 re-implementation of the classic 1985 dungeon crawler
 *The Bard's Tale*, built with [Avalonia](https://avaloniaui.net/) and a clean
 MVVM architecture.
@@ -81,6 +83,12 @@ dotnet test
 
 That's all the desktop head needs. The browser, Android and iOS heads each need a
 one-time SDK workload (and, for iOS, a Mac with Xcode); see below.
+
+**Continuous integration.** Every push and pull request to `main` runs
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) on Ubuntu: it builds the desktop
+head (compiling Core + UI) and runs the full test suite. The badge at the top of this
+README reflects its latest status. (The mobile/browser heads aren't built in CI, as they
+need extra SDK workloads and — for iOS — a Mac.)
 
 ## Platform setup & build
 

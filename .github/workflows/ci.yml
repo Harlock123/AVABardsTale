@@ -1,0 +1,42 @@
+name: CI
+
+# Build the cross-platform code and run the full test suite on every push and PR.
+# Only the platform-agnostic parts are exercised here (Core, UI, Desktop and the tests):
+# the iOS / Android / Browser heads need extra SDK workloads (and iOS a Mac), so they're
+# left out of CI — building the test project already compiles Core + UI (XAML included).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Build the desktop head (compiles Core + UI + Desktop)
+        run: dotnet build src/BardsTale.Desktop/BardsTale.Desktop.csproj -c Release
+
+      - name: Run the test suite
+        run: dotnet test tests/BardsTale.Tests/BardsTale.Tests.csproj -c Release --logger "console;verbosity=normal"

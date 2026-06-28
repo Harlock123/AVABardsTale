@@ -49,6 +49,22 @@ public static class MusicSynth
         return wav;
     }
 
+    /// <summary>
+    /// The loop as a WAV with its level scaled by <paramref name="gain"/> (0–1). The Windows MCI
+    /// backend can't adjust a playing stream's volume, so it bakes the chosen level into the file.
+    /// </summary>
+    public static byte[] BuildWav(GameMusic music, double gain) =>
+        gain >= 0.999 ? BuildWav(music) : ToWav(Scale(BuildPcm(music), gain));
+
+    // Returns a volume-scaled copy of the PCM, leaving the shared cached buffer untouched.
+    private static short[] Scale(short[] pcm, double gain)
+    {
+        gain = Math.Clamp(gain, 0, 1);
+        var outp = new short[pcm.Length];
+        for (var i = 0; i < pcm.Length; i++) outp[i] = (short)(pcm[i] * gain);
+        return outp;
+    }
+
     // C major: C4=60. A minor uses the same notes centred on A.
     private static Track TrackFor(GameMusic music) => music switch
     {

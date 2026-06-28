@@ -39,6 +39,22 @@ public static class ToneSynth
         return wav;
     }
 
+    /// <summary>
+    /// The effect as a WAV with its level scaled by <paramref name="gain"/> (0–1). The Windows MCI
+    /// backend can't adjust a playing stream's volume, so it bakes the chosen level into the file.
+    /// </summary>
+    public static byte[] BuildWav(GameSound sound, double gain) =>
+        gain >= 0.999 ? BuildWav(sound) : ToWav(Scale(BuildPcm(sound), gain));
+
+    // Returns a volume-scaled copy of the PCM, leaving the shared cached buffer untouched.
+    private static short[] Scale(short[] pcm, double gain)
+    {
+        gain = Math.Clamp(gain, 0, 1);
+        var outp = new short[pcm.Length];
+        for (var i = 0; i < pcm.Length; i++) outp[i] = (short)(pcm[i] * gain);
+        return outp;
+    }
+
     private static Seg[] RecipeFor(GameSound sound) => sound switch
     {
         GameSound.UiConfirm => new[] { new Seg(680, 920, 70, Wave.Sine, 0.40) },

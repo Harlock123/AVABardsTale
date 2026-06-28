@@ -43,6 +43,15 @@ internal static class WinMm
     internal static void Play(string alias, bool loop) =>
         Send($"play {alias}{(loop ? " repeat" : "")}");
 
+    /// <summary>
+    /// Plays an aliased device from the start. Re-issuing this on an already-open device is the
+    /// way music loops on Windows: the <c>waveaudio</c> device ignores <c>play … repeat</c>
+    /// (it returns MCIERR_UNSUPPORTED_FUNCTION and plays nothing), so the caller re-arms this
+    /// just before each loop ends — re-seeking an open device is gap-free and needs no re-spawn.
+    /// </summary>
+    internal static void PlayFromStart(string alias) =>
+        Send($"play {alias} from 0");
+
     internal static void Close(string alias)
     {
         Send($"stop {alias}");

@@ -15,7 +15,9 @@ public sealed class WindowsAudioService : IAudioService
 {
     private const int MaxConcurrent = 8;
     private readonly object _gate = new();
-    private readonly Dictionary<GameSound, string> _files = new();
+    // MCI can't set a playing waveaudio stream's volume, so the level is baked into the WAV;
+    // files are cached per (sound, volume%) so a steady volume re-renders each effect only once.
+    private readonly Dictionary<(GameSound Sound, int VolumePct), string> _files = new();
     private readonly List<string> _active = new(); // live MCI aliases, oldest first
     private int _counter;
 
@@ -38,10 +40,9 @@ public sealed class WindowsAudioService : IAudioService
                 Reap();
                 if (_active.Count >= MaxConcurrent) CloseAt(0); // drop the oldest to make room
 
-                var path = FileFor(sound);
+                var path = FileFor(sound, volume); // volume baked into the WAV (MCI can't set it live)
                 var alias = $"btsfx{_counter++}";
                 if (!WinMm.Open(path, alias)) return;
-                WinMm.SetVolume(alias, volume);
                 WinMm.Play(alias, loop: false);
                 _active.Add(alias);
             }
@@ -75,12 +76,14 @@ public sealed class WindowsAudioService : IAudioService
         }
     }
 
-    private string FileFor(GameSound sound)
+    private string FileFor(GameSound sound, double volume)
     {
-        if (_files.TryGetValue(sound, out var existing) && File.Exists(existing)) return existing;
-        var path = Path.Combine(Path.GetTempPath(), $"bardstale_{sound}.wav");
-        File.WriteAllBytes(path, ToneSynth.BuildWav(sound));
-        _files[sound] = path;
+        var pct = (int)Math.Round(Math.Clamp(volume, 0, 1) * 100);
+        var key = (sound, pct);
+        if (_files.TryGetValue(key, out var existing) && File.Exists(existing)) return existing;
+        var path = Path.Combine(Path.GetTempPath(), $"bardstale_{sound}_v{pct}.wav");
+        File.WriteAllBytes(path, ToneSynth.BuildWav(sound, pct / 100.0));
+        _files[key] = path;
         return path;
     }
 }

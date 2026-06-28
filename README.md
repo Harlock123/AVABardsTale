@@ -143,11 +143,19 @@ workload. It runs natively on all three OSes:
 # run from source
 dotnet run --project src/BardsTale.Desktop
 
-# publish a self-contained build for distribution (pick your runtime ID)
-dotnet publish src/BardsTale.Desktop -c Release -r win-x64   --self-contained
-dotnet publish src/BardsTale.Desktop -c Release -r osx-arm64 --self-contained
-dotnet publish src/BardsTale.Desktop -c Release -r linux-x64 --self-contained
+# publish self-contained, single-file builds for every desktop platform into ./dist
+scripts/publish.sh                      # all six RIDs (win/osx/linux × x64/arm64)
+scripts/publish.sh win-x64 osx-arm64    # …or just the ones you want
+
+# or publish a single RID by hand
+dotnet publish src/BardsTale.Desktop -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
 ```
+
+`scripts/publish.sh` writes a self-contained **single executable** per runtime to
+`dist/<rid>/` — each bundles the .NET runtime and Avalonia's native libraries, so it runs
+with no .NET install. .NET cross-publishes from any host, so all six come off one machine.
+The `dist/` folder is git-ignored (the binaries are ~90–110&nbsp;MB each). The iOS and
+Android heads aren't covered here — they build through their own SDK workloads (see below).
 
 ### Browser (WebAssembly / PWA)
 

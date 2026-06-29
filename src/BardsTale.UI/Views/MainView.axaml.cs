@@ -15,12 +15,11 @@ namespace BardsTale.UI.Views;
 /// </summary>
 public partial class MainView : UserControl
 {
+    private TopLevel? _topLevel;
+
     public MainView()
     {
         InitializeComponent();
-        // Tunnel so navigation keys reach us before a focused on-screen button can
-        // swallow them (e.g. Enter activating a button instead of entering a building).
-        AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
         // A tap on non-interactive space reclaims keyboard focus (matters on mobile).
         AddHandler(PointerPressedEvent, OnPreviewPointerPressed, RoutingStrategies.Tunnel);
     }
@@ -31,8 +30,26 @@ public partial class MainView : UserControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+
+        // Handle navigation keys at the window/top level (tunnelling) rather than on this
+        // control, so they keep working even when keyboard focus is lost. Dismissing an
+        // overlay, building or quest offer with a mouse click removes the focused button
+        // from the tree, leaving focus null — at which point key events no longer route
+        // through this control. Listening on the top level catches them regardless, so the
+        // game can't go unresponsive until a save/load reclaims focus. Tunnel so we see the
+        // keys before a focused button swallows them (e.g. Enter entering a building).
+        _topLevel = TopLevel.GetTopLevel(this);
+        _topLevel?.AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+
         Focus();
         Dispatcher.UIThread.Post(() => Focus(), DispatcherPriority.Loaded);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _topLevel?.RemoveHandler(KeyDownEvent, OnPreviewKeyDown);
+        _topLevel = null;
+        base.OnDetachedFromVisualTree(e);
     }
 
     private void OnPreviewPointerPressed(object? sender, PointerPressedEventArgs e)

@@ -10,7 +10,7 @@
 
   <PropertyGroup>
     <!-- Semantic version stamped into AssemblyVersion, FileVersion and the product info. -->
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
 
     <Product>The Bard's Tale — Avalonia Remake</Product>
     <Authors>Harlock123</Authors>

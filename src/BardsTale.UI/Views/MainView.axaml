@@ -18,7 +18,7 @@
             <ScaleTransform ScaleX="{Binding Settings.UiScale}" ScaleY="{Binding Settings.UiScale}"/>
         </LayoutTransformControl.LayoutTransform>
     <Grid Margin="12" RowDefinitions="Auto,*">
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="2,0,0,10">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="2,0,0,10">
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
                 <TextBlock Text="THE BARD'S TALE" FontSize="22" FontWeight="Bold" Foreground="#E8C56B"/>
                 <Border IsVisible="{Binding IsIronman}" Background="#3A1416" BorderBrush="#C0566B" BorderThickness="1"
@@ -42,22 +42,29 @@
                     <TextBlock Text="{Binding ChallengeBadge}" FontSize="11" FontWeight="Bold" Foreground="#E8C56B"/>
                 </Border>
             </StackPanel>
-            <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Foreground="#A9D0B0"
-                       VerticalAlignment="Center" Margin="16,0" FontFamily="Consolas,monospace"/>
-            <Button Grid.Column="2" Content="{Binding RenownBadge}" Command="{Binding ShowAchievementsCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="3" Content="📜 Quests (J)" Command="{Binding ShowQuestLogCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="4" Content="📖 Bestiary (B)" Command="{Binding ShowBestiaryCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="5" Content="🔗 Sets (K)" Command="{Binding ShowSetCodexCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="6" Content="🎯 Daily" Command="{Binding ShowChallengeCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="7" Content="📊 Runs" Command="{Binding ShowHistoryCommand}" Margin="0,0,6,0"
-                    ToolTip.Tip="Run history &amp; lifetime totals"/>
-            <Button Grid.Column="8" Content="❔ Help" Command="{Binding ShowHelpCommand}" Margin="0,0,6,0"
-                    ToolTip.Tip="How to play (F1)"/>
-            <Button Grid.Column="9" Content="⚙ Settings" Command="{Binding ShowSettingsCommand}" Margin="0,0,6,0"/>
-            <Button Grid.Column="10" Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,0,6,0"
-                    IsEnabled="{Binding ManualSavesAllowed}"/>
-            <Button Grid.Column="11" Content="Load" Command="{Binding ShowLoadSlotsCommand}"
-                    IsEnabled="{Binding ManualSavesAllowed}"/>
+            <Grid Grid.Column="1" ColumnDefinitions="Auto,*" VerticalAlignment="Center">
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Foreground="#A9D0B0"
+                           VerticalAlignment="Center" Margin="16,0" FontFamily="Consolas,monospace"
+                           MaxWidth="320" TextTrimming="CharacterEllipsis"/>
+                <!-- Action buttons wrap to a second row instead of clipping when the window is
+                     narrow or the UI scale is large. -->
+                <WrapPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Content="{Binding RenownBadge}" Command="{Binding ShowAchievementsCommand}" Margin="0,2,6,2"/>
+                    <Button Content="📜 Quests (J)" Command="{Binding ShowQuestLogCommand}" Margin="0,2,6,2"/>
+                    <Button Content="📖 Bestiary (B)" Command="{Binding ShowBestiaryCommand}" Margin="0,2,6,2"/>
+                    <Button Content="🔗 Sets (K)" Command="{Binding ShowSetCodexCommand}" Margin="0,2,6,2"/>
+                    <Button Content="🎯 Daily" Command="{Binding ShowChallengeCommand}" Margin="0,2,6,2"/>
+                    <Button Content="📊 Runs" Command="{Binding ShowHistoryCommand}" Margin="0,2,6,2"
+                            ToolTip.Tip="Run history &amp; lifetime totals"/>
+                    <Button Content="❔ Help" Command="{Binding ShowHelpCommand}" Margin="0,2,6,2"
+                            ToolTip.Tip="How to play (F1)"/>
+                    <Button Content="⚙ Settings" Command="{Binding ShowSettingsCommand}" Margin="0,2,6,2"/>
+                    <Button Content="Save" Command="{Binding ShowSaveSlotsCommand}" Margin="0,2,6,2"
+                            IsEnabled="{Binding ManualSavesAllowed}"/>
+                    <Button Content="Load" Command="{Binding ShowLoadSlotsCommand}" Margin="0,2,0,2"
+                            IsEnabled="{Binding ManualSavesAllowed}"/>
+                </WrapPanel>
+            </Grid>
         </Grid>
 
         <Panel Grid.Row="1">
@@ -119,23 +126,33 @@
                 </Border>
             </Border>
 
-            <!-- Ironman game-over screen -->
+            <!-- Game-over screen (total party kill) -->
             <Border IsVisible="{Binding IsGameOver}" Background="#F00B0D14">
                 <Border Width="520" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="#1A1216" BorderBrush="#C0566B" BorderThickness="2" CornerRadius="8" Padding="28">
                     <StackPanel Spacing="14">
                         <TextBlock Text="☠ THE PARTY HAS FALLEN ☠" FontSize="26" FontWeight="Bold"
                                    Foreground="#E08A8A" HorizontalAlignment="Center"/>
-                        <TextBlock TextWrapping="Wrap" TextAlignment="Center" Foreground="#D8B0B0" FontSize="14"
+                        <!-- Ironman: permanent, saves wiped. -->
+                        <TextBlock IsVisible="{Binding IsIronman}"
+                                   TextWrapping="Wrap" TextAlignment="Center" Foreground="#D8B0B0" FontSize="14"
                                    Text="Your Ironman run ends in the dark of the catacombs. There is no reloading, no revival — the save has been wiped. Such is the price of glory sought without a safety net."/>
+                        <!-- Normal: the run is over, but a save can be reloaded. -->
+                        <TextBlock IsVisible="{Binding ManualSavesAllowed}"
+                                   TextWrapping="Wrap" TextAlignment="Center" Foreground="#D8B0B0" FontSize="14"
+                                   Text="The catacombs have claimed your party. This adventure is over — reload your last save to try your luck again, or begin anew."/>
                         <Border IsVisible="{Binding ShowChallengeResult}" Background="#2A2410" BorderBrush="#D8B45A"
                                 BorderThickness="1" CornerRadius="4" Padding="10,6" HorizontalAlignment="Center">
                             <TextBlock Text="{Binding ChallengeResultText}" Foreground="#E8C56B" FontWeight="Bold"
                                        FontSize="13" HorizontalAlignment="Center"/>
                         </Border>
-                        <Button Content="Begin a New Adventure" Command="{Binding NewGameCommand}"
-                                HorizontalAlignment="Center" Margin="0,8,0,0" Padding="16,8"
-                                Background="#3A5A3A" Foreground="#E9FFE0" FontWeight="Bold"/>
+                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" Margin="0,8,0,0">
+                            <Button Content="Load a Save" Command="{Binding ShowLoadSlotsCommand}"
+                                    IsVisible="{Binding ManualSavesAllowed}" Padding="16,8"
+                                    Background="#33405A" Foreground="#E0ECFF" FontWeight="Bold"/>
+                            <Button Content="Begin a New Adventure" Command="{Binding NewGameCommand}"
+                                    Padding="16,8" Background="#3A5A3A" Foreground="#E9FFE0" FontWeight="Bold"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </Border>

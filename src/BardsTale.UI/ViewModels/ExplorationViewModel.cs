@@ -556,8 +556,10 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 break;
             case CombatOutcome.Defeat:
                 AddLog("Your party has been wiped out...");
-                PartyWipedRequested?.Invoke(); // the shell handles the consequence (e.g. Ironman permadeath)
-                break;
+                IsInCombat = false;
+                Combat = null;
+                PartyWipedRequested?.Invoke(); // the shell ends the run; don't drop the dead party back into the maze
+                return;
         }
 
         IsInCombat = false;

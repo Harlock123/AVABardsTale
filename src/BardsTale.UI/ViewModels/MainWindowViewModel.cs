@@ -584,23 +584,30 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// A total party kill. In an Ironman run this is permanent: the saves are wiped and a
-    /// game-over banner shows. (Outside Ironman the party can still be carried back and revived.)
+    /// A total party kill ends the run and shows the game-over screen. In Ironman it is permanent —
+    /// every save is wiped. Outside Ironman the saves remain, so the player can reload their last
+    /// one or begin a new adventure; either way the dead party can't keep stumbling around the maze.
     /// </summary>
     private async void OnPartyWiped()
     {
-        if (!_session.Ironman) return;
-
-        try
-        {
-            await _saves.DeleteAsync(SaveSlots.Autosave);
-            foreach (var slot in _saves.ManualSlots) await _saves.DeleteAsync(slot);
-        }
-        catch { /* best-effort wipe */ }
-
         Sfx.Play(GameSound.Hurt);
         Music.Stop();
-        StatusMessage = "The Ironman run ends here.";
+
+        if (_session.Ironman)
+        {
+            try
+            {
+                await _saves.DeleteAsync(SaveSlots.Autosave);
+                foreach (var slot in _saves.ManualSlots) await _saves.DeleteAsync(slot);
+            }
+            catch { /* best-effort wipe */ }
+            StatusMessage = "The Ironman run ends here.";
+        }
+        else
+        {
+            StatusMessage = "Your party has fallen. Reload a save, or begin a new adventure.";
+        }
+
         IsGameOver = true;
         RecordChallengeResult(); // a challenge run is scored even when it ends in death
         await RecordRun("Defeat");

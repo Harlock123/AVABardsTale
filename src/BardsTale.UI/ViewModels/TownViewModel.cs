@@ -927,6 +927,7 @@ public sealed partial class TownViewModel : ViewModelBase
     /// <summary>Offers a quest from the given giver, gated so offers don't pile up.</summary>
     private void MaybeOfferQuest(QuestGiver giver, double chance)
     {
+        if (_session.Party.Members.Count == 0) return; // no party recruited yet (pre-Guild / main menu)
         if (IsQuestOfferOpen || PendingOffer is not null) return;
         if (_session.Quests.IsFull || _session.Quests.HasActiveFrom(giver)) return;
         if (!_session.Rng.Chance(chance)) return;

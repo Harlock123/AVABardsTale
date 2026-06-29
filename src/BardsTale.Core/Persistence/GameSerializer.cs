@@ -43,6 +43,7 @@ public static class GameSerializer
                 Gold = p.Gold,
                 BankedGold = p.BankedGold,
                 Keys = p.Keys,
+                Boon = (int)p.Boon,
                 TownX = session.TownPosition.X,
                 TownY = session.TownPosition.Y,
                 TownFacing = (int)session.TownFacing,
@@ -223,6 +224,7 @@ public static class GameSerializer
         p.Gold = data.Party.Gold;
         p.BankedGold = data.Party.BankedGold;
         p.Keys = data.Party.Keys;
+        p.Boon = (PartyBoon)data.Party.Boon;
         session.TownPosition = new Position(data.Party.TownX, data.Party.TownY);
         session.TownFacing = (Direction)data.Party.TownFacing;
         p.Position = new Position(data.Party.DungeonX, data.Party.DungeonY);

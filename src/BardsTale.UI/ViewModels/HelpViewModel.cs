@@ -56,11 +56,19 @@ public static class HelpContent
                 "Pull levers to raise barred gates; carry keys to open locked doors; Search walls for secret passages.",
                 "Camp to recover HP and spell points — at the risk of a wandering ambush. Return via the up-stairs at the entrance."),
 
+            S("Tricks & blessings of the deep",
+                "Not every wall is real — an illusory wall can be walked straight through (a Rogue may sense one first); a one-way door seals behind you.",
+                "Spinners quietly turn you about — check the compass and auto-map to get your bearings again.",
+                "A mage's Clairvoyance (the 🔮 Scry button) lights up nearby cells and flags hidden traps, teleporters and illusions on the map.",
+                "Make an offering at a shrine (🔱) for a dive-long party Boon — Might (harder hits), Warding (harder to hit) or Vigor (mend each round). It fades when you leave the catacombs."),
+
             S("Combat",
                 "Each round you give every able hero an order: Attack/Shoot, Cast a spell, Sing (Bard), Use an item, or Defend.",
                 "Pick a target enemy group on the left for offensive actions. Auto fills sensible orders and resolves the round.",
                 "Only the front rank (first three heroes) can melee — give back-rankers a bow, a spell, or a song.",
-                "Exploit a foe's elemental weakness for double damage; its resistance halves yours (both shown in the bestiary)."),
+                "Elements matter: hit a foe's weakness for double damage, its resistance for half, and an immunity for nothing at all (all shown in the bestiary).",
+                "Cast Scrye Foe to read a monster's weakness, resistance and immunity on the spot — then aim your spells accordingly.",
+                "Watch for elite champions (gold) and affixed packs (cyan): Regenerating, Swift, Vampiric, Warded (shrugs off magic) or Savage — and deep floors may carry two affixes at once."),
 
             S("Tips for survival",
                 "Rest at the Inn or Temple between dives; cure poison, sleep and paralysis with spells, items, or rest.",

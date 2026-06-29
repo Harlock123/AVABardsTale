@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using BardsTale.Core.Characters;
 using BardsTale.Core.Game;
 using BardsTale.Core.Items;
 using BardsTale.UI.Audio;
@@ -643,6 +644,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     /// <summary>Returning to town is a safe checkpoint, so the game autosaves there (if enabled).</summary>
     private async void ReturnFromDungeon()
     {
+        _session.Party.Boon = PartyBoon.None; // shrine blessings fade once you leave the catacombs
+
         // Fresh notices go up on the board while the party was away.
         _session.QuestBoard.Restock(_session.Rng, System.Math.Max(1, _session.Stats.DeepestDepth));
 

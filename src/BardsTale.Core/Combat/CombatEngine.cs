@@ -193,7 +193,7 @@ public sealed class CombatEngine
         }
 
         // End-of-round mending: an Aura of Renewal and a sustained Hymn of Renewal heal the party...
-        var regen = _partyRegen + _songRegen;
+        var regen = _partyRegen + _songRegen + (_party.Boon == PartyBoon.Vigor ? Boons.VigorRegen : 0);
         if (regen > 0 && _party.Members.Any(m => !m.IsDead))
         {
             foreach (var m in _party.Members.Where(m => !m.IsDead))
@@ -281,6 +281,13 @@ public sealed class CombatEngine
                         : $"Poison wracks {m.Name} for {dmg}.");
                 }
                 if (m.IsAsleep) m.SleepTurns--; // a round of slumber passes
+
+                if (!m.IsDead && m.Affix.HasFlag(MonsterAffix.Regenerating) && m.IsWounded)
+                {
+                    var heal = Math.Max(2, m.Template.MaxHitPoints / 10);
+                    m.Heal(heal);
+                    round.Log.Add($"{m.Name}'s wounds knit shut (+{heal}).");
+                }
             }
     }
 
@@ -501,7 +508,7 @@ public sealed class CombatEngine
     /// <summary>One weapon swing's raw damage for an ability — mirrors a normal melee attack.</summary>
     private int WeaponDamageRoll(Character a)
     {
-        var atkBonus = _partyAttackBonus + _songAttackBonus;
+        var atkBonus = _partyAttackBonus + _songAttackBonus + (_party.Boon == PartyBoon.Might ? Boons.MightDamage : 0);
         var w = a.EffectiveWeapon;
         return Math.Max(1, _rng.Roll(w.DamageDice, w.DamageSides, w.DamageBonus + a.StrengthBonus + atkBonus + a.GearDamageBonus));
     }
@@ -559,6 +566,10 @@ public sealed class CombatEngine
             ? $"the {monsterName} is {string.Join("; ", parts)}."
             : $"the {monsterName} bears no elemental affinity — any magic bites it equally.";
     }
+
+    /// <summary>A Warded monster shrugs off magic — incoming spell damage is sharply reduced (×0.6).</summary>
+    private static int AfterWard(Monster m, int dmg) =>
+        m.Affix.HasFlag(MonsterAffix.Warded) ? Math.Max(1, (int)Math.Round(dmg * 0.6)) : dmg;
 
     /// <summary>Scales raw damage by a monster's elemental affinity: ×0 if immune, ×2 if weak, ÷2 if resistant.</summary>
     private static int ScaleByElement(string monsterName, int dmg, Element element, out string note)
@@ -646,7 +657,7 @@ public sealed class CombatEngine
                 var group = GetTargetGroup(cmd.TargetGroup);
                 var target = group?.FirstAlive();
                 if (target is null) break;
-                var dmg = ScaleByElement(target.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out var note);
+                var dmg = AfterWard(target, ScaleByElement(target.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out var note));
                 target.HitPoints -= dmg;
                 target.Wake();
                 round.Log.Add($"{caster.Name} casts {spell.Name}, blasting {target.Name} for {dmg}{note}.");
@@ -666,7 +677,7 @@ public sealed class CombatEngine
                 var group = GetTargetGroup(cmd.TargetGroup);
                 var target = group?.FirstAlive();
                 if (target is null) break;
-                var dmg = ScaleByElement(target.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out var note);
+                var dmg = AfterWard(target, ScaleByElement(target.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out var note));
                 target.HitPoints -= dmg;
                 target.Wake();
                 var healed = Math.Max(1, dmg / 2);
@@ -681,7 +692,7 @@ public sealed class CombatEngine
                 foreach (var group in _encounter.LivingGroups)
                     foreach (var m in group.Monsters.Where(m => !m.IsDead))
                     {
-                        var dmg = ScaleByElement(m.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out _);
+                        var dmg = AfterWard(m, ScaleByElement(m.Name, _rng.Roll(1, spell.Power, spell.Power / 2), spell.Element, out _));
                         m.HitPoints -= dmg;
                         m.Wake();
                         if (m.IsDead) round.Log.Add($"{m.Name} is slain!");
@@ -1063,9 +1074,10 @@ public sealed class CombatEngine
         if (monster.IsDead) return;
 
         // An enraged boss/elite lashes out twice and hits harder; everyone else swings once.
-        var swings = monster.Enraged ? 2 : 1;
+        // A Swift monster adds a swing; a Savage one hits markedly harder.
+        var swings = (monster.Enraged ? 2 : 1) + (monster.Affix.HasFlag(MonsterAffix.Swift) ? 1 : 0);
         var hitBonus = monster.Enraged ? 2 : 0;
-        var damageBonus = monster.Enraged ? 2 : 0;
+        var damageBonus = (monster.Enraged ? 2 : 0) + (monster.Affix.HasFlag(MonsterAffix.Savage) ? 3 : 0);
 
         for (var i = 0; i < swings; i++)
         {
@@ -1080,7 +1092,8 @@ public sealed class CombatEngine
         var target = PickPartyTarget();
         if (target is null) return;
 
-        var ac = target.ArmorClass - (_partyArmorBonus + _songArmorBonus) + (_defending.Contains(target) ? -2 : 0);
+        var boonArmor = _party.Boon == PartyBoon.Warding ? Boons.WardingArmor : 0;
+        var ac = target.ArmorClass - (_partyArmorBonus + _songArmorBonus + boonArmor) + (_defending.Contains(target) ? -2 : 0);
         if (RollToHit(monster.Template.AttackBonus + hitBonus, ac))
         {
             var dmg = _rng.Roll(monster.Template.AttackDice, monster.Template.AttackSides,
@@ -1088,6 +1101,13 @@ public sealed class CombatEngine
             var wasAsleep = target.IsAsleep;
             target.ApplyDamage(dmg);
             round.Log.Add($"{monster.Name} hits {target.Name} for {dmg}.");
+
+            if (monster.Affix.HasFlag(MonsterAffix.Vampiric) && dmg > 0)
+            {
+                var drained = Math.Max(1, dmg / 2);
+                monster.Heal(drained);
+                round.Log.Add($"{monster.Name} drinks {drained} life from the wound.");
+            }
 
             if (target.IsDead)
             {

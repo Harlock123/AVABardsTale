@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BardsTale.Core.Characters;
+using BardsTale.Core.Util;
 
 namespace BardsTale.Core.Combat;
 
@@ -52,6 +53,82 @@ public static class Elites
 
     /// <summary>The chance a wandering pack is led by an elite — rising slowly with depth.</summary>
     public static double ChanceForDepth(int depth) => Math.Min(0.25, 0.06 + 0.012 * depth);
+}
+
+/// <summary>
+/// A modifier a wandering monster (or whole pack) can carry, rolled at encounter generation —
+/// orthogonal to the elite system, and worth a little extra reward for the added danger. Each
+/// is read by the combat engine and shown on the enemy's roster card.
+/// </summary>
+[Flags]
+public enum MonsterAffix
+{
+    None = 0,
+    /// <summary>Knits its wounds shut a little each round.</summary>
+    Regenerating = 1 << 0,
+    /// <summary>Strikes one extra time per round.</summary>
+    Swift = 1 << 1,
+    /// <summary>Drinks life from the heroes it wounds, healing itself.</summary>
+    Vampiric = 1 << 2,
+    /// <summary>Shrugs off magic — spell damage against it is sharply reduced.</summary>
+    Warded = 1 << 3,
+    /// <summary>Hits markedly harder than its kin.</summary>
+    Savage = 1 << 4
+}
+
+/// <summary>Rolls and labels monster affixes (see <see cref="MonsterAffix"/>).</summary>
+public static class Affixes
+{
+    private static readonly MonsterAffix[] Pool =
+    {
+        MonsterAffix.Regenerating, MonsterAffix.Swift, MonsterAffix.Vampiric,
+        MonsterAffix.Warded, MonsterAffix.Savage
+    };
+
+    /// <summary>The chance a wandering pack carries an affix — rising slowly with depth.</summary>
+    public static double ChanceForDepth(int depth) => Math.Min(0.30, 0.05 + 0.015 * depth);
+
+    /// <summary>
+    /// Maybe grants a random affix (scaling with depth), bumping XP and gold to match the extra
+    /// danger. A no-op if the template already carries one.
+    /// </summary>
+    public static MonsterTemplate MaybeApply(MonsterTemplate t, int depth, IRandomSource rng)
+    {
+        if (t.Affix != MonsterAffix.None) return t;
+        if (!rng.Chance(ChanceForDepth(depth))) return t;
+
+        var affixes = Pool[rng.Next(0, Pool.Length)];
+        var reward = 1.4;
+        // Deep in the catacombs (floor 12+), a pack may carry a second, distinct modifier.
+        if (depth >= DoubleAffixDepth && rng.Chance(0.35))
+        {
+            var second = Pool[rng.Next(0, Pool.Length)];
+            if (second != affixes) { affixes |= second; reward = 1.9; }
+        }
+
+        return t with
+        {
+            Affix = affixes,
+            ExperienceValue = (int)Math.Round(t.ExperienceValue * reward),
+            GoldValue = (int)Math.Round(t.GoldValue * reward)
+        };
+    }
+
+    /// <summary>The floor from which a pack can carry two affixes at once.</summary>
+    public const int DoubleAffixDepth = 12;
+
+    /// <summary>A short title-case label for an affix set ("" for None), for roster cards and logs.</summary>
+    public static string Label(MonsterAffix a)
+    {
+        if (a == MonsterAffix.None) return "";
+        var parts = new List<string>();
+        if (a.HasFlag(MonsterAffix.Regenerating)) parts.Add("Regenerating");
+        if (a.HasFlag(MonsterAffix.Swift)) parts.Add("Swift");
+        if (a.HasFlag(MonsterAffix.Vampiric)) parts.Add("Vampiric");
+        if (a.HasFlag(MonsterAffix.Warded)) parts.Add("Warded");
+        if (a.HasFlag(MonsterAffix.Savage)) parts.Add("Savage");
+        return string.Join(", ", parts);
+    }
 }
 
 /// <summary>
@@ -113,7 +190,8 @@ public sealed record MonsterTemplate(
     MonsterSpell? Spell = null,
     MonsterAbility Ability = MonsterAbility.None,
     double AbilityChance = 0.0,
-    bool IsElite = false)
+    bool IsElite = false,
+    MonsterAffix Affix = MonsterAffix.None)
 {
     public bool IsCaster => Spell is not null;
 
@@ -159,6 +237,9 @@ public sealed class Monster
 
     /// <summary>A struck monster snaps awake (sleep ends the instant it takes a blow).</summary>
     public void Wake() => SleepTurns = 0;
+
+    /// <summary>The encounter-rolled modifier this monster carries (see <see cref="MonsterAffix"/>).</summary>
+    public MonsterAffix Affix => Template.Affix;
 
     public string Name => Template.Name;
     public int ArmorClass => Template.ArmorClass;

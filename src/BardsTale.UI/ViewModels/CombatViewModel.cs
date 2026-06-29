@@ -60,6 +60,7 @@ public sealed partial class CombatViewModel : ViewModelBase
     /// </summary>
     public void Begin()
     {
+        AnnounceModifiers();
         switch (_engine.Surprise)
         {
             case SurpriseState.PartySurprised:
@@ -74,6 +75,28 @@ public sealed partial class CombatViewModel : ViewModelBase
                 BeginSelection();
                 break;
         }
+    }
+
+    // Calls out any affixed enemy pack at the start of the fight, with a one-line hint, so the
+    // (newest, least obvious) modifier system is legible right when it matters.
+    private void AnnounceModifiers()
+    {
+        foreach (var g in Groups)
+        {
+            if (g.Affix == MonsterAffix.None) continue;
+            AddLog($"⚠ {Affixes.Label(g.Affix)} {g.Name}: {AffixHint(g.Affix)}.");
+        }
+    }
+
+    private static string AffixHint(MonsterAffix a)
+    {
+        var parts = new List<string>();
+        if (a.HasFlag(MonsterAffix.Regenerating)) parts.Add("it mends each round");
+        if (a.HasFlag(MonsterAffix.Swift)) parts.Add("it strikes an extra time");
+        if (a.HasFlag(MonsterAffix.Vampiric)) parts.Add("it heals when it wounds you");
+        if (a.HasFlag(MonsterAffix.Warded)) parts.Add("magic barely scratches it");
+        if (a.HasFlag(MonsterAffix.Savage)) parts.Add("it hits brutally hard");
+        return string.Join("; ", parts);
     }
 
     public ObservableCollection<MonsterGroupViewModel> Groups { get; }

@@ -111,6 +111,30 @@
                     </Border>
                 </Border>
 
+                <!-- Shrine offering prompt -->
+                <Border IsVisible="{Binding IsAtShrine}" Background="#C00B0D14"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="420"
+                            Background="#1B1E2A" BorderBrush="#9BD7E0" BorderThickness="2"
+                            CornerRadius="6" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="🔱  A Shrine to Forgotten Gods" FontSize="18" FontWeight="Bold"
+                                       Foreground="#BFE9F2" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding ShrinePrompt}" Foreground="#CFD3E0"
+                                       TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBlock Text="Its blessing lasts until you next leave the catacombs."
+                                       Foreground="#8C93AB" FontSize="11" TextWrapping="Wrap"
+                                       TextAlignment="Center" Margin="0,0,0,14"/>
+                            <Grid ColumnDefinitions="*,*">
+                                <Button Grid.Column="0" Content="Make Offering" Command="{Binding MakeOfferingCommand}"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                                <Button Grid.Column="1" Content="Step Away" Command="{Binding LeaveShrineCommand}"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Border>
+
                 <!-- Dungeon event scene -->
                 <Border IsVisible="{Binding IsAtEvent}" Background="#C00B0D14"
                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -263,16 +287,19 @@
                             Command="{Binding TurnRightCommand}" HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center" Margin="2"/>
                 </Grid>
-                <Grid ColumnDefinitions="*,*,*,*" Margin="0,4,0,0">
+                <Grid ColumnDefinitions="*,*,*,*,*" Margin="0,4,0,0">
                     <Button Grid.Column="0" Content="Light" Command="{Binding CastLightCommand}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
-                    <Button Grid.Column="1" Content="Descend" Command="{Binding DescendCommand}"
+                    <Button Grid.Column="1" Content="🔮 Scry" Command="{Binding ScryCommand}"
+                            ToolTip.Tip="Reveal nearby cells &amp; hidden trickery on the map (needs a Clairvoyance caster)"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
+                    <Button Grid.Column="2" Content="Descend" Command="{Binding DescendCommand}"
                             ToolTip.Tip="Press Enter"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
-                    <Button Grid.Column="2" Content="Ascend" Command="{Binding AscendCommand}"
+                    <Button Grid.Column="3" Content="Ascend" Command="{Binding AscendCommand}"
                             ToolTip.Tip="Press Enter"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
-                    <Button Grid.Column="3" Content="Exit to Town" Command="{Binding ReturnToTownCommand}"
+                    <Button Grid.Column="4" Content="Exit to Town" Command="{Binding ReturnToTownCommand}"
                             ToolTip.Tip="Press Enter"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="2"/>
                 </Grid>

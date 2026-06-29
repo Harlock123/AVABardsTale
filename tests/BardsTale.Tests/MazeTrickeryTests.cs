@@ -185,6 +185,36 @@ public class MazeTrickeryTests
         Assert.True(game.Maze.HasIllusoryWall(new Position(2, 2), Direction.North)); // only a hint — still there
     }
 
+    // --- Exploration scry (Clairvoyance) ---
+
+    [Fact]
+    public void Scrying_reveals_nearby_cells_and_their_hidden_trickery()
+    {
+        var rng = new SystemRandomSource(seed: 1);
+        var party = NewGame.CreateDefaultParty(rng);
+        var maze = new Maze("t", 7, 7) { StartPosition = new Position(3, 3), StartFacing = Direction.North };
+        maze.MarkIllusoryWall(3, 2, Direction.East);      // within radius 2 of (3,3)
+        maze[4, 3].Feature = CellFeature.Teleporter;       // within radius 2
+        var game = new GameState(party, maze, rng);
+
+        var msg = game.Scry(2);
+
+        Assert.Contains("illusory wall", msg);
+        Assert.Contains("teleporter", msg);
+        Assert.True(maze[1, 1].Visited); // a corner of the 5×5 area got lit up on the map
+    }
+
+    [Fact]
+    public void Scrying_an_empty_area_reports_nothing_hidden()
+    {
+        var rng = new SystemRandomSource(seed: 1);
+        var party = NewGame.CreateDefaultParty(rng);
+        var maze = new Maze("t", 7, 7) { StartPosition = new Position(3, 3), StartFacing = Direction.North };
+        var game = new GameState(party, maze, rng);
+
+        Assert.Contains("nothing hidden", game.Scry(2));
+    }
+
     [Fact]
     public void A_party_without_a_rogue_gets_no_illusion_hint()
     {

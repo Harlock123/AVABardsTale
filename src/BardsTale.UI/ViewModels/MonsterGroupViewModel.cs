@@ -18,9 +18,19 @@ public sealed partial class MonsterGroupViewModel : ViewModelBase
 
     public string Name => Group.Name;
     public bool IsElite => Group.Template.IsElite;
+    public MonsterAffix Affix => Group.Template.Affix;
     public string CountText => Group.IsDefeated ? "defeated" : $"{Group.LivingCount} remaining";
     public bool IsDefeated => Group.IsDefeated;
-    public string Label => $"{Index + 1}. {Name} ×{Group.LivingCount}";
+
+    public string Label
+    {
+        get
+        {
+            var affix = Affixes.Label(Affix);
+            var prefix = affix.Length > 0 ? affix + " " : "";
+            return $"{Index + 1}. {prefix}{Name} ×{Group.LivingCount}";
+        }
+    }
 
     /// <summary>Status glyphs for the group — 💤 if any are asleep, ☠ if any are poisoned.</summary>
     public string StatusGlyph
@@ -37,10 +47,12 @@ public sealed partial class MonsterGroupViewModel : ViewModelBase
 
     public bool HasStatus => StatusGlyph.Length > 0;
 
-    /// <summary>Elite groups read in gold to stand out from the rabble.</summary>
+    /// <summary>Elites read in gold, affixed foes in pale cyan — both stand out from the rabble.</summary>
     public IBrush LabelBrush => IsElite
         ? new SolidColorBrush(Color.Parse("#E8C56B"))
-        : new SolidColorBrush(Color.Parse("#E8E9F0"));
+        : Affix != MonsterAffix.None
+            ? new SolidColorBrush(Color.Parse("#9BD7E0"))
+            : new SolidColorBrush(Color.Parse("#E8E9F0"));
 
     // --- Floating combat number (pops on the group when it's struck or mended) ---
     [ObservableProperty] private string _floatingText = "";

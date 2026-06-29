@@ -63,7 +63,7 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 | `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime, as an installable PWA with IndexedDB saves. (Kept out of the default solution; see below.) |
 | `src/BardsTale.Android` | Thin Android head (tablet, landscape) — a launcher `Activity` + an `AudioTrack` sound backend, wrapping `MainView` via the single-view lifetime. |
 | `src/BardsTale.iOS` | Thin iOS head (iPad, landscape) — an `AvaloniaAppDelegate` entry point + an `AVAudioPlayer` sound backend. |
-| `tests/BardsTale.Tests` | xUnit suite (**470 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, monster morale, front/back ranks, sustained Bard songs, elemental affinities), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, illusory walls & one-way doors, dungeon events, town services & tavern rumours, the bestiary & lore, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
+| `tests/BardsTale.Tests` | xUnit suite (**486 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, monster morale, front/back ranks, sustained Bard songs, elemental affinities & immunities, scrying, monster affixes), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, illusory walls & one-way doors, shrines & party boons, dungeon events, town services & tavern rumours, the bestiary & lore, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
 
 The split follows Avalonia's standard cross-platform layout: a shared UI library plus
 one thin "head" project per platform. Every head reuses `BardsTale.UI` unchanged —
@@ -582,7 +582,8 @@ shade's cinderblast, a storm giant's thunderclap, an acid breath — and warded 
 halves the matching blow. (Foes have their own affinities too: strike a monster's
 **weakness** for double damage, its **resistance** for half, and its **immunity** for
 nothing at all — fire never singes a salamander, nor lightning a storm giant — so the
-spell *school* you reach for is a real choice. All three are shown in the bestiary.)
+spell *school* you reach for is a real choice. All three are shown in the bestiary — or cast
+**Scrye Foe** to read a monster's weakness, resistance and immunity mid-fight, before you waste a nuke.)
 
 Garth's starts with only the **entry-tier defensive accessories** (the single-element wards
 and a Ring of Protection), but **restocks as you progress** — reaching floors 4, 8, 12 and 16
@@ -648,8 +649,9 @@ Linux's CLI players) fall back to a clean cut. Crossfade can be turned off in Se
   and can't be mapped — until you conjure **light**), **traps** (spring for damage),
   **anti-magic** zones (spells and songs fizzle for both sides), **illusory walls**
   (they read as solid stone but you walk straight through — a Rogue may sense them first),
-  and **one-way doors** (step through and they seal behind you, no going back). All
-  survive save/load.
+  and **one-way doors** (step through and they seal behind you, no going back) — all of which
+  survive save/load. A mage's **Clairvoyance** (the *🔮 Scry* button) lights up the cells around
+  the party and flags the hidden traps, teleporters and illusions among them on the auto-map.
 - **Search & secret doors** — every floor hides **secret vaults**, sealed dead-ends reachable
   only by **Searching** (the *🔍 Search* action) the walls; a Rogue finds them far more reliably,
   and **passively notices** hidden doors just by walking past them. A HUD readout hints at how
@@ -674,9 +676,16 @@ Linux's CLI players) fall back to a clean cut. Crossfade can be turned off in Se
   blessings or curses, healing, treasure, or a thief in the dark. One-shot, marked on the auto-map.
 - **Camping** — rest anywhere in the dungeon to recover half the party's HP and spell
   points, gambling against a depth-scaled chance of a surprise wandering ambush.
+- **Shrines & party boons** — an altar (🔱) on each floor grants a **dive-long blessing** for a
+  gold offering: **Might** (harder hits), **Warding** (harder to hit) or **Vigor** (the party mends
+  each combat round). A "player-side affix" that lasts until you climb back to town.
 - A **fixed boss lair** on each level (guarding the descent) — a tough named boss
   flanked by minions, cleared permanently once beaten; the boss changes by depth.
   Every boss is **guaranteed to drop a magic item**.
+- **Elite champions & monster affixes** — a wandering pack may be led by a buffed **elite** (gold),
+  or carry an **affix** (cyan): **Regenerating, Swift, Vampiric, Warded** (shrugs off magic) or
+  **Savage** — and from floor 12 a pack can carry **two at once**. Affixed and elite foes are worth
+  more, named on the combat roster, and called out with a one-line hint when the fight begins.
 - A **light main-quest thread**: scripted **story beats** play the first time the party reaches
   certain floors (the descent, a torn journal page, a ghost's warning, the Mad God's mark, the
   deepening cold, the tower's shadow, and the confrontation), giving the dive a narrative arc

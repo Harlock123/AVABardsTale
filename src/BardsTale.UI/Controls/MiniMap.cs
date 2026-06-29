@@ -128,6 +128,7 @@ public sealed class MiniMap : Control
             CellFeature.Lever => Brushes.Goldenrod,
             CellFeature.Key => Brushes.Gold,
             CellFeature.Event => Brushes.MediumSpringGreen,
+            CellFeature.Shrine => Brushes.Aqua,
             _ => null
         };
         if (brush is null) return;

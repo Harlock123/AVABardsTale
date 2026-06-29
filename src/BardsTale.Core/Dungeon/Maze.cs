@@ -38,7 +38,9 @@ public enum CellFeature
     /// <summary>An iron key lying on the floor — step onto it to pocket it for a locked door.</summary>
     Key,
     /// <summary>A non-combat dungeon event — a scene with choices (see <see cref="DungeonEvents"/>).</summary>
-    Event
+    Event,
+    /// <summary>An altar that grants a dive-long party boon in exchange for a gold offering.</summary>
+    Shrine
 }
 
 /// <summary>One tile of a maze level.</summary>

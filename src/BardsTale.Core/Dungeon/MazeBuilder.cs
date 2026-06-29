@@ -89,6 +89,9 @@ public sealed class MazeBuilder
             maze[evt].EventId = _rng.Next(0, DungeonEvents.Count);
         }
 
+        // An altar that grants a dive-long party boon for a gold offering.
+        Place(CellFeature.Shrine, 1);
+
         PlaceSecretVaults(maze, width, height, count: 2);
 
         if (Take() is { } tele && Take() is { } dest)

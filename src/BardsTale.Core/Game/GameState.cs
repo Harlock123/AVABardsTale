@@ -27,7 +27,8 @@ public enum MoveResultKind
     Lever,
     KeyFound,
     Unlocked,
-    Event
+    Event,
+    Shrine
 }
 
 public sealed record MoveResult(MoveResultKind Kind, string Description, Encounter? Encounter = null,
@@ -48,6 +49,9 @@ public sealed record SearchResult(bool Found, string Message);
 
 /// <summary>The outcome of answering a riddle tile.</summary>
 public sealed record RiddleResult(bool Correct, IReadOnlyList<string> Log);
+
+/// <summary>The outcome of making an offering at a shrine: whether a boon was granted, and the narration.</summary>
+public sealed record ShrineResult(bool Granted, string Message);
 
 /// <summary>The outcome of pulling a rune lever: how many gates it raised, and narration.</summary>
 public sealed record LeverResult(int GatesOpened, string Message);
@@ -259,6 +263,9 @@ public sealed class GameState
                     "Half-buried in the dust lies an iron key — you pocket it.");
             case CellFeature.Event:
                 return new MoveResult(MoveResultKind.Event, DungeonEvents.Get(cell.EventId).Prompt);
+            case CellFeature.Shrine:
+                return new MoveResult(MoveResultKind.Shrine,
+                    $"A shrine to forgotten gods hums with power. An offering of {ShrineCost} gold may earn its blessing.");
         }
 
         if (CheckForEncounter(out var encounter))
@@ -326,6 +333,47 @@ public sealed class GameState
     }
 
     /// <summary>
+    /// Clairvoyance: reveals every cell within <paramref name="radius"/> of the party on the auto-map and
+    /// reports any hidden trickery among them — illusory walls, secret doors, teleporters, spinners and traps.
+    /// </summary>
+    public string Scry(int radius = 2)
+    {
+        var origin = Party.Position;
+        bool illusion = false, secret = false, teleporter = false, spinner = false, trap = false;
+        for (var dx = -radius; dx <= radius; dx++)
+            for (var dy = -radius; dy <= radius; dy++)
+            {
+                var p = new Position(origin.X + dx, origin.Y + dy);
+                if (!Maze.InBounds(p)) continue;
+                var cell = Maze[p];
+                cell.Visited = true; // light it up on the auto-map
+                if (cell.IllusoryWalls != Walls.None) illusion = true;
+                if (cell.SecretDoors != Walls.None) secret = true;
+                switch (cell.Feature)
+                {
+                    case CellFeature.Teleporter: teleporter = true; break;
+                    case CellFeature.SpinnerTrap: spinner = true; break;
+                    case CellFeature.Trap: trap = true; break;
+                }
+            }
+
+        var found = new List<string>();
+        if (illusion) found.Add("an illusory wall");
+        if (secret) found.Add("a hidden door");
+        if (teleporter) found.Add("a teleporter");
+        if (spinner) found.Add("a spinning floor");
+        if (trap) found.Add("a concealed trap");
+
+        if (found.Count == 0)
+            return "Your scrying lights up the surrounding passages — nothing hidden lurks nearby.";
+
+        var list = found.Count == 1
+            ? found[0]
+            : string.Join(", ", found.Take(found.Count - 1)) + " and " + found[^1];
+        return $"Your scrying lights up the surrounding passages — you sense {list} close by.";
+    }
+
+    /// <summary>
     /// A Rogue's instinct for false stonework: a small chance, on entering a cell, to sense that a
     /// neighbouring "wall" is really an illusion — naming the direction so the party can step through it.
     /// Unlike a secret door, the illusion is NOT dispelled here; the party still has to walk into it.
@@ -358,6 +406,36 @@ public sealed class GameState
 
     /// <summary>How many locked doors remain on this level (each needs a carried key to open).</summary>
     public int LockedDoors() => Maze.LockedDoorCount();
+
+    /// <summary>True when the party stands on a shrine tile.</summary>
+    public bool OnShrine => CurrentCell.Feature == CellFeature.Shrine;
+
+    /// <summary>The gold a shrine asks for its blessing — deeper shrines demand more.</summary>
+    public int ShrineCost => 30 * Depth;
+
+    private static readonly PartyBoon[] ShrineBoons = { PartyBoon.Might, PartyBoon.Warding, PartyBoon.Vigor };
+
+    /// <summary>
+    /// Offers gold at the shrine underfoot for a random dive-long party boon. Fails (no boon, no gold
+    /// spent) if the party can't meet the price; on success the shrine is spent and the boon replaces
+    /// any the party already carried.
+    /// </summary>
+    public ShrineResult MakeOffering()
+    {
+        if (CurrentCell.Feature != CellFeature.Shrine)
+            return new ShrineResult(false, "There is no shrine here.");
+
+        var cost = ShrineCost;
+        if (Party.Gold < cost)
+            return new ShrineResult(false, $"The shrine demands {cost} gold — more than the party can spare.");
+
+        Party.Gold -= cost;
+        var boon = ShrineBoons[_rng.Next(0, ShrineBoons.Length)];
+        Party.Boon = boon;
+        CurrentCell.Feature = CellFeature.None; // the blessing is spent
+        return new ShrineResult(true,
+            $"You offer {cost} gold. The shrine grants the Boon of {Boons.Label(boon)} — {Boons.Describe(boon)} until you next leave the catacombs.");
+    }
 
     /// <summary>True when the party stands on a dungeon-event tile.</summary>
     public bool OnEvent => CurrentCell.Feature == CellFeature.Event;

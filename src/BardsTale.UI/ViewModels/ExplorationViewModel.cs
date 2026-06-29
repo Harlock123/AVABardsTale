@@ -172,6 +172,12 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     partial void OnIsAtLeverChanged(bool value) => UpdateExploreState();
 
+    /// <summary>True while standing at a shrine, with the offer/step-away prompt showing.</summary>
+    [ObservableProperty] private bool _isAtShrine;
+    [ObservableProperty] private string _shrinePrompt = "";
+
+    partial void OnIsAtShrineChanged(bool value) => UpdateExploreState();
+
     /// <summary>True while a dungeon-event scene is showing, with its choices.</summary>
     [ObservableProperty] private bool _isAtEvent;
     [ObservableProperty] private string _eventTitle = "";
@@ -187,7 +193,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     partial void OnIsAtStoryChanged(bool value) => UpdateExploreState();
 
-    public bool CanExplore => !IsInCombat && !IsAtChest && !IsAtRiddle && !IsAtLever && !IsAtEvent && !IsAtStory;
+    public bool CanExplore => !IsInCombat && !IsAtChest && !IsAtRiddle && !IsAtLever && !IsAtShrine && !IsAtEvent && !IsAtStory;
 
     /// <summary>Shows the main-quest beat for the current floor, if it hasn't played yet.</summary>
     private void CheckStory()
@@ -376,6 +382,28 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         LeverPrompt = "";
     }
 
+    /// <summary>Makes an offering at the shrine for a dive-long party boon.</summary>
+    [RelayCommand]
+    private void MakeOffering()
+    {
+        if (!IsAtShrine) return;
+        var result = _game.MakeOffering();
+        AddLog(result.Message);
+        Sfx.Play(result.Granted ? GameSound.Heal : GameSound.FootstepDungeon);
+        IsAtShrine = false;
+        ShrinePrompt = "";
+        SyncWorld(); // a spent shrine clears from the map
+    }
+
+    /// <summary>Leaves the shrine untouched.</summary>
+    [RelayCommand]
+    private void LeaveShrine()
+    {
+        AddLog("You leave the shrine untouched.");
+        IsAtShrine = false;
+        ShrinePrompt = "";
+    }
+
     /// <summary>Picks one of the dungeon event's choices and applies its outcome.</summary>
     [RelayCommand]
     private void ChooseEventOption(DungeonEventOptionViewModel? option)
@@ -430,6 +458,33 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         SyncWorld();
     }
 
+    /// <summary>A mage's Clairvoyance reveals the surrounding cells and any hidden trickery on the auto-map.</summary>
+    [RelayCommand(CanExecute = nameof(CanExplore))]
+    private void Scry()
+    {
+        if (_game.MagicSuppressed)
+        {
+            AddLog("Your magic fails in the dead air — the way ahead stays hidden.");
+            return;
+        }
+
+        var caster = _game.Party.Members.FirstOrDefault(m => !m.IsDead && m.KnownSpells.Select(Spells.Get)
+            .Any(s => s.Effect == SpellEffect.RevealArea && s.Cost <= m.SpellPoints));
+        if (caster is null)
+        {
+            AddLog("No one here knows how to scry the way ahead.");
+            return;
+        }
+
+        var spell = caster.KnownSpells.Select(Spells.Get)
+            .First(s => s.Effect == SpellEffect.RevealArea && s.Cost <= caster.SpellPoints);
+        caster.SpellPoints -= spell.Cost;
+        AddLog($"{caster.Name} casts {spell.Name}.");
+        AddLog(_game.Scry(spell.Power));
+        Sfx.Play(GameSound.UiConfirm);
+        SyncWorld(); // newly revealed cells appear on the auto-map
+    }
+
     private void Handle(MoveResult result)
     {
         // A passage-discovery note (an illusory wall dispelled, a one-way door sealing behind you)
@@ -473,6 +528,11 @@ public sealed partial class ExplorationViewModel : ViewModelBase
                 AddLog(result.Description);
                 LeverPrompt = result.Description;
                 IsAtLever = true;
+                break;
+            case MoveResultKind.Shrine:
+                AddLog(result.Description);
+                ShrinePrompt = result.Description;
+                IsAtShrine = true;
                 break;
             case MoveResultKind.Event when _game.CurrentEvent is { } ev:
                 AddLog($"— {ev.Title} —");

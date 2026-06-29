@@ -32,7 +32,9 @@ public enum SpellEffect
     /// <summary>Poisons an enemy group, sapping their health each round (Power = rounds).</summary>
     PoisonEnemies,
     /// <summary>Scrying: reveals one foe's elemental weaknesses, resistances and immunities. Deals no damage.</summary>
-    RevealLore
+    RevealLore,
+    /// <summary>Clairvoyance: out in the maze, reveals the surrounding cells and their hidden trickery on the auto-map (Power = radius).</summary>
+    RevealArea
 }
 
 public enum SpellTarget
@@ -65,8 +67,8 @@ public sealed record Spell(
     public bool TargetsEnemies => Target is SpellTarget.SingleEnemy or SpellTarget.AllEnemies;
     public bool TargetsAllies => Target is SpellTarget.SingleAlly or SpellTarget.Party;
 
-    /// <summary>Utility spells like Identify have no place in a combat round.</summary>
-    public bool UsableInCombat => Effect != SpellEffect.Identify;
+    /// <summary>Utility spells like Identify and Clairvoyance have no place in a combat round.</summary>
+    public bool UsableInCombat => Effect is not (SpellEffect.Identify or SpellEffect.RevealArea);
 
     /// <summary>Restorative spells the party can cast on themselves between fights, in town.</summary>
     public bool UsableInTown => Effect is SpellEffect.HealAlly or SpellEffect.HealParty
@@ -89,6 +91,7 @@ public sealed record Spell(
         SpellEffect.PoisonEnemies => $"{Cost} SP · poison a foe group",
         SpellEffect.Identify => $"{Cost} SP · identify an item",
         SpellEffect.RevealLore => $"{Cost} SP · reveal a foe's affinities",
+        SpellEffect.RevealArea => $"{Cost} SP · scry the area",
         _ => $"{Cost} SP"
     };
 }
@@ -126,6 +129,8 @@ public static class Spells
             "Reveals the true nature of an unidentified item."),
         new Spell("SCFO", "SCFO", "Scrye Foe", MagicSchool.Magician, 1, 1, SpellEffect.RevealLore, SpellTarget.SingleEnemy, 0,
             "Lays bare a foe's nature — the elements it shrugs off, and the elements that savage it."),
+        new Spell("CLAI", "CLAI", "Clairvoyance", MagicSchool.Magician, 2, 3, SpellEffect.RevealArea, SpellTarget.None, 2,
+            "Out in the maze, floods the surrounding stone with sight — mapping nearby cells and the illusions, teleporters and traps among them."),
         new Spell("MAFO", "MAFO", "Mana Font", MagicSchool.Magician, 3, 3, SpellEffect.RestorePartySpellPoints, SpellTarget.Party, 10,
             "Channels arcane vigour, restoring spell points to the whole party."),
         new Spell("FROS", "FROS", "Frost Blast", MagicSchool.Magician, 2, 3, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 13,

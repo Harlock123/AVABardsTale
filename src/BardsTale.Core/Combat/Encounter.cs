@@ -92,6 +92,7 @@ public sealed class EncounterFactory
         for (var i = 0; i < groupCount; i++)
         {
             var template = GentleStart(NgPlus.Scale(_rng.Pick(pool), _ascension, _difficulty), depth);
+            template = Affixes.MaybeApply(template, depth, _rng); // a pack may carry a modifier
             var count = _rng.Next(1, template.MaxPerGroup + 1);
             groups.Add(new MonsterGroup(template, count));
         }

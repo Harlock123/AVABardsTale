@@ -28,6 +28,9 @@ public sealed class SaveService : ISaveStore
 
     public IReadOnlyList<string> ManualSlots { get; } = SaveSlots.Manual;
 
+    /// <summary>The folder these saves live in (for the "reveal save folder" action).</summary>
+    public string? Location => _dir;
+
     private string PathFor(string slot) => Path.Combine(_dir, slot + ".json");
 
     public bool Exists(string slot) => File.Exists(PathFor(slot));

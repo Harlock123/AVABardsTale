@@ -18,6 +18,9 @@ public interface ISaveStore
     /// <summary>The player-managed save slots (the autosave slot is separate).</summary>
     IReadOnlyList<string> ManualSlots { get; }
 
+    /// <summary>The on-disk folder holding the saves, or null for non-file stores (e.g. the browser).</summary>
+    string? Location => null;
+
     Task<bool> ExistsAsync(string slot);
     Task SaveAsync(GameSession session, string slot);
     Task<GameSession> LoadAsync(string slot);

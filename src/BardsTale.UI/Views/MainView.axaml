@@ -515,6 +515,17 @@
                             </StackPanel>
                             <ToggleSwitch Grid.Column="1" VerticalAlignment="Center" IsChecked="{Binding Settings.ModCursed}"/>
                         </Grid>
+
+                        <Border Height="1" Background="#2A2F3E" Margin="0,4"
+                                IsVisible="{Binding CanRevealSaveFolder}"/>
+                        <StackPanel Spacing="6" IsVisible="{Binding CanRevealSaveFolder}">
+                            <TextBlock Text="Save data" Foreground="#E8C56B" FontWeight="Bold"/>
+                            <TextBlock Text="Your saves, autosave and settings live here." Foreground="#9AA0B5" FontSize="11"/>
+                            <TextBlock Text="{Binding SaveFolderPath}" Foreground="#7E879B" FontSize="11"
+                                       TextWrapping="Wrap" FontFamily="Consolas,monospace"/>
+                            <Button Content="📂 Reveal Save Folder" Command="{Binding RevealSaveFolderCommand}"
+                                    HorizontalAlignment="Left" Margin="0,2,0,0"/>
+                        </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </DockPanel>

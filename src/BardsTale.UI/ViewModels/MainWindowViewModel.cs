@@ -220,6 +220,33 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void CloseSettings() => IsSettingsOpen = false;
 
+    /// <summary>The folder saves live in, or null on stores without a filesystem (e.g. the browser).</summary>
+    public string? SaveFolderPath => _saves.Location;
+
+    /// <summary>True when there's a real on-disk folder to reveal (desktop heads).</summary>
+    public bool CanRevealSaveFolder => !string.IsNullOrEmpty(_saves.Location);
+
+    /// <summary>Opens the save folder in the OS file manager (Finder / Explorer / xdg-open).</summary>
+    [RelayCommand]
+    private void RevealSaveFolder()
+    {
+        var dir = _saves.Location;
+        if (string.IsNullOrEmpty(dir)) return;
+        try
+        {
+            var (cmd, args) =
+                OperatingSystem.IsWindows() ? ("explorer.exe", $"\"{dir}\"") :
+                OperatingSystem.IsMacOS() ? ("open", $"\"{dir}\"") :
+                ("xdg-open", $"\"{dir}\"");
+            System.Diagnostics.Process.Start(cmd, args);
+            StatusMessage = $"Save folder: {dir}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Couldn't open the save folder: {ex.Message}";
+        }
+    }
+
     /// <summary>Opens the help/tutorial overlay, (re)building its sections to reflect the current key bindings.</summary>
     [RelayCommand]
     private void ShowHelp()

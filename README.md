@@ -63,7 +63,7 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 | `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime, as an installable PWA with IndexedDB saves. (Kept out of the default solution; see below.) |
 | `src/BardsTale.Android` | Thin Android head (tablet, landscape) — a launcher `Activity` + an `AudioTrack` sound backend, wrapping `MainView` via the single-view lifetime. |
 | `src/BardsTale.iOS` | Thin iOS head (iPad, landscape) — an `AvaloniaAppDelegate` entry point + an `AVAudioPlayer` sound backend. |
-| `tests/BardsTale.Tests` | xUnit suite (**448 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, monster morale, front/back ranks, sustained Bard songs), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, dungeon events, town services & tavern rumours, the bestiary & lore, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
+| `tests/BardsTale.Tests` | xUnit suite (**470 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, monster morale, front/back ranks, sustained Bard songs, elemental affinities), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, illusory walls & one-way doors, dungeon events, town services & tavern rumours, the bestiary & lore, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
 
 The split follows Avalonia's standard cross-platform layout: a shared UI library plus
 one thin "head" project per platform. Every head reuses `BardsTale.UI` unchanged —
@@ -580,7 +580,9 @@ it, warded against fire."*), and free-action shrugging off paralysis or sleep.
 Wards matter because monsters hurl **elemental** attacks — dragon breath, a flame
 shade's cinderblast, a storm giant's thunderclap, an acid breath — and warded gear
 halves the matching blow. (Foes have their own affinities too: strike a monster's
-**weakness** for double damage, its **resistance** for half — both shown in the bestiary.)
+**weakness** for double damage, its **resistance** for half, and its **immunity** for
+nothing at all — fire never singes a salamander, nor lightning a storm giant — so the
+spell *school* you reach for is a real choice. All three are shown in the bestiary.)
 
 Garth's starts with only the **entry-tier defensive accessories** (the single-element wards
 and a Ring of Protection), but **restocks as you progress** — reaching floors 4, 8, 12 and 16
@@ -641,10 +643,13 @@ Linux's CLI players) fall back to a clean cut. Crossfade can be turned off in Se
 - A full town loop: recruitment, shopping, healing/revival and levelling, with a
   persistent party and shared gold purse that survive trips into the dungeon.
 - Recursive-backtracker maze generation with extra loops, stairs, message tiles,
-  and special tiles — **spinners** (randomise your facing), **teleporters** (whisk
-  you across the level), **darkness** zones (the view blacks out and can't be
-  mapped — until you conjure **light**), **traps** (spring for damage), and
-  **anti-magic** zones (spells and songs fizzle for both sides). All survive save/load.
+  and special tiles — **spinners** (silently spin your facing, leaving you to re-orient),
+  **teleporters** (whisk you across the level), **darkness** zones (the view blacks out
+  and can't be mapped — until you conjure **light**), **traps** (spring for damage),
+  **anti-magic** zones (spells and songs fizzle for both sides), **illusory walls**
+  (they read as solid stone but you walk straight through — a Rogue may sense them first),
+  and **one-way doors** (step through and they seal behind you, no going back). All
+  survive save/load.
 - **Search & secret doors** — every floor hides **secret vaults**, sealed dead-ends reachable
   only by **Searching** (the *🔍 Search* action) the walls; a Rogue finds them far more reliably,
   and **passively notices** hidden doors just by walking past them. A HUD readout hints at how

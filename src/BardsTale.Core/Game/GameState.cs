@@ -30,7 +30,8 @@ public enum MoveResultKind
     Event
 }
 
-public sealed record MoveResult(MoveResultKind Kind, string Description, Encounter? Encounter = null);
+public sealed record MoveResult(MoveResultKind Kind, string Description, Encounter? Encounter = null,
+    string? Note = null);
 
 /// <summary>
 /// The outcome of opening a treasure chest: narration, the spoils, and whether a trap went off.
@@ -171,13 +172,43 @@ public sealed class GameState
                     "You fit an iron key to the lock — it turns with a clunk and the door swings open.");
             }
 
+            // The far side of a one-way door reads as blank stone — there is no coming back through it.
+            var behind = Party.Position.Step(dir);
+            if (Maze.InBounds(behind) && (Maze[behind].OneWayDoors & Cell.ToWallFlag(dir.Opposite())) != 0)
+                return new MoveResult(MoveResultKind.BlockedByWall,
+                    "Blank stone — yet you'd swear you came through here. The way back has sealed itself.");
+
             return new MoveResult(MoveResultKind.BlockedByWall, "A wall blocks your way.");
         }
+
+        // Note any trickery on the wall we're crossing, before the step dispels or hides it.
+        var fromPos = Party.Position;
+        var crossing = Cell.ToWallFlag(dir);
+        var throughIllusion = (Maze[fromPos].IllusoryWalls & crossing) != 0;
+        var throughOneWay = (Maze[fromPos].OneWayDoors & crossing) != 0;
 
         Party.Position = Party.Position.Step(dir);
         MarkVisited();
         if (LightRemaining > 0) LightRemaining--;
 
+        string? note = null;
+        if (throughIllusion)
+        {
+            Maze.RevealIllusoryWall(fromPos, dir);
+            note = "The wall ahead shimmers and parts — it was an illusion, and you step right through!";
+        }
+        else if (throughOneWay)
+        {
+            note = "You slip through a concealed door; it grinds shut behind you — there's no going back this way.";
+        }
+
+        var result = ResolveLanding();
+        return note is null ? result : result with { Note = note };
+    }
+
+    /// <summary>Resolves whatever the party meets on the cell it just stepped onto.</summary>
+    private MoveResult ResolveLanding()
+    {
         var cell = CurrentCell;
         switch (cell.Feature)
         {
@@ -190,9 +221,10 @@ public sealed class GameState
             case CellFeature.Exit:
                 return new MoveResult(MoveResultKind.Exit, "Sunlight ahead — the way out!");
             case CellFeature.SpinnerTrap:
+                // A silent spinner: the party is turned without being told which way — they must re-orient.
                 Party.Facing = (Direction)_rng.Next(0, 4);
                 return new MoveResult(MoveResultKind.Spun,
-                    $"The floor spins beneath you! You are now facing {Party.Facing}.");
+                    "The floor turns silently beneath you — when it stills, you've lost all sense of which way you face.");
             case CellFeature.Teleporter when cell.Destination is { } dest:
                 Party.Position = dest;
                 MarkVisited();
@@ -775,7 +807,8 @@ public sealed class GameState
 
     private string DescribeView()
     {
-        var ahead = Maze.CanMove(Party.Position, Party.Facing) ? "The passage continues ahead." : "A wall looms ahead.";
+        // Describe what the party can *see*, not what's truly passable — an illusory wall reads as solid stone.
+        var ahead = CurrentCell.HasWall(Party.Facing) ? "A wall looms ahead." : "The passage continues ahead.";
         return ahead;
     }
 }

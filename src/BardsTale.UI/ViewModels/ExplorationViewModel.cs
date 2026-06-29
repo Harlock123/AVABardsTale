@@ -432,6 +432,10 @@ public sealed partial class ExplorationViewModel : ViewModelBase
 
     private void Handle(MoveResult result)
     {
+        // A passage-discovery note (an illusory wall dispelled, a one-way door sealing behind you)
+        // rides alongside whatever the party finds on the cell beyond.
+        if (result.Note is { } note) AddLog(note);
+
         switch (result.Kind)
         {
             case MoveResultKind.BlockedByWall:

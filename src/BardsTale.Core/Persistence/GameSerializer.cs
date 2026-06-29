@@ -196,6 +196,8 @@ public static class GameSerializer
                     SecretDoors = (int)cell.SecretDoors,
                     Gates = (int)cell.Gates,
                     LockedDoors = (int)cell.LockedDoors,
+                    IllusoryWalls = (int)cell.IllusoryWalls,
+                    OneWayDoors = (int)cell.OneWayDoors,
                     RiddleId = cell.RiddleId,
                     EventId = cell.EventId
                 });
@@ -341,6 +343,8 @@ public static class GameSerializer
                 cell.SecretDoors = (Walls)cs.SecretDoors;
                 cell.Gates = (Walls)cs.Gates;
                 cell.LockedDoors = (Walls)cs.LockedDoors;
+                cell.IllusoryWalls = (Walls)cs.IllusoryWalls;
+                cell.OneWayDoors = (Walls)cs.OneWayDoors;
                 cell.RiddleId = cs.RiddleId;
                 cell.EventId = cs.EventId;
                 if (cs.DestX is { } dx && cs.DestY is { } dy)

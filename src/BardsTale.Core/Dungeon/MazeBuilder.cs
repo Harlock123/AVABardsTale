@@ -104,6 +104,73 @@ public sealed class MazeBuilder
         // A locked vault: sealed behind a locked door, with its iron key dropped elsewhere on
         // the floor — find and carry the key to open it.
         PlaceKeyedVault(maze, width, height, Take);
+
+        // Walls that aren't quite what they seem: a couple of illusions the party can walk straight
+        // through, and one-way doors that seal behind them. Both only add passages, so neither can
+        // ever strand the maze (the level stays fully connected by its ordinary corridors).
+        PlaceIllusoryWalls(maze, width, height, count: 2);
+        PlaceOneWayDoors(maze, width, height, count: 2);
+    }
+
+    /// <summary>Disguises ordinary walls as illusions: they read (and render) as solid stone, but the
+    /// party walks straight through — a shortcut found by bumping the wall, not by searching it out.</summary>
+    private void PlaceIllusoryWalls(Maze maze, int width, int height, int count)
+    {
+        var candidates = InternalSolidWalls(maze, width, height);
+        Shuffle(candidates);
+        for (var i = 0; i < count && i < candidates.Count; i++)
+            maze.MarkIllusoryWall(candidates[i].p.X, candidates[i].p.Y, candidates[i].dir);
+    }
+
+    /// <summary>Opens one-way doors: the party can step out, but the far side stays walled, so there's no
+    /// returning that way. Re-collects candidates so it never reuses a wall just turned illusory.</summary>
+    private void PlaceOneWayDoors(Maze maze, int width, int height, int count)
+    {
+        var candidates = InternalSolidWalls(maze, width, height);
+        Shuffle(candidates);
+        for (var i = 0; i < count && i < candidates.Count; i++)
+            maze.MarkOneWayDoor(candidates[i].p.X, candidates[i].p.Y, candidates[i].dir);
+    }
+
+    /// <summary>Every (cell, direction) where a plain wall separates two in-bounds cells — excluding the
+    /// outer border, any wall that's already a puzzle (secret/gate/locked/illusory/one-way), and the
+    /// level's set-piece tiles (stairs/boss/exit) so trickery can't bypass them.</summary>
+    private static List<(Position p, Direction dir)> InternalSolidWalls(Maze maze, int width, int height)
+    {
+        var dirs = new[] { Direction.North, Direction.East, Direction.South, Direction.West };
+        var list = new List<(Position, Direction)>();
+        for (var x = 0; x < width; x++)
+            for (var y = 0; y < height; y++)
+            {
+                var cell = maze[x, y];
+                if (IsSetPiece(cell.Feature)) continue;
+                foreach (var d in dirs)
+                {
+                    var flag = Cell.ToWallFlag(d);
+                    if ((cell.Walls & flag) == 0) continue; // no wall to disguise
+                    var n = new Position(x, y).Step(d);
+                    if (!maze.InBounds(n) || IsSetPiece(maze[n].Feature)) continue; // skip border & set-pieces
+                    var special = cell.SecretDoors | cell.Gates | cell.LockedDoors | cell.IllusoryWalls | cell.OneWayDoors;
+                    if ((special & flag) != 0) continue; // leave existing puzzle walls alone
+                    var opp = Cell.ToWallFlag(d.Opposite());
+                    var nSpecial = maze[n].SecretDoors | maze[n].Gates | maze[n].LockedDoors | maze[n].IllusoryWalls | maze[n].OneWayDoors;
+                    if ((nSpecial & opp) != 0) continue;
+                    list.Add((new Position(x, y), d));
+                }
+            }
+        return list;
+    }
+
+    private static bool IsSetPiece(CellFeature f) =>
+        f is CellFeature.StairsUp or CellFeature.StairsDown or CellFeature.BossLair or CellFeature.Exit;
+
+    private void Shuffle<T>(IList<T> list)
+    {
+        for (var i = list.Count - 1; i > 0; i--)
+        {
+            var j = _rng.Next(0, i + 1);
+            (list[i], list[j]) = (list[j], list[i]);
+        }
     }
 
     /// <summary>

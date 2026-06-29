@@ -58,6 +58,12 @@ public sealed class Cell
     /// <summary>Which present walls are locked doors, opened by spending a carried key.</summary>
     public Walls LockedDoors { get; set; } = Walls.None;
 
+    /// <summary>Which present walls are illusions — they read as solid stone, but the party walks straight through.</summary>
+    public Walls IllusoryWalls { get; set; } = Walls.None;
+
+    /// <summary>Which walls are one-way exits: open heading out, but the neighbour stays walled, so there is no coming back.</summary>
+    public Walls OneWayDoors { get; set; } = Walls.None;
+
     /// <summary>For riddle tiles, which riddle is inscribed (index into the riddle catalogue).</summary>
     public int RiddleId { get; set; } = -1;
 
@@ -129,10 +135,17 @@ public sealed class Maze
     public bool CanMove(Position from, Direction dir)
     {
         if (!InBounds(from)) return false;
-        if (this[from].HasWall(dir)) return false;
+        var cell = this[from];
+        var flag = Cell.ToWallFlag(dir);
+        // A wall blocks — unless it is an illusion, which the party can pass straight through.
+        if ((cell.Walls & flag) != 0 && (cell.IllusoryWalls & flag) == 0) return false;
         var target = from.Step(dir);
         return InBounds(target);
     }
+
+    /// <summary>True when the wall toward <paramref name="dir"/> from <paramref name="p"/> is an illusion.</summary>
+    public bool HasIllusoryWall(Position p, Direction dir) =>
+        InBounds(p) && (this[p].IllusoryWalls & Cell.ToWallFlag(dir)) != 0;
 
     private static readonly Direction[] AllDirections =
         { Direction.North, Direction.East, Direction.South, Direction.West };
@@ -273,6 +286,53 @@ public sealed class Maze
                 var l = _cells[x, y].LockedDoors;
                 if ((l & Walls.North) != 0) count++;
                 if ((l & Walls.West) != 0) count++;
+            }
+        return count;
+    }
+
+    /// <summary>Disguises an existing wall as an illusion: it still reads as solid stone (and renders as a
+    /// wall), but the party can walk straight through it. Marked on both sides so it is passable either way.</summary>
+    public void MarkIllusoryWall(int x, int y, Direction dir)
+    {
+        SetWall(x, y, dir, present: true);
+        this[x, y].IllusoryWalls |= Cell.ToWallFlag(dir);
+        var n = new Position(x, y).Step(dir);
+        if (InBounds(n)) this[n].IllusoryWalls |= Cell.ToWallFlag(dir.Opposite());
+    }
+
+    /// <summary>Dispels a discovered illusory wall — clears the wall and the illusion flag on both sides,
+    /// leaving an ordinary open passage.</summary>
+    public void RevealIllusoryWall(Position p, Direction dir)
+    {
+        SetWall(p.X, p.Y, dir, present: false);
+        this[p].IllusoryWalls &= ~Cell.ToWallFlag(dir);
+        var n = p.Step(dir);
+        if (InBounds(n)) this[n].IllusoryWalls &= ~Cell.ToWallFlag(dir.Opposite());
+    }
+
+    /// <summary>Opens a one-way passage: the wall toward <paramref name="dir"/> is removed so the party can
+    /// step out, but the neighbour keeps its wall, so it cannot be re-entered from the far side.</summary>
+    public void MarkOneWayDoor(int x, int y, Direction dir)
+    {
+        var flag = Cell.ToWallFlag(dir);
+        var cell = _cells[x, y];
+        cell.Walls &= ~flag;        // open the near (forward) side
+        cell.OneWayDoors |= flag;   // remember it's a one-way exit, for narration
+        var n = new Position(x, y).Step(dir);
+        if (InBounds(n))
+            _cells[n.X, n.Y].Walls |= Cell.ToWallFlag(dir.Opposite()); // the far side stays walled
+    }
+
+    /// <summary>How many one-way doors lead out of this level's cells (each counted once, on the open side).</summary>
+    public int OneWayDoorCount()
+    {
+        var count = 0;
+        for (var x = 0; x < Width; x++)
+            for (var y = 0; y < Height; y++)
+            {
+                var o = _cells[x, y].OneWayDoors;
+                foreach (var d in AllDirections)
+                    if ((o & Cell.ToWallFlag(d)) != 0) count++;
             }
         return count;
     }

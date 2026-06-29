@@ -147,6 +147,18 @@ public sealed class Maze
     public bool HasIllusoryWall(Position p, Direction dir) =>
         InBounds(p) && (this[p].IllusoryWalls & Cell.ToWallFlag(dir)) != 0;
 
+    /// <summary>The directions from a cell whose "wall" is actually an undiscovered illusion.</summary>
+    public IReadOnlyList<Direction> IllusoryWallsAt(Position p)
+    {
+        var found = new List<Direction>();
+        if (!InBounds(p)) return found;
+        var cell = this[p];
+        foreach (var d in AllDirections)
+            if ((cell.IllusoryWalls & Cell.ToWallFlag(d)) != 0)
+                found.Add(d);
+        return found;
+    }
+
     private static readonly Direction[] AllDirections =
         { Direction.North, Direction.East, Direction.South, Direction.West };
 

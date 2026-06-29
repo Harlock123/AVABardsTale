@@ -154,4 +154,48 @@ public class MazeTrickeryTests
         Assert.True(lmaze[1, 1].HasWall(Direction.South));             // one-way far side walled
         Assert.NotEqual(Walls.None, lmaze[1, 2].OneWayDoors & Cell.ToWallFlag(Direction.North));
     }
+
+    // --- Rogue illusion hint ---
+
+    [Fact]
+    public void Illusory_walls_at_lists_the_illusion_directions()
+    {
+        var maze = new Maze("t", 3, 3);
+        maze.MarkIllusoryWall(1, 1, Direction.North);
+        maze.MarkIllusoryWall(1, 1, Direction.East);
+
+        var dirs = maze.IllusoryWallsAt(new Position(1, 1));
+
+        Assert.Contains(Direction.North, dirs);
+        Assert.Contains(Direction.East, dirs);
+    }
+
+    [Fact]
+    public void A_rogue_eventually_senses_an_illusory_wall_without_dispelling_it()
+    {
+        // The default party includes a Rogue (Sable).
+        var (game, _) = GameWith(m => m.MarkIllusoryWall(2, 2, Direction.North));
+
+        string? hint = null;
+        for (var i = 0; i < 300 && hint is null; i++)
+            hint = game.RogueSenseIllusion();
+
+        Assert.NotNull(hint);
+        Assert.Contains("north", hint!);                                        // names the direction
+        Assert.True(game.Maze.HasIllusoryWall(new Position(2, 2), Direction.North)); // only a hint — still there
+    }
+
+    [Fact]
+    public void A_party_without_a_rogue_gets_no_illusion_hint()
+    {
+        var rng = new SystemRandomSource(seed: 1);
+        var party = new Party();
+        party.Add(new CharacterFactory(rng).Create("Tank", Race.Human, CharacterClass.Warrior));
+        var maze = new Maze("t", W, H) { StartPosition = new Position(2, 2), StartFacing = Direction.North };
+        maze.MarkIllusoryWall(2, 2, Direction.North);
+        var game = new GameState(party, maze, rng);
+
+        for (var i = 0; i < 50; i++)
+            Assert.Null(game.RogueSenseIllusion());
+    }
 }

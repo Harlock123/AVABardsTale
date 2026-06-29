@@ -325,6 +325,30 @@ public sealed class GameState
         return $"{rogue.Name} instinctively notices a hidden door to the {where}!";
     }
 
+    /// <summary>
+    /// A Rogue's instinct for false stonework: a small chance, on entering a cell, to sense that a
+    /// neighbouring "wall" is really an illusion — naming the direction so the party can step through it.
+    /// Unlike a secret door, the illusion is NOT dispelled here; the party still has to walk into it.
+    /// Returns a hint if one is sensed (and the party has a living Rogue), else null.
+    /// </summary>
+    public string? RogueSenseIllusion()
+    {
+        var illusions = Maze.IllusoryWallsAt(Party.Position);
+        if (illusions.Count == 0) return null;
+
+        var rogue = Party.Members
+            .Where(m => !m.IsDead && m.Class == CharacterClass.Rogue)
+            .OrderByDescending(m => m.Level)
+            .FirstOrDefault();
+        if (rogue is null) return null;
+
+        var chance = Math.Min(0.40, 0.08 + 0.015 * rogue.Level); // a faint instinct, not a guarantee
+        if (!_rng.Chance(chance)) return null;
+
+        var where = string.Join(" and ", illusions.Select(d => d.ToString().ToLowerInvariant()));
+        return $"{rogue.Name} senses the wall to the {where} is not all it seems — try walking into it.";
+    }
+
     /// <summary>Undiscovered secret doors plus unsolved riddle tiles remaining on this level.</summary>
     public (int SecretDoors, int Riddles) RemainingSecrets() =>
         (Maze.HiddenSecretCount(), Maze.CountFeature(CellFeature.Riddle));

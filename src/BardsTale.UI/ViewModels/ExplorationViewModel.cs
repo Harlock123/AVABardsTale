@@ -491,6 +491,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
         {
             TickPoison();
             if (_game.RoguePassiveSearch() is { } noticed) AddLog(noticed);
+            if (_game.RogueSenseIllusion() is { } illusionHint) AddLog(illusionHint);
         }
 
         UpdateLocationState();

@@ -30,7 +30,9 @@ public enum SpellEffect
     /// <summary>Lulls an enemy group to sleep — they skip turns until they wake or are struck (Power = rounds).</summary>
     SleepEnemies,
     /// <summary>Poisons an enemy group, sapping their health each round (Power = rounds).</summary>
-    PoisonEnemies
+    PoisonEnemies,
+    /// <summary>Scrying: reveals one foe's elemental weaknesses, resistances and immunities. Deals no damage.</summary>
+    RevealLore
 }
 
 public enum SpellTarget
@@ -86,6 +88,7 @@ public sealed record Spell(
         SpellEffect.SleepEnemies => $"{Cost} SP · sleep a foe group",
         SpellEffect.PoisonEnemies => $"{Cost} SP · poison a foe group",
         SpellEffect.Identify => $"{Cost} SP · identify an item",
+        SpellEffect.RevealLore => $"{Cost} SP · reveal a foe's affinities",
         _ => $"{Cost} SP"
     };
 }
@@ -121,6 +124,8 @@ public static class Spells
             "Hurls a bolt of fire at a single foe.", Element.Fire),
         new Spell("SCSI", "SCSI", "Scrye Sight", MagicSchool.Magician, 1, 2, SpellEffect.Identify, SpellTarget.None, 0,
             "Reveals the true nature of an unidentified item."),
+        new Spell("SCFO", "SCFO", "Scrye Foe", MagicSchool.Magician, 1, 1, SpellEffect.RevealLore, SpellTarget.SingleEnemy, 0,
+            "Lays bare a foe's nature — the elements it shrugs off, and the elements that savage it."),
         new Spell("MAFO", "MAFO", "Mana Font", MagicSchool.Magician, 3, 3, SpellEffect.RestorePartySpellPoints, SpellTarget.Party, 10,
             "Channels arcane vigour, restoring spell points to the whole party."),
         new Spell("FROS", "FROS", "Frost Blast", MagicSchool.Magician, 2, 3, SpellEffect.DamageEnemy, SpellTarget.SingleEnemy, 13,

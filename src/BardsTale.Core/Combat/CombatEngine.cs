@@ -545,6 +545,21 @@ public sealed class CombatEngine
         }
     }
 
+    /// <summary>A spoken-aloud summary of a monster's elemental affinities, for the Scrye Foe spell.</summary>
+    private static string LoreOf(string monsterName)
+    {
+        var parts = new List<string>();
+        var weak = MonsterElements.Describe(MonsterElements.WeakOf(monsterName));
+        var resist = MonsterElements.Describe(MonsterElements.ResistOf(monsterName));
+        var immune = MonsterElements.Describe(MonsterElements.ImmuneOf(monsterName));
+        if (weak.Length > 0) parts.Add($"weak to {weak.ToLowerInvariant()}");
+        if (resist.Length > 0) parts.Add($"resists {resist.ToLowerInvariant()}");
+        if (immune.Length > 0) parts.Add($"immune to {immune.ToLowerInvariant()}");
+        return parts.Count > 0
+            ? $"the {monsterName} is {string.Join("; ", parts)}."
+            : $"the {monsterName} bears no elemental affinity — any magic bites it equally.";
+    }
+
     /// <summary>Scales raw damage by a monster's elemental affinity: ×0 if immune, ×2 if weak, ÷2 if resistant.</summary>
     private static int ScaleByElement(string monsterName, int dmg, Element element, out string note)
     {
@@ -636,6 +651,14 @@ public sealed class CombatEngine
                 target.Wake();
                 round.Log.Add($"{caster.Name} casts {spell.Name}, blasting {target.Name} for {dmg}{note}.");
                 if (target.IsDead) round.Log.Add($"{target.Name} is slain!");
+                break;
+            }
+            case SpellEffect.RevealLore:
+            {
+                var group = GetTargetGroup(cmd.TargetGroup);
+                var target = group?.FirstAlive();
+                if (target is null) break;
+                round.Log.Add($"{caster.Name} casts {spell.Name}: {LoreOf(target.Name)}");
                 break;
             }
             case SpellEffect.DrainEnemy:

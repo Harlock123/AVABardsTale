@@ -68,6 +68,24 @@ public class ElementTests
     }
 
     [Fact]
+    public void Scrying_a_foe_reveals_its_affinities_in_the_log()
+    {
+        var party = NewGame.CreateDefaultParty(new SystemRandomSource(seed: 1));
+        var caster = party.Members[0];
+        caster.SpellPoints = 10;
+        var spell = Spells.Get("SCFO"); // Scrye Foe
+        var encounter = new Encounter(new[] { new MonsterGroup(Bestiary.Salamander, 1) });
+        var engine = new CombatEngine(party, encounter, new SystemRandomSource(seed: 5), surprise: SurpriseState.None);
+
+        var round = engine.ExecuteRound(new List<CombatCommand> { new(caster, CombatActionType.CastSpell, 0, Spell: spell) });
+
+        // The salamander is immune to fire and weak to cold — both should be named, with no damage dealt.
+        Assert.Contains(round.Log, l => l.Contains("immune to fire"));
+        Assert.Contains(round.Log, l => l.Contains("weak to cold"));
+        Assert.Equal(Bestiary.Salamander.MaxHitPoints, encounter.Groups[0].Monsters[0].HitPoints);
+    }
+
+    [Fact]
     public void Damage_spells_and_wands_carry_their_element()
     {
         Assert.Equal(Element.Fire, Spells.All.First(s => s.Id == "ARFI").Element);

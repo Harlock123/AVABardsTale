@@ -38,9 +38,16 @@ public class ElementTests
     [Fact]
     public void A_resisted_element_is_halved()
     {
-        // Salamander resists Fire and is neutral to Arcane.
-        var neutral = DamageTo(Bestiary.Salamander, Element.Arcane);
-        Assert.Equal(System.Math.Max(1, neutral / 2), DamageTo(Bestiary.Salamander, Element.Fire));
+        // Skeleton resists Cold and is neutral to Arcane.
+        var neutral = DamageTo(Bestiary.Skeleton, Element.Arcane);
+        Assert.Equal(System.Math.Max(1, neutral / 2), DamageTo(Bestiary.Skeleton, Element.Cold));
+    }
+
+    [Fact]
+    public void An_immune_element_does_nothing()
+    {
+        // A salamander bathes in flame — fire does not even singe it.
+        Assert.Equal(0, DamageTo(Bestiary.Salamander, Element.Fire));
     }
 
     [Fact]
@@ -55,7 +62,8 @@ public class ElementTests
     {
         Assert.True((MonsterElements.WeakOf("Skeleton") & Element.Fire) != 0);
         Assert.True((MonsterElements.ResistOf("Skeleton") & Element.Poison) != 0);
-        Assert.True((MonsterElements.ResistOf("Salamander") & Element.Fire) != 0);
+        Assert.True((MonsterElements.ImmuneOf("Salamander") & Element.Fire) != 0); // bathes in flame
+        Assert.True((MonsterElements.ImmuneOf("Elite Salamander") & Element.Fire) != 0); // elites inherit
         Assert.Equal(Element.None, MonsterElements.WeakOf("Goblin")); // neutral
     }
 

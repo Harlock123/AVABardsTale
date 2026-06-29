@@ -69,15 +69,12 @@ public sealed class BestiaryEntryViewModel : ViewModelBase
             if (!IsDiscovered) return "";
             var weak = MonsterElements.DescribeGlyphs(MonsterElements.WeakOf(_t.Name));
             var resist = MonsterElements.DescribeGlyphs(MonsterElements.ResistOf(_t.Name));
-            var w = weak.Length > 0 ? $"⚠ Weak  {weak}" : "";
-            var r = resist.Length > 0 ? $"🛡 Resists  {resist}" : "";
-            return (w, r) switch
-            {
-                ("", "") => "",
-                ("", _) => r,
-                (_, "") => w,
-                _ => $"{w}    {r}"
-            };
+            var immune = MonsterElements.DescribeGlyphs(MonsterElements.ImmuneOf(_t.Name));
+            var parts = new List<string>();
+            if (weak.Length > 0) parts.Add($"⚠ Weak  {weak}");
+            if (resist.Length > 0) parts.Add($"🛡 Resists  {resist}");
+            if (immune.Length > 0) parts.Add($"🚫 Immune  {immune}");
+            return string.Join("    ", parts);
         }
     }
 

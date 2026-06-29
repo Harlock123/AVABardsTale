@@ -545,15 +545,25 @@ public sealed class CombatEngine
         }
     }
 
-    /// <summary>Scales raw damage by a monster's elemental affinity: ×2 if weak, ÷2 if resistant.</summary>
+    /// <summary>Scales raw damage by a monster's elemental affinity: ×0 if immune, ×2 if weak, ÷2 if resistant.</summary>
     private static int ScaleByElement(string monsterName, int dmg, Element element, out string note)
     {
-        if (element != Element.None && (MonsterElements.WeakOf(monsterName) & element) != 0)
+        if (element == Element.None)
+        {
+            note = "";
+            return dmg;
+        }
+        if ((MonsterElements.ImmuneOf(monsterName) & element) != 0)
+        {
+            note = " — immune, no effect!";
+            return 0;
+        }
+        if ((MonsterElements.WeakOf(monsterName) & element) != 0)
         {
             note = " — weak, double damage!";
             return dmg * 2;
         }
-        if (element != Element.None && (MonsterElements.ResistOf(monsterName) & element) != 0)
+        if ((MonsterElements.ResistOf(monsterName) & element) != 0)
         {
             note = " — resisted";
             return Math.Max(1, dmg / 2);

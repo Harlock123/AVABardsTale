@@ -475,7 +475,8 @@ press **Enter** (or the on-screen *Enter Building* button) to go inside:
   your stash. See *Item powers & the Forge*.
 - **Temple of Healing** — heal the whole party, resurrect the fallen, or restore
   levels and attributes sapped by drain attacks, all for gold.
-- **Review Board** — spend banked experience to level heroes up.
+- **Review Board** — spend banked experience to level heroes up (more HP, a prime-attribute
+  point every few levels, and new spells, songs or extra attacks as you climb).
 - **The Scarlet Bard** & **Mad Mable's** — taverns where you buy a round of drinks
   to loosen tongues and hear rumours. Many are **dynamic, progress-aware tips**: the
   named **boss waiting on the next floor down**, a real creature that **prowls that depth**,
@@ -760,7 +761,12 @@ Linux's CLI players) fall back to a clean cut. Crossfade can be turned off in Se
   (per-round regen), the *Cantata of Mana* (per-round party SP), and the *Dirge of the
   Doomed* (a battle dirge that withers every foe each round). Striking up a new tune
   spends one of the Bard's limited daily tunes; resting refills them.
-- Level-gated spell/song learning at the Review Board.
+- **Level-up rewards** at the Review Board grow the *whole* hero, not just a bigger HP bar:
+  every level adds hit points; casters gain spell points and learn newly-unlocked spells, Bards
+  learn songs; **every third level raises the class's prime attribute** — Strength (fighters),
+  Dexterity (the nimble), Intelligence (mages) or Luck (Bards), feeding damage, armour class,
+  spell points and saves; and **martial classes earn an extra attack per round** at set levels.
+  (Each level costs double the last in banked experience — `1000 × 2ⁿ⁻¹`.)
 - Item drops from defeated foes into a shared party stash, consumable potions
   usable on a chosen ally mid-combat, potions for sale at Garth's, and equipping
   looted weapons/armour/shields from the stash (with the old piece stowed back).

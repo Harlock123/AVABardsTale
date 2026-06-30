@@ -2,6 +2,7 @@ using BardsTale.Core.Characters;
 using BardsTale.Core.Items;
 using BardsTale.Core.Magic;
 using BardsTale.Core.Util;
+using Attribute = BardsTale.Core.Characters.Attribute;
 
 namespace BardsTale.Core.Game;
 
@@ -10,6 +11,21 @@ public static class Progression
 {
     /// <summary>The level a hero must reach in their current class before they can retrain.</summary>
     public const int MinChangeClassLevel = 3;
+
+    /// <summary>A hero gains a point in their class's prime attribute every this many levels.</summary>
+    public const int AttributeGainInterval = 3;
+
+    /// <summary>The ceiling a level-up attribute gain will not push a prime attribute past.</summary>
+    public const int AttributeCap = 24;
+
+    /// <summary>The attribute a class advances on the milestone levels — what makes that class tick.</summary>
+    public static Attribute PrimeAttribute(CharacterClass c) => c switch
+    {
+        CharacterClass.Warrior or CharacterClass.Paladin => Attribute.Strength,
+        CharacterClass.Rogue or CharacterClass.Hunter or CharacterClass.Monk => Attribute.Dexterity,
+        CharacterClass.Bard => Attribute.Luck,
+        _ => Attribute.Intelligence // the four spellcasting schools
+    };
 
     // A drained hero must have their levels restored at the Temple before they can advance again.
     public static bool CanLevelUp(Character c) => !c.IsDead && !c.IsDrained && c.Experience >= c.ExperienceForNextLevel;
@@ -72,6 +88,8 @@ public static class Progression
     {
         if (!CanLevelUp(c)) return null;
 
+        var attacksBefore = c.AttacksPerRound;
+
         c.Experience -= c.ExperienceForNextLevel;
         c.Level++;
 
@@ -99,6 +117,22 @@ public static class Progression
             if (newSongs.Count > 0)
                 detail += $", learns {string.Join(", ", newSongs)}";
         }
+
+        // Every few levels, a point in the class's prime attribute — flowing through damage, AC,
+        // spell points, saves and the like, so higher levels grow the whole hero, not just HP/SP.
+        if (c.Level % AttributeGainInterval == 0)
+        {
+            var attr = PrimeAttribute(c.Class);
+            if (c.Attributes[attr] < AttributeCap)
+            {
+                c.Attributes[attr]++;
+                detail += $", +1 {AttributeSet.Abbreviation(attr)}";
+            }
+        }
+
+        // Martial classes earn extra swings as they advance (AttacksPerRound) — call it out when it ticks up.
+        if (c.AttacksPerRound > attacksBefore)
+            detail += ", gains an extra attack each round!";
 
         return $"{c.Name} advances to level {c.Level}! ({detail})";
     }

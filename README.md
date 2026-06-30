@@ -63,7 +63,7 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 | `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime, as an installable PWA with IndexedDB saves. (Kept out of the default solution; see below.) |
 | `src/BardsTale.Android` | Thin Android head (tablet, landscape) — a launcher `Activity` + an `AudioTrack` sound backend, wrapping `MainView` via the single-view lifetime. |
 | `src/BardsTale.iOS` | Thin iOS head (iPad, landscape) — an `AvaloniaAppDelegate` entry point + an `AVAudioPlayer` sound backend. |
-| `tests/BardsTale.Tests` | xUnit suite (**494 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, monster morale, front/back ranks, sustained Bard songs, elemental affinities & immunities, scrying, monster affixes), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, illusory walls & one-way doors, shrines & party boons, dungeon events, town services & tavern rumours, the bestiary & lore, character sheets, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
+| `tests/BardsTale.Tests` | xUnit suite (**504 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, telegraphed multi-phase bosses & signatures, monster morale, front/back ranks, sustained Bard songs, elemental affinities & immunities, scrying, monster affixes), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, illusory walls & one-way doors, shrines & party boons, dungeon events, town services & tavern rumours, the bestiary & lore, character sheets, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
 
 The split follows Avalonia's standard cross-platform layout: a shared UI library plus
 one thin "head" project per platform. Every head reuses `BardsTale.UI` unchanged —
@@ -690,6 +690,25 @@ Linux's CLI players) fall back to a clean cut. Crossfade can be turned off in Se
 - A **fixed boss lair** on each level (guarding the descent) — a tough named boss
   flanked by minions, cleared permanently once beaten; the boss changes by depth.
   Every boss is **guaranteed to drop a magic item**.
+- **Telegraphed, multi-phase bosses** — driven below **half health**, a lair boss shifts into a
+  deadlier second phase and may **wind up a signature attack** (a ⚡ on its roster card, a round's
+  warning). The party has three counters: **brace** with Defend (halves it), **break the cast** by
+  stunning or sleeping the boss before it strikes, or simply **kill it** first. Below **35%** it also
+  **enrages** (berserk, striking twice and harder), so a deep boss escalates as you wear it down. The
+  marquee bosses telegraph **named signatures** — some with a nasty rider:
+
+  | Boss | Signature | What it does |
+  | --- | --- | --- |
+  | Demon Lord | **Hellfire Cataclysm** | Fire blast across the party |
+  | Frost King | **Killing Winter** | Cold blast — can **freeze** a hero solid |
+  | Pit Lord | **Apocalypse** | Heavy fire blast across the party |
+  | Dragon Tyrant | **Cataclysm Breath** | Devastating fire blast |
+  | Mangar the Mad | **Mind Storm** | Arcane blast — can **lull** heroes to sleep |
+  | Beholder Tyrant | **Disintegration Ray** | A single overwhelming bolt at one hero |
+  | Archlich | **Soul Harvest** | A focused bolt that **heals the boss** for half the harm |
+
+  (Any other boss with a damaging spell telegraphs an amplified version of it; a boss's signature is
+  noted in its bestiary entry.)
 - **Elite champions & monster affixes** — a wandering pack may be led by a buffed **elite** (gold),
   or carry an **affix** (cyan): **Regenerating, Swift, Vampiric, Warded** (shrugs off magic) or
   **Savage** — and from floor 12 a pack can carry **two at once**. Affixed and elite foes are worth

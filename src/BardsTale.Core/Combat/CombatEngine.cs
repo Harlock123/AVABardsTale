@@ -65,8 +65,17 @@ public sealed class CombatEngine
     // Boss/elite champions that turn berserk once cornered (see MaybeEnrage).
     private readonly HashSet<Monster> _enrageable = new();
 
+    // Lair bosses that can telegraph a signature attack once worn into their second phase.
+    private readonly HashSet<Monster> _bosses = new();
+
     /// <summary>Fraction of max HP at or below which a boss/elite flips into its enrage.</summary>
     private const double EnrageThreshold = 0.35;
+
+    /// <summary>Fraction of max HP at or below which a boss shifts into its deadlier second phase.</summary>
+    private const double PhaseTwoThreshold = 0.5;
+
+    /// <summary>A boss in phase two has this chance, on its turn, to wind up its signature attack.</summary>
+    private const double TelegraphChance = 0.5;
 
     public CombatEngine(Party party, Encounter encounter, IRandomSource rng,
         bool magicSuppressed = false, SurpriseState? surprise = null)
@@ -79,7 +88,11 @@ public sealed class CombatEngine
         // A lair boss (the lead group of a boss fight) and any elite champion can enrage
         // when driven near death; their summoned rabble cannot.
         if (encounter.IsBoss && encounter.Groups.Count > 0)
-            foreach (var m in encounter.Groups[0].Monsters) _enrageable.Add(m);
+            foreach (var m in encounter.Groups[0].Monsters)
+            {
+                _enrageable.Add(m);
+                _bosses.Add(m); // only true lair bosses telegraph signature attacks
+            }
         foreach (var group in encounter.Groups.Where(g => g.Template.IsElite))
             foreach (var m in group.Monsters) _enrageable.Add(m);
 
@@ -217,6 +230,14 @@ public sealed class CombatEngine
             var healed = m.HitPoints - before;
             if (healed > 0) round.Log.Add($"{m.Name} regenerates {healed} HP.");
         }
+
+        // A boss that was winding up but got put to sleep loses its charge — the telegraph is broken.
+        foreach (var boss in _bosses)
+            if (boss.IsCharging && boss.IsAsleep)
+            {
+                boss.Charging = null;
+                round.Log.Add($"The slumbering {boss.Name}'s gathering power unravels harmlessly.");
+            }
 
         if (_encounter.IsCleared)
         {
@@ -867,10 +888,29 @@ public sealed class CombatEngine
     /// <summary>A monster either casts its signature spell (if useful) or attacks.</summary>
     private void ResolveMonsterTurn(Monster monster, CombatRound round)
     {
-        if (monster.IsDead) return;
+        if (monster.IsDead || monster.IsAsleep) return; // a foe slept mid-round skips its turn
 
         if (TryRout(monster, round)) return;
         MaybeEnrage(monster, round);
+        MaybeShiftPhase(monster, round);
+
+        // A boss that has been winding up unleashes its signature attack now, instead of acting.
+        if (monster.Charging is { } charged)
+        {
+            UnleashSignature(monster, charged, round);
+            monster.Charging = null;
+            return;
+        }
+
+        // In its second phase, a boss may instead wind up a telegraphed signature attack — a
+        // round's warning the party can brace against, or break by killing or stunning the boss.
+        if (_bosses.Contains(monster) && monster.Phase >= 2 && !_magicSuppressed
+            && SignatureOf(monster) is { } sig && _rng.Chance(TelegraphChance))
+        {
+            monster.Charging = sig;
+            round.Log.Add($"⚡ {monster.Name} gathers power for {sig.Name} — brace, or break it before it strikes!");
+            return;
+        }
 
         var spell = monster.Template.Spell;
         if (!_magicSuppressed && spell is not null && CanCastUsefully(spell)
@@ -881,6 +921,66 @@ public sealed class CombatEngine
         }
         ResolveMonsterAttack(monster, round);
     }
+
+    /// <summary>A boss's telegraph-able signature (bespoke where defined; sleep/heal/summon bosses have none).</summary>
+    private static BossSignature? SignatureOf(Monster monster) => BossSignatures.For(monster.Template);
+
+    /// <summary>
+    /// Worn into its second phase (below half health), a boss escalates — from here it can telegraph
+    /// its signature attack. A one-time, one-way shift, distinct from the near-death enrage.
+    /// </summary>
+    private void MaybeShiftPhase(Monster monster, CombatRound round)
+    {
+        if (!_bosses.Contains(monster) || monster.Phase >= 2) return;
+        if (monster.HitPoints > monster.Template.MaxHitPoints * PhaseTwoThreshold) return;
+        if (SignatureOf(monster) is null) return; // only foes with a signature attack have a second phase
+
+        monster.Phase = 2;
+        round.Log.Add($"{monster.Name} draws on its full power — the fight turns deadlier!");
+    }
+
+    /// <summary>Unleashes a wound-up signature attack: a named, amplified blow the party can blunt by bracing (Defend).</summary>
+    private void UnleashSignature(Monster boss, BossSignature sig, CombatRound round)
+    {
+        round.Log.Add($"💥 {boss.Name} unleashes {sig.Name}!");
+
+        if (sig.Payload == SignaturePayload.FocusedBolt)
+        {
+            var target = PickPartyTarget();
+            if (target is null) return;
+            var dmg = _rng.Roll(1, sig.Power, sig.Power / 2);
+            var before = target.HitPoints;
+            HitMemberWithSpell(target, dmg, sig.Element, round, luckySave: LuckySave(target), braced: _defending.Contains(target));
+            if (sig.HealsSelf && before - target.HitPoints > 0)
+            {
+                var drained = (before - target.HitPoints) / 2;
+                boss.Heal(drained);
+                round.Log.Add($"{boss.Name} drinks the harvested life, mending {drained}.");
+            }
+            return;
+        }
+
+        // PartyBlast: every standing hero is caught; bracing (Defend) or luck softens the blow,
+        // and a rider (e.g. Killing Winter's freeze, Mind Storm's slumber) may grip the survivors.
+        foreach (var m in _party.Members.Where(m => !m.IsDead).ToList())
+        {
+            var dmg = _rng.Roll(1, sig.Power);
+            HitMemberWithSpell(m, dmg, sig.Element, round, luckySave: LuckySave(m), braced: _defending.Contains(m));
+            if (sig.Rider != StatusEffect.None && !m.IsDead && !m.IsImmuneTo(sig.Rider) && _rng.Chance(sig.RiderChance))
+            {
+                m.Inflict(sig.Rider);
+                round.Log.Add($"{m.Name} is {RiderVerb(sig.Rider)}!");
+            }
+        }
+    }
+
+    private static string RiderVerb(StatusEffect rider) => rider switch
+    {
+        StatusEffect.Paralyzed => "frozen rigid",
+        StatusEffect.Asleep => "lulled into slumber",
+        StatusEffect.Poisoned => "wracked with venom",
+        _ => "stricken"
+    };
 
     /// <summary>
     /// Drives a boss or elite berserk the first time it is cornered below the enrage
@@ -1036,9 +1136,15 @@ public sealed class CombatEngine
     }
 
     /// <summary>Applies elemental spell damage to a party member; luck and warded gear each halve it (and are noted).</summary>
-    private void HitMemberWithSpell(Character target, int dmg, Element element, CombatRound round, bool luckySave = false)
+    private void HitMemberWithSpell(Character target, int dmg, Element element, CombatRound round,
+        bool luckySave = false, bool braced = false)
     {
         var notes = new List<string>();
+        if (braced)
+        {
+            dmg = Math.Max(1, dmg / 2);
+            notes.Add("braced");
+        }
         if (luckySave)
         {
             dmg = Math.Max(1, dmg / 2);

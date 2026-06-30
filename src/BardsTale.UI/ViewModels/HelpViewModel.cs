@@ -68,7 +68,8 @@ public static class HelpContent
                 "Only the front rank (first three heroes) can melee — give back-rankers a bow, a spell, or a song.",
                 "Elements matter: hit a foe's weakness for double damage, its resistance for half, and an immunity for nothing at all (all shown in the bestiary).",
                 "Cast Scrye Foe to read a monster's weakness, resistance and immunity on the spot — then aim your spells accordingly.",
-                "Watch for elite champions (gold) and affixed packs (cyan): Regenerating, Swift, Vampiric, Warded (shrugs off magic) or Savage — and deep floors may carry two affixes at once."),
+                "Watch for elite champions (gold) and affixed packs (cyan): Regenerating, Swift, Vampiric, Warded (shrugs off magic) or Savage — and deep floors may carry two affixes at once.",
+                "Worn below half health, a lair boss turns deadlier and may wind up a signature attack (⚡): brace with Defend to halve it, or break the cast by stunning, sleeping or killing the boss before it strikes."),
 
             S("Tips for survival",
                 "Rest at the Inn or Temple between dives; cure poison, sleep and paralysis with spells, items, or rest.",

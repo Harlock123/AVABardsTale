@@ -21,6 +21,16 @@ public class HelpContentTests
     }
 
     [Fact]
+    public void Help_teaches_the_boss_telegraph_counterplay()
+    {
+        var text = string.Join(" ",
+            HelpContent.Build("W", "S", "A", "D").SelectMany(s => s.Lines)).ToLowerInvariant();
+        Assert.Contains("wind up", text);  // the telegraph
+        Assert.Contains("brace", text);    // Defend to halve it
+        Assert.Contains("break the cast", text);
+    }
+
+    [Fact]
     public void Every_section_has_at_least_one_line()
     {
         foreach (var section in HelpContent.Build("W", "S", "A", "D"))

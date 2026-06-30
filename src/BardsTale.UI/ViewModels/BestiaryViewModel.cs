@@ -114,6 +114,9 @@ public sealed class BestiaryEntryViewModel : ViewModelBase
         }
         if (_t.Spell is { } spell)
             parts.Add($"it casts {spell.Name}");
+        // A lair boss with a damaging signature telegraphs its named special once worn into phase two.
+        if (Bosses.FloorOf(_t.BaseName) is not null && BossSignatures.For(_t) is { } sig)
+            parts.Add($"below half health it winds up {sig.Name} — brace or break the cast");
         if (parts.Count == 0) return "";
 
         var joined = string.Join("; ", parts);

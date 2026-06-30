@@ -222,6 +222,15 @@ public sealed class Monster
     /// </summary>
     public bool Enraged { get; set; }
 
+    /// <summary>A boss's combat phase (1 at full health); rises as it is worn down, unlocking telegraphed attacks.</summary>
+    public int Phase { get; set; } = 1;
+
+    /// <summary>A signature attack the boss is winding up — it unleashes on its next turn unless broken first.</summary>
+    public BossSignature? Charging { get; set; }
+
+    /// <summary>True while the boss is winding up a telegraphed signature attack.</summary>
+    public bool IsCharging => Charging is not null;
+
     // --- Status afflictions the party can inflict on a monster (rounds remaining) ---
     /// <summary>Rounds of poison left; the monster takes damage at the start of each.</summary>
     public int PoisonTurns { get; set; }

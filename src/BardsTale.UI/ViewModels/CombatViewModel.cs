@@ -30,6 +30,7 @@ public sealed partial class CombatViewModel : ViewModelBase
     private readonly List<Item> _reservedItems = new();
     private readonly HashSet<Character> _powerUsed = new(); // wielded-item powers fire once per fight
     private readonly HashSet<Character> _abilityUsed = new(); // martial signature abilities fire once per fight
+    private static bool _taughtTelegraph; // once-ever: explain a boss wind-up the first time it's seen
     private int _orderIndex;
     private CombatActionOptionViewModel? _pendingOption;
 
@@ -448,6 +449,13 @@ public sealed partial class CombatViewModel : ViewModelBase
 
         foreach (var g in Groups) g.Refresh();
         StateChanged?.Invoke();
+
+        // The first time a boss winds up a signature attack, explain the counter-play once.
+        if (!_taughtTelegraph && Groups.Any(g => g.IsCharging))
+        {
+            _taughtTelegraph = true;
+            AddLog("⚡ It's winding up a signature attack! Next round: Defend to brace (halves it), or stun/sleep or kill it to break the cast.");
+        }
 
         if (round.Outcome != CombatOutcome.Ongoing)
         {

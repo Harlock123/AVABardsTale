@@ -32,18 +32,22 @@ public sealed partial class MonsterGroupViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Status glyphs for the group — 💤 if any are asleep, ☠ if any are poisoned.</summary>
+    /// <summary>Status glyphs for the group — ⚡ winding up, 💤 if any are asleep, ☠ if any are poisoned.</summary>
     public string StatusGlyph
     {
         get
         {
             var live = Group.Monsters.Where(m => !m.IsDead).ToList();
             var glyph = "";
+            if (live.Any(m => m.IsCharging)) glyph += "⚡";
             if (live.Any(m => m.IsAsleep)) glyph += "💤";
             if (live.Any(m => m.IsPoisoned)) glyph += "☠";
             return glyph;
         }
     }
+
+    /// <summary>True while a boss in this group is winding up a telegraphed attack.</summary>
+    public bool IsCharging => Group.Monsters.Any(m => !m.IsDead && m.IsCharging);
 
     public bool HasStatus => StatusGlyph.Length > 0;
 
@@ -93,5 +97,6 @@ public sealed partial class MonsterGroupViewModel : ViewModelBase
         OnPropertyChanged(nameof(HealthText));
         OnPropertyChanged(nameof(StatusGlyph));
         OnPropertyChanged(nameof(HasStatus));
+        OnPropertyChanged(nameof(IsCharging));
     }
 }

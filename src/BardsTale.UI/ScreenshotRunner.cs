@@ -49,6 +49,10 @@ public static class ScreenshotRunner
         Setup(vm);
         await Settle();
 
+        // The help overlay auto-opens on first launch (a deferred dispatcher post that has fired by
+        // now). Dismiss it once so it doesn't obscure every shot — nothing re-opens it after this.
+        vm.CloseHelpCommand.Execute(null);
+
         // The town hub (first-person streets + party + minimap).
         vm.ShowTownScreen();
         await Settle();

@@ -17,6 +17,7 @@ namespace BardsTale.Core.Game;
 public sealed class GameSession
 {
     private GameState? _dungeon;
+    private GameState? _tower;
 
     public GameSession(int? seed = null)
     {
@@ -111,19 +112,42 @@ public sealed class GameSession
     /// <summary>Reinstates a dungeon restored from a saved game.</summary>
     public void RestoreDungeon(GameState dungeon) => _dungeon = dungeon;
 
+    /// <summary>The Gloomy Tower, if the party has ventured into it. Null until first entered.</summary>
+    public GameState? ActiveTower => _tower;
+
+    /// <summary>Reinstates the Gloomy Tower restored from a saved game.</summary>
+    public void RestoreTower(GameState tower) => _tower = tower;
+
     /// <summary>Enters the catacombs, building level 1 the first time and resuming thereafter.</summary>
     public GameState EnterDungeon()
     {
         if (_dungeon is null)
         {
             var maze = new MazeBuilder(Rng).Build("Catacombs — Level 1", 16, 16);
-            _dungeon = new GameState(Party, maze, Rng, Ascension, Combat.DifficultyProfile.For(Difficulty), Modifiers);
+            _dungeon = new GameState(Party, maze, Rng, Ascension, Combat.DifficultyProfile.For(Difficulty), Modifiers,
+                DungeonKind.Catacombs);
         }
         else
         {
             _dungeon.ReturnToEntrance();
         }
         return _dungeon;
+    }
+
+    /// <summary>Enters the Gloomy Tower, building its first floor the first time and resuming thereafter.</summary>
+    public GameState EnterTower()
+    {
+        if (_tower is null)
+        {
+            var maze = new MazeBuilder(Rng).Build("Gloomy Tower — Floor 1", 14, 14);
+            _tower = new GameState(Party, maze, Rng, Ascension, Combat.DifficultyProfile.For(Difficulty), Modifiers,
+                DungeonKind.Tower);
+        }
+        else
+        {
+            _tower.ReturnToEntrance();
+        }
+        return _tower;
     }
 
     /// <summary>Fills the party with the classic ready-made adventurers, up to six.</summary>

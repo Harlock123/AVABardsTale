@@ -63,7 +63,7 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 | `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime, as an installable PWA with IndexedDB saves. (Kept out of the default solution; see below.) |
 | `src/BardsTale.Android` | Thin Android head (tablet, landscape) — a launcher `Activity` + an `AudioTrack` sound backend, wrapping `MainView` via the single-view lifetime. |
 | `src/BardsTale.iOS` | Thin iOS head (iPad, landscape) — an `AvaloniaAppDelegate` entry point + an `AVAudioPlayer` sound backend. |
-| `tests/BardsTale.Tests` | xUnit suite (**504 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, telegraphed multi-phase bosses & signatures, monster morale, front/back ranks, sustained Bard songs, elemental affinities & immunities, scrying, monster affixes), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, illusory walls & one-way doors, shrines & party boons, dungeon events, town services & tavern rumours, the bestiary & lore, character sheets, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
+| `tests/BardsTale.Tests` | xUnit suite (**513 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, telegraphed multi-phase bosses & signatures, monster morale, front/back ranks, sustained Bard songs, elemental affinities & immunities, scrying, monster affixes), the two dungeons (catacombs & Gloomy Tower) with their own boss bands and curated rosters, item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, illusory walls & one-way doors, shrines & party boons, dungeon events, town services & tavern rumours, the bestiary & lore, character sheets, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
 
 The split follows Avalonia's standard cross-platform layout: a shared UI library plus
 one thin "head" project per platform. Every head reuses `BardsTale.UI` unchanged —
@@ -508,6 +508,18 @@ wandering-monster pool drawn from progressively tougher tiers — rats and kobol
 top, dragons, liches and titans at the bottom. **Experience scales with depth** (it
 grows geometrically as you descend), so the party's level keeps pace with the climb
 down to **Mangar the Mad** on floor 20.
+
+### A second delve — the Gloomy Tower
+
+Looming at the **centre of the town square** is a second, optional dungeon: the **Gloomy
+Tower**, an **eight-floor** arcane gauntlet entirely separate from the catacombs. It keeps
+its **own depth, its own explored maps and its own boss band** — restless dead, witches,
+gorgons, constructs and eye-horrors — climbing to a unique apex, **the Gloomlord** (whose
+*Gloom Singularity* can lull the party to sleep). Its **wandering roster is curated to match**:
+skeletons, coven witches and animated armour give way to wraiths, iron golems and mind flayers
+near the top — never the catacombs' entry vermin. The two delves are fully independent (each
+remembers where you left off, and both persist through save/load), and **clearing the Tower does
+not win the game** — only Mangar does. A tougher, treasure-rich side-trip for a seasoned party.
 
 ### Side quests
 

@@ -27,6 +27,7 @@ public sealed class SaveData
 
     public PartySave Party { get; set; } = new();
     public DungeonSave? Dungeon { get; set; }
+    public DungeonSave? Tower { get; set; }
     public RunStatsSave Stats { get; set; } = new();
     public QuestLogSave Quests { get; set; } = new();
     public CodexSave Codex { get; set; } = new();
@@ -146,6 +147,7 @@ public sealed class CharacterSave
 
 public sealed class DungeonSave
 {
+    public int Kind { get; set; }           // 0 = Catacombs, 1 = Tower (DungeonKind)
     public int Depth { get; set; }          // the level the party currently stands on
     public int LightRemaining { get; set; }
     public List<LevelSave> Levels { get; set; } = new(); // every explored level, one per depth

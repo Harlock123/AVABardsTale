@@ -357,7 +357,6 @@
                                                         <TextBlock Text="{Binding ExperienceText}" FontSize="11" Foreground="#9AA0B5"/>
                                                     </StackPanel>
                                                     <Button Grid.Column="1" Content="Advance" VerticalAlignment="Center"
-                                                            IsEnabled="{Binding CanLevelUp}"
                                                             Command="{Binding $parent[ItemsControl].((vm:TownViewModel)DataContext).AdvanceCommand}"
                                                             CommandParameter="{Binding}"/>
                                                 </Grid>

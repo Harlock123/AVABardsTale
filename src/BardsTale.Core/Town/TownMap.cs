@@ -15,7 +15,8 @@ public enum TownBuilding
     DungeonEntrance,
     QuestBoard,
     Smithy,
-    Bank
+    Bank,
+    TowerEntrance
 }
 
 /// <summary>A building's door on the streets of Skara Brae.</summary>

@@ -439,6 +439,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         var town = new TownViewModel(_session);
         town.EnterDungeonRequested += OnEnterDungeon;
+        town.EnterTowerRequested += OnEnterTower;
         town.RenownChanged += RefreshRenown;
         CurrentView = town;
         Music.Play(GameMusic.Town);
@@ -451,7 +452,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private void OnEnterDungeon()
     {
         _deepestBeforeDive = _session.Stats.DeepestDepth;
-        var game = _session.EnterDungeon();
+        ShowExploration(_session.EnterDungeon());
+    }
+
+    private void OnEnterTower() => ShowExploration(_session.EnterTower());
+
+    /// <summary>Switches to the exploration view for a delve (catacombs or tower), wiring its events.</summary>
+    private void ShowExploration(GameState game)
+    {
         var exploration = new ExplorationViewModel(game, _session.Stats, _session.Quests, _session.Codex,
             _session.Renown, _session.ReachStory);
         exploration.ReturnToTownRequested += ReturnFromDungeon;

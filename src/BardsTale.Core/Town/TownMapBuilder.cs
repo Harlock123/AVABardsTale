@@ -34,6 +34,13 @@ public static class TownMapBuilder
         town.AddBuilding(TownBuilding.Temple, "Temple of Healing", new Position(5, 10));
         town.AddBuilding(TownBuilding.Inn, "Garrick's Inn", new Position(1, 10));
         town.AddBuilding(TownBuilding.DungeonEntrance, "Catacomb Stair", new Position(10, 10));
+        // The Gloomy Tower looms at the heart of the square. Wall it on three sides — a dead-end
+        // alcove open only to the south (toward the spawn) — so its façade reads up close in the
+        // first-person view, the way a perimeter building's wall does, rather than rendering distant.
+        town.AddBuilding(TownBuilding.TowerEntrance, "The Gloomy Tower", new Position(5, 4));
+        streets.SetWall(5, 4, Direction.North);
+        streets.SetWall(5, 4, Direction.East);
+        streets.SetWall(5, 4, Direction.West);
         town.AddBuilding(TownBuilding.QuestBoard, "The Notice Board", new Position(0, 0));
         town.AddBuilding(TownBuilding.Smithy, "The Forge", new Position(0, 10));
         town.AddBuilding(TownBuilding.Bank, "Skara Brae Bank", new Position(10, 0));

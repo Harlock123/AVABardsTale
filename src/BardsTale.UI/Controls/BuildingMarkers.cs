@@ -28,9 +28,14 @@ public static class BuildingMarkers
         new BuildingMarker(TownBuilding.Smithy,          "Smithy",    "⚒", Rgb(0x9C, 0x4A, 0x30), Brushes.White),
         new BuildingMarker(TownBuilding.Bank,            "Bank",      "B", Rgb(0xC9, 0xA8, 0x3A), Rgb(0x1A, 0x16, 0x26)),
         new BuildingMarker(TownBuilding.DungeonEntrance, "Catacombs", "▼", Rgb(0x9E, 0x2C, 0x2C), Brushes.White),
+        new BuildingMarker(TownBuilding.TowerEntrance,   "Tower",     "♜", Rgb(0x6E, 0x57, 0x9C), Brushes.White),
     };
 
     private static readonly Dictionary<TownBuilding, BuildingMarker> ByType = All.ToDictionary(m => m.Building);
 
-    public static BuildingMarker For(TownBuilding building) => ByType[building];
+    private static readonly BuildingMarker Fallback =
+        new(TownBuilding.None, "", "•", new SolidColorBrush(Color.FromRgb(0x55, 0x5A, 0x6E)), Brushes.White);
+
+    /// <summary>The marker for a building — a neutral dot for any not in the table, so a new building can't crash the map.</summary>
+    public static BuildingMarker For(TownBuilding building) => ByType.GetValueOrDefault(building, Fallback);
 }

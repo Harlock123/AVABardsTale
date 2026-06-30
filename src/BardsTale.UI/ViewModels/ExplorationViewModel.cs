@@ -198,6 +198,7 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     /// <summary>Shows the main-quest beat for the current floor, if it hasn't played yet.</summary>
     private void CheckStory()
     {
+        if (_game.Kind != BardsTale.Core.Dungeon.DungeonKind.Catacombs) return; // the main quest lives in the catacombs
         if (_reachStory?.Invoke(_game.Depth) is { } beat)
         {
             StoryTitle = beat.Title;
@@ -240,7 +241,9 @@ public sealed partial class ExplorationViewModel : ViewModelBase
     private void Descend()
     {
         Handle(_game.Descend());
-        _stats.DeepestDepth = Math.Max(_stats.DeepestDepth, _game.Depth);
+        // Only catacombs progress drives Garth's restock and quest scaling; the tower is its own track.
+        if (_game.Kind == BardsTale.Core.Dungeon.DungeonKind.Catacombs)
+            _stats.DeepestDepth = Math.Max(_stats.DeepestDepth, _game.Depth);
         CheckAchievements();
         OnPropertyChanged(nameof(Maze));
         Sfx.Play(GameSound.StairsDown);

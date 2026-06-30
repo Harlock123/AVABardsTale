@@ -79,6 +79,9 @@ public sealed partial class TownViewModel : ViewModelBase
     /// <summary>Raised when the party descends from the catacomb stair into the dungeon.</summary>
     public event Action? EnterDungeonRequested;
 
+    /// <summary>Raised when the party enters the Gloomy Tower from the town square.</summary>
+    public event Action? EnterTowerRequested;
+
     /// <summary>Raised when renown changes (an achievement was unlocked), so the shell can refresh.</summary>
     public event Action? RenownChanged;
 
@@ -239,6 +242,17 @@ public sealed partial class TownViewModel : ViewModelBase
                 return;
             }
             EnterDungeonRequested?.Invoke();
+            return;
+        }
+
+        if (entrance.Building == TownBuilding.TowerEntrance)
+        {
+            if (!CanEnterDungeon)
+            {
+                Notice = "You need at least one living adventurer before braving the tower.";
+                return;
+            }
+            EnterTowerRequested?.Invoke();
             return;
         }
 
@@ -654,7 +668,7 @@ public sealed partial class TownViewModel : ViewModelBase
 
     // --- Review Board ---
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanAdvance))]
     private void Advance(CharacterViewModel? hero)
     {
         if (hero is null) return;
@@ -662,7 +676,11 @@ public sealed partial class TownViewModel : ViewModelBase
         if (result is not null) Sfx.Play(GameSound.LevelUp);
         Notice = result ?? $"{hero.Name} needs more experience to advance.";
         RefreshEconomy();
+        AdvanceCommand.NotifyCanExecuteChanged(); // spending XP may end this hero's eligibility
     }
+
+    /// <summary>Only a living, undrained hero with the experience banked can advance at the Review Board.</summary>
+    private static bool CanAdvance(CharacterViewModel? hero) => hero?.CanLevelUp == true;
 
     // --- Tavern ---
 
@@ -1110,5 +1128,6 @@ public sealed partial class TownViewModel : ViewModelBase
         OnPropertyChanged(nameof(RestCost));
         OnPropertyChanged(nameof(CanEnterDungeon));
         EnterDungeonCommand.NotifyCanExecuteChanged();
+        AdvanceCommand.NotifyCanExecuteChanged(); // keep the Review Board's per-hero buttons in sync
     }
 }

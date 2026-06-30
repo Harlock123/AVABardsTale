@@ -74,17 +74,22 @@ public sealed class EncounterFactory
     private readonly IRandomSource _rng;
     private readonly int _ascension;
     private readonly DifficultyProfile _difficulty;
+    private readonly Dungeon.DungeonKind _kind;
 
-    public EncounterFactory(IRandomSource rng, int ascension = 0, DifficultyProfile? difficulty = null)
+    public EncounterFactory(IRandomSource rng, int ascension = 0, DifficultyProfile? difficulty = null,
+        Dungeon.DungeonKind kind = Dungeon.DungeonKind.Catacombs)
     {
         _rng = rng;
         _ascension = ascension;
         _difficulty = difficulty ?? DifficultyProfile.Normal;
+        _kind = kind;
     }
 
     public Encounter CreateRandom(int depth)
     {
-        var pool = Bestiary.PoolForDepth(depth);
+        var pool = _kind == Dungeon.DungeonKind.Tower
+            ? Bestiary.PoolForTower(depth)
+            : Bestiary.PoolForDepth(depth);
         // Group count scales UP with depth: a single group on the entry floors, more as you descend.
         var maxGroups = Math.Clamp(1 + depth / 4, 1, 4);
         var groupCount = _rng.Next(1, maxGroups + 1);

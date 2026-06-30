@@ -1,4 +1,5 @@
 using BardsTale.Core.Characters;
+using BardsTale.Core.Dungeon;
 
 namespace BardsTale.Core.Combat;
 
@@ -86,12 +87,18 @@ public static class Bosses
             Spell: new MonsterSpell("Mind Storm", MonsterSpellKind.BlastParty, Power: 28, Chance: 0.55),
             Ability: MonsterAbility.DrainLevel, AbilityChance: 0.35);
 
+    /// <summary>The apex of the Gloomy Tower — a wraith-sovereign of the dark side-delve (not the game-winner).</summary>
+    public static readonly MonsterTemplate Gloomlord =
+        new("The Gloomlord", 260, 0, 3, 9, 0, 3500, 1500, 1, Speed: 5,
+            Spell: new MonsterSpell("Umbral Nova", MonsterSpellKind.BlastParty, Power: 26, Chance: 0.55),
+            Ability: MonsterAbility.DrainLevel, AbilityChance: 0.30);
+
     /// <summary>Every named boss, for the bestiary catalogue.</summary>
     public static readonly IReadOnlyList<MonsterTemplate> All = new[]
     {
         SkeletonLord, CovenMatron, GoblinKing, CryptTyrant, OrcWarlord, Medusa, DemonLord, TrollKing,
         WerewolfAlpha, VampireLord, StoneTitan, LichKing, WyvernMatriarch, BeholderTyrant, FrostKing,
-        DeathTyrant, PitLord, Archlich, DragonTyrant, Mangar
+        DeathTyrant, PitLord, Archlich, DragonTyrant, Mangar, Gloomlord
     };
 
     /// <summary>The level on which Mangar lairs. Beating him wins the game.</summary>
@@ -143,6 +150,54 @@ public static class Bosses
             }, isBoss: true, isFinalBoss: true);
 
         var (boss, minion, count) = Lairs[(Math.Max(1, depth) - 1) % Lairs.Length];
+        return new Encounter(new[]
+        {
+            new MonsterGroup(NgPlus.Scale(boss, ascension, difficulty), 1),
+            new MonsterGroup(NgPlus.Scale(minion, ascension, difficulty), count)
+        }, isBoss: true);
+    }
+
+    // --- The Gloomy Tower: a shorter, optional side-delve with its own boss band ---
+
+    /// <summary>The top floor of the Gloomy Tower, where the Gloomlord lairs. Clearing it does not win the game.</summary>
+    public const int TowerDepth = 8;
+
+    // One lair per tower floor (1..TowerDepth-1), with the Gloomlord as the apex on floor 8.
+    private static readonly (MonsterTemplate Boss, MonsterTemplate Minion, int MinionCount)[] TowerLairs =
+    {
+        (CovenMatron, Bestiary.CovenWitch, 2),
+        (CryptTyrant, Bestiary.CryptCrawler, 2),
+        (Medusa, Bestiary.Gargoyle, 2),
+        (StoneTitan, Bestiary.Gargoyle, 2),
+        (BeholderTyrant, Bestiary.Wraith, 2),
+        (Archlich, Bestiary.Wraith, 1),
+        (VampireLord, Bestiary.Wight, 2),
+    };
+
+    /// <summary>The floor a delve bottoms out on — Mangar's depth for the catacombs, the Gloomlord's for the Tower.</summary>
+    public static int FinalDepthOf(DungeonKind kind) => kind == DungeonKind.Tower ? TowerDepth : FinalDepth;
+
+    /// <summary>The lair boss guarding a floor of the given delve.</summary>
+    public static MonsterTemplate BossForDepth(DungeonKind kind, int depth)
+    {
+        if (kind == DungeonKind.Catacombs) return BossForDepth(depth);
+        return depth >= TowerDepth ? Gloomlord : TowerLairs[(Math.Max(1, depth) - 1) % TowerLairs.Length].Boss;
+    }
+
+    /// <summary>Builds the fixed boss encounter for a floor of the given delve.</summary>
+    public static Encounter Create(DungeonKind kind, int depth, int ascension = 0, DifficultyProfile? difficulty = null)
+    {
+        if (kind == DungeonKind.Catacombs) return Create(depth, ascension, difficulty);
+
+        if (depth >= TowerDepth)
+            // The apex is a tough boss with rich loot — but NOT the final boss, so it doesn't win the game.
+            return new Encounter(new[]
+            {
+                new MonsterGroup(NgPlus.Scale(Gloomlord, ascension, difficulty), 1),
+                new MonsterGroup(NgPlus.Scale(Bestiary.Wraith, ascension, difficulty), 2)
+            }, isBoss: true);
+
+        var (boss, minion, count) = TowerLairs[(Math.Max(1, depth) - 1) % TowerLairs.Length];
         return new Encounter(new[]
         {
             new MonsterGroup(NgPlus.Scale(boss, ascension, difficulty), 1),

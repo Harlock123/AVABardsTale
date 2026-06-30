@@ -509,4 +509,36 @@ public static class Bestiary
         var tier = Math.Clamp((depth + 1) / 2, 1, Tiers.Length);
         return Bands[tier - 1];
     }
+
+    // ── The Gloomy Tower: a curated, escalating roster — undead, witches, constructs and arcane
+    //    horrors — distinct from the catacombs and matching the tower's tough endgame-boss lairs ──
+    public static readonly IReadOnlyList<MonsterTemplate> TowerTier1 =
+        new[] { Skeleton, Zombie, GiantSpider, CultAcolyte, CovenWitch, AnimatedArmor };
+    public static readonly IReadOnlyList<MonsterTemplate> TowerTier2 =
+        new[] { Ghoul, Shadow, Gargoyle, HexAdept, CryptCrawler, Wight };
+    public static readonly IReadOnlyList<MonsterTemplate> TowerTier3 =
+        new[] { Wraith, Necromancer, DarkElf, PhaseSpider, SpiritNaga, Banshee };
+    public static readonly IReadOnlyList<MonsterTemplate> TowerTier4 =
+        new[] { WraithLord, BoneGolem, IronGolem, EyeTyrant, Nightwalker, MindFlayer };
+
+    private static readonly IReadOnlyList<MonsterTemplate>[] TowerTiers =
+        { TowerTier1, TowerTier2, TowerTier3, TowerTier4 };
+
+    // Each tower floor draws from its tier plus the one below it, for variety (as the catacombs do).
+    private static readonly IReadOnlyList<MonsterTemplate>[] TowerBands = BuildTowerBands();
+
+    private static IReadOnlyList<MonsterTemplate>[] BuildTowerBands()
+    {
+        var bands = new IReadOnlyList<MonsterTemplate>[TowerTiers.Length];
+        for (var i = 0; i < TowerTiers.Length; i++)
+            bands[i] = i == 0 ? TowerTiers[0] : TowerTiers[i].Concat(TowerTiers[i - 1]).ToArray();
+        return bands;
+    }
+
+    /// <summary>The wandering pool for a floor of the Gloomy Tower (its own roster, scaling 1→8).</summary>
+    public static IReadOnlyList<MonsterTemplate> PoolForTower(int depth)
+    {
+        var tier = Math.Clamp((depth + 1) / 2, 1, TowerTiers.Length);
+        return TowerBands[tier - 1];
+    }
 }

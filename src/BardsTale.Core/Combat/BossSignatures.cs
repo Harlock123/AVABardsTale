@@ -41,6 +41,8 @@ public static class BossSignatures
             Rider: StatusEffect.Asleep, RiderChance: 0.25),
         ["Beholder Tyrant"] = new("Disintegration Ray", Element.Arcane, SignaturePayload.FocusedBolt, 55),
         ["Archlich"] = new("Soul Harvest", Element.Arcane, SignaturePayload.FocusedBolt, 60, HealsSelf: true),
+        ["The Gloomlord"] = new("Gloom Singularity", Element.Arcane, SignaturePayload.PartyBlast, 46,
+            Rider: StatusEffect.Asleep, RiderChance: 0.25),
     };
 
     /// <summary>

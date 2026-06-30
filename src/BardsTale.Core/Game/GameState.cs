@@ -77,7 +77,7 @@ public sealed class GameState
     private readonly Dictionary<int, Maze> _levels = new();
 
     public GameState(Party party, Maze maze, IRandomSource rng, int ascension = 0, DifficultyProfile? difficulty = null,
-        RunModifier modifiers = RunModifier.None)
+        RunModifier modifiers = RunModifier.None, DungeonKind kind = DungeonKind.Catacombs)
     {
         Party = party;
         Maze = maze;
@@ -85,7 +85,8 @@ public sealed class GameState
         _ascension = ascension;
         _difficulty = difficulty ?? DifficultyProfile.Normal;
         _modifiers = modifiers;
-        _encounters = new EncounterFactory(rng, ascension, _difficulty);
+        Kind = kind;
+        _encounters = new EncounterFactory(rng, ascension, _difficulty, kind);
         _levels[Depth] = maze;
         Party.Position = maze.StartPosition;
         Party.Facing = maze.StartFacing;
@@ -95,7 +96,7 @@ public sealed class GameState
     /// <summary>Restores a dungeon from a saved game, preserving depth, position and the explored map.</summary>
     public GameState(Party party, Maze maze, IRandomSource rng, int depth, Position position, Direction facing,
         int lightRemaining = 0, int ascension = 0, DifficultyProfile? difficulty = null,
-        RunModifier modifiers = RunModifier.None)
+        RunModifier modifiers = RunModifier.None, DungeonKind kind = DungeonKind.Catacombs)
     {
         Party = party;
         Maze = maze;
@@ -103,7 +104,8 @@ public sealed class GameState
         _ascension = ascension;
         _difficulty = difficulty ?? DifficultyProfile.Normal;
         _modifiers = modifiers;
-        _encounters = new EncounterFactory(rng, ascension, _difficulty);
+        Kind = kind;
+        _encounters = new EncounterFactory(rng, ascension, _difficulty, kind);
         Depth = depth;
         _levels[Depth] = maze;
         Party.Position = position;
@@ -114,6 +116,13 @@ public sealed class GameState
     public Party Party { get; }
     public Maze Maze { get; private set; }
     public int Depth { get; private set; } = 1;
+
+    /// <summary>Which delve this is — the catacombs (main quest) or the optional Gloomy Tower.</summary>
+    public DungeonKind Kind { get; } = DungeonKind.Catacombs;
+
+    /// <summary>The display prefix for this delve's level names ("Catacombs — Level 3", "Gloomy Tower — Floor 3").</summary>
+    private string LevelName(int depth) =>
+        Kind == DungeonKind.Tower ? $"Gloomy Tower — Floor {depth}" : $"Catacombs — Level {depth}";
 
     /// <summary>Every explored level keyed by depth — used by save/load to persist each map.</summary>
     public IReadOnlyDictionary<int, Maze> Levels => _levels;
@@ -242,8 +251,8 @@ public sealed class GameState
                     "A dead, magicless silence presses in — spells and songs will not work here.");
             case CellFeature.BossLair:
                 return new MoveResult(MoveResultKind.Encounter,
-                    $"A monstrous presence rises to bar your way — the {Bosses.BossForDepth(Depth).Name}!",
-                    Bosses.Create(Depth, _ascension, _difficulty));
+                    $"A monstrous presence rises to bar your way — the {Bosses.BossForDepth(Kind, Depth).Name}!",
+                    Bosses.Create(Kind, Depth, _ascension, _difficulty));
             case CellFeature.Chest:
                 return new MoveResult(MoveResultKind.Chest,
                     "A heavy treasure chest sits here, its lid latched shut.");
@@ -818,7 +827,7 @@ public sealed class GameState
     /// (1000 · 2^(level-1)), so XP rewards grow geometrically with depth — about +25%
     /// per floor — to keep the party's level climbing in step with the 20-floor descent.
     /// </summary>
-    public double DepthXpScale => Math.Pow(1.25, Math.Min(Depth, Bosses.FinalDepth) - 1);
+    public double DepthXpScale => Math.Pow(1.25, Math.Min(Depth, Bosses.FinalDepthOf(Kind)) - 1);
 
     /// <summary>
     /// Award experience and gold to the survivors after a won fight. Level-ups are
@@ -868,6 +877,13 @@ public sealed class GameState
 
     public MoveResult Descend()
     {
+        // Each delve bottoms out at its final floor — there is nowhere further to go.
+        if (Depth >= Bosses.FinalDepthOf(Kind))
+            return new MoveResult(MoveResultKind.Moved,
+                Kind == DungeonKind.Tower
+                    ? "This is the tower's highest floor — there is nowhere further to climb."
+                    : "These are the deepest catacombs — there is nowhere further down.");
+
         Depth++;
         // Revisit a level you've already mapped, or carve a fresh one the first time down.
         if (_levels.TryGetValue(Depth, out var existing))
@@ -876,14 +892,15 @@ public sealed class GameState
         }
         else
         {
-            Maze = new MazeBuilder(_rng).Build($"Catacombs — Level {Depth}", Maze.Width, Maze.Height);
+            Maze = new MazeBuilder(_rng).Build(LevelName(Depth), Maze.Width, Maze.Height);
             _levels[Depth] = Maze;
         }
         Party.Position = Maze.StartPosition;
         Party.Facing = Maze.StartFacing;
         _stepsSinceEncounter = 0;
         MarkVisited();
-        return new MoveResult(MoveResultKind.Moved, $"You descend to level {Depth}.");
+        return new MoveResult(MoveResultKind.Moved,
+            Kind == DungeonKind.Tower ? $"You climb to floor {Depth} of the tower." : $"You descend to level {Depth}.");
     }
 
     /// <summary>Climbs to the level above, arriving at its downward stair with its map intact.</summary>

@@ -58,6 +58,8 @@ public static class GameSerializer
 
         if (session.ActiveDungeon is { } dungeon)
             data.Dungeon = ToDungeonSave(dungeon);
+        if (session.ActiveTower is { } tower)
+            data.Tower = ToDungeonSave(tower);
 
         data.Stats = new RunStatsSave
         {
@@ -158,10 +160,30 @@ public static class GameSerializer
         BardTunes = c.BardTunes
     };
 
+    /// <summary>
+    /// Rebuilds a GameState from a saved delve. When <paramref name="atEntrance"/> the party is placed at
+    /// the current floor's entrance (used for the non-active delve); otherwise at its exact saved position.
+    /// </summary>
+    private static GameState RestoreDungeonState(DungeonSave save, Party p, GameSession session, bool atEntrance)
+    {
+        var current = save.Levels.FirstOrDefault(l => l.Depth == save.Depth) ?? save.Levels[0];
+        var maze = FromLevelSave(current);
+        var pos = atEntrance ? maze.StartPosition : p.Position;
+        var facing = atEntrance ? maze.StartFacing : p.Facing;
+        var game = new GameState(p, maze, session.Rng, save.Depth, pos, facing, save.LightRemaining,
+            session.Ascension, BardsTale.Core.Combat.DifficultyProfile.For(session.Difficulty), session.Modifiers,
+            (BardsTale.Core.Dungeon.DungeonKind)save.Kind);
+        foreach (var level in save.Levels)
+            if (level.Depth != current.Depth)
+                game.AddLevel(level.Depth, FromLevelSave(level));
+        return game;
+    }
+
     private static DungeonSave ToDungeonSave(GameState dungeon)
     {
         var save = new DungeonSave
         {
+            Kind = (int)dungeon.Kind,
             Depth = dungeon.Depth,
             LightRemaining = dungeon.LightRemaining
         };
@@ -258,18 +280,13 @@ public static class GameSerializer
                 Name = entry.Name, Slain = entry.Slain, FirstSeenDepth = entry.FirstSeenDepth
             });
 
+        // The Gloomy Tower (if explored) is restored first, so the catacombs set the party's exact
+        // position last; the tower resumes at its current floor's entrance (re-entry resets it anyway).
+        if (data.Tower is { } towerSave && towerSave.Levels.Count > 0)
+            session.RestoreTower(RestoreDungeonState(towerSave, p, session, atEntrance: true));
+
         if (data.Dungeon is { } dungeonSave && dungeonSave.Levels.Count > 0)
-        {
-            var current = dungeonSave.Levels.FirstOrDefault(l => l.Depth == dungeonSave.Depth)
-                          ?? dungeonSave.Levels[0];
-            var game = new GameState(p, FromLevelSave(current), session.Rng,
-                dungeonSave.Depth, p.Position, p.Facing, dungeonSave.LightRemaining, session.Ascension,
-                BardsTale.Core.Combat.DifficultyProfile.For(session.Difficulty), session.Modifiers);
-            foreach (var level in dungeonSave.Levels)
-                if (level.Depth != current.Depth)
-                    game.AddLevel(level.Depth, FromLevelSave(level));
-            session.RestoreDungeon(game);
-        }
+            session.RestoreDungeon(RestoreDungeonState(dungeonSave, p, session, atEntrance: false));
 
         return session;
     }

@@ -94,6 +94,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private AchievementsViewModel? _achievements;
     [ObservableProperty] private bool _isSetCodexOpen;
     [ObservableProperty] private SetCodexViewModel? _setCodex;
+    [ObservableProperty] private bool _isPartySheetOpen;
+    [ObservableProperty] private PartySheetViewModel? _partySheet;
     [ObservableProperty] private bool _isHelpOpen;
     [ObservableProperty] private bool _isHistoryOpen;
     [ObservableProperty] private HistoryViewModel? _history;
@@ -350,6 +352,24 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         if (IsSetCodexOpen) CloseSetCodex();
         else ShowSetCodex();
+    }
+
+    /// <summary>Opens the character-sheet overlay, a full stat readout of every hero, rebuilt from the live party.</summary>
+    [RelayCommand]
+    private void ShowPartySheet()
+    {
+        PartySheet = new PartySheetViewModel(_session.Party);
+        IsPartySheetOpen = true;
+    }
+
+    [RelayCommand]
+    private void ClosePartySheet() => IsPartySheetOpen = false;
+
+    /// <summary>The 'C' key toggles the character sheet.</summary>
+    public void TogglePartySheet()
+    {
+        if (IsPartySheetOpen) ClosePartySheet();
+        else ShowPartySheet();
     }
 
     /// <summary>Opens the achievements & renown overlay (rebuilt from current standing).</summary>

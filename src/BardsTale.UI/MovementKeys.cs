@@ -54,6 +54,11 @@ public static class MovementKeys
                 vm.CloseSetCodexCommand.Execute(null);
                 e.Handled = true;
             }
+            else if (vm.IsPartySheetOpen)
+            {
+                vm.ClosePartySheetCommand.Execute(null);
+                e.Handled = true;
+            }
             else if (vm.Town is { IsQuestOfferOpen: true } offer)
             {
                 offer.DeclineQuestOfferCommand.Execute(null);
@@ -118,6 +123,15 @@ public static class MovementKeys
             && vm.Town is not { IsQuestOfferOpen: true })
         {
             vm.ToggleSetCodex();
+            e.Handled = true;
+            return;
+        }
+
+        // C opens (and closes) the character sheet from anywhere.
+        if (e.Key is Key.C && !vm.IsSlotPanelOpen && !vm.IsSettingsOpen
+            && vm.Town is not { IsQuestOfferOpen: true })
+        {
+            vm.TogglePartySheet();
             e.Handled = true;
             return;
         }

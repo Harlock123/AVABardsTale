@@ -79,6 +79,12 @@ public static class ScreenshotRunner
         Capture(view, dir, "set-codex");
         vm.CloseSetCodexCommand.Execute(null);
 
+        // The character-sheet overlay — every hero's full stat readout.
+        vm.ShowPartySheetCommand.Execute(null);
+        await Settle();
+        Capture(view, dir, "party-sheet");
+        vm.ClosePartySheetCommand.Execute(null);
+
         // The town "Cast a Spell" menu (spell points, costs, dimmed-unaffordable).
         vm.ShowTownScreen();
         if (vm.Town is { } town)

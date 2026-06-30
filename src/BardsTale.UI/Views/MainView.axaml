@@ -53,6 +53,8 @@
                     <Button Content="📜 Quests (J)" Command="{Binding ShowQuestLogCommand}" Margin="0,2,6,2"/>
                     <Button Content="📖 Bestiary (B)" Command="{Binding ShowBestiaryCommand}" Margin="0,2,6,2"/>
                     <Button Content="🔗 Sets (K)" Command="{Binding ShowSetCodexCommand}" Margin="0,2,6,2"/>
+                    <Button Content="📋 Party (C)" Command="{Binding ShowPartySheetCommand}" Margin="0,2,6,2"
+                            ToolTip.Tip="Full character sheets — attributes, bonuses, wards, gear &amp; magic"/>
                     <Button Content="🎯 Daily" Command="{Binding ShowChallengeCommand}" Margin="0,2,6,2"/>
                     <Button Content="📊 Runs" Command="{Binding ShowHistoryCommand}" Margin="0,2,6,2"
                             ToolTip.Tip="Run history &amp; lifetime totals"/>
@@ -675,6 +677,64 @@
                                                            TextWrapping="Wrap"/>
                                                 <TextBlock Text="{Binding Source}" FontSize="11" Foreground="#8FB7FF"
                                                            TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Border>
+
+            <!-- Character sheet -->
+            <Border IsVisible="{Binding IsPartySheetOpen}" Background="#E60B0D14">
+                <Border Width="640" MaxHeight="700" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="#161A24" BorderBrush="#3A3F52" BorderThickness="2" CornerRadius="6" Padding="20">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+                            <TextBlock Grid.Column="0" Text="{Binding PartySheet.Heading}" FontSize="20" FontWeight="Bold"
+                                       Foreground="#E8C56B" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Close (Esc)" Command="{Binding ClosePartySheetCommand}"/>
+                        </Grid>
+                        <TextBlock DockPanel.Dock="Bottom" Margin="0,12,0,0" FontSize="11" Foreground="#7E879B"
+                                   Text="Press C to open or close. The prime attribute (gold) rises every third level."/>
+                        <Border DockPanel.Dock="Bottom" IsVisible="{Binding PartySheet.HasBoon}" Margin="0,10,0,0"
+                                Background="#15202A" BorderBrush="#2E5560" BorderThickness="1" CornerRadius="4" Padding="10,6">
+                            <TextBlock Text="{Binding PartySheet.BoonLine}" FontSize="12" Foreground="#9BD7E0" TextWrapping="Wrap"/>
+                        </Border>
+                        <ScrollViewer>
+                            <ItemsControl ItemsSource="{Binding PartySheet.Heroes}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:CharacterSheetViewModel">
+                                        <Border Margin="0,0,0,10" Padding="14,11" CornerRadius="4" Background="#222634">
+                                            <StackPanel Spacing="5">
+                                                <TextBlock Text="{Binding Header}" FontWeight="Bold" FontSize="15"
+                                                           Foreground="{Binding HeaderBrush}"/>
+                                                <TextBlock Text="{Binding LevelLine}" FontSize="11" Foreground="#9AA0B5"/>
+                                                <TextBlock Text="{Binding Vitals}" FontSize="13" Foreground="#E8E9F0"
+                                                           FontFamily="Consolas,monospace"/>
+                                                <ItemsControl ItemsSource="{Binding Attributes}" Margin="0,2,0,0">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:AttributeChipViewModel">
+                                                            <Border Background="#1C2030" CornerRadius="3" Padding="7,2" Margin="0,0,6,0">
+                                                                <TextBlock Text="{Binding Text}" FontSize="12" FontWeight="Bold"
+                                                                           FontFamily="Consolas,monospace" Foreground="{Binding Brush}"/>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{Binding Derived}" FontSize="12" Foreground="#C7CBDA"
+                                                           FontFamily="Consolas,monospace" Margin="0,2,0,0"/>
+                                                <TextBlock Text="{Binding Wards}" FontSize="12" Foreground="#8FB7FF"/>
+                                                <TextBlock Text="{Binding Sets}" FontSize="12" Foreground="#C9A24B"
+                                                           IsVisible="{Binding HasSets}" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding Gear}" FontSize="12" Foreground="#B7BCCB"/>
+                                                <TextBlock Text="{Binding Magic}" FontSize="11" Foreground="#9AA0B5"
+                                                           IsVisible="{Binding HasMagic}" TextWrapping="Wrap"/>
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>

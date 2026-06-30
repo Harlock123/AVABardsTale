@@ -26,9 +26,9 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 | --- | --- | --- |
 | ![Combat](SCREENSHOTS/combat.png) | ![The Smithy](SCREENSHOTS/smithy.png) | ![The bestiary](SCREENSHOTS/bestiary.png) |
 
-| Accessory-set codex | Cast a Spell |
-| --- | --- |
-| ![Accessory-set codex](SCREENSHOTS/set-codex.png) | ![Cast a Spell](SCREENSHOTS/spell-menu.png) |
+| Accessory-set codex | Cast a Spell | Character sheet |
+| --- | --- | --- |
+| ![Accessory-set codex](SCREENSHOTS/set-codex.png) | ![Cast a Spell](SCREENSHOTS/spell-menu.png) | ![Character sheet](SCREENSHOTS/party-sheet.png) |
 
 <details>
 <summary>More of Skara Brae's buildings</summary>
@@ -63,7 +63,7 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 | `src/BardsTale.Browser` | Thin WebAssembly head — runs the same UI in the browser via `Avalonia.Browser` and the single-view lifetime, as an installable PWA with IndexedDB saves. (Kept out of the default solution; see below.) |
 | `src/BardsTale.Android` | Thin Android head (tablet, landscape) — a launcher `Activity` + an `AudioTrack` sound backend, wrapping `MainView` via the single-view lifetime. |
 | `src/BardsTale.iOS` | Thin iOS head (iPad, landscape) — an `AvaloniaAppDelegate` entry point + an `AVAudioPlayer` sound backend. |
-| `tests/BardsTale.Tests` | xUnit suite (**486 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, monster morale, front/back ranks, sustained Bard songs, elemental affinities & immunities, scrying, monster affixes), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, illusory walls & one-way doors, shrines & party boons, dungeon events, town services & tavern rumours, the bestiary & lore, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
+| `tests/BardsTale.Tests` | xUnit suite (**494 tests**) covering geometry, maze generation & connectivity, special tiles, character creation, the full combat resolver (status effects, enemy spells, drain, summoning, surprise rounds, bosses, elite/enrage AI, monster morale, front/back ranks, sustained Bard songs, elemental affinities & immunities, scrying, monster affixes), item powers & forging, accessories/wards/set bonuses, treasure chests & mimics, camping, search/secret doors, riddles, levers & gates, keys & locked doors, illusory walls & one-way doors, shrines & party boons, dungeon events, town services & tavern rumours, the bestiary & lore, character sheets, difficulty modes, New Game+/Ironman, run modifiers, the seeded daily challenge, story beats, run history, music & crossfade, save/load round-trips, and per-depth map persistence. |
 
 The split follows Avalonia's standard cross-platform layout: a shared UI library plus
 one thin "head" project per platform. Every head reuses `BardsTale.UI` unchanged —
@@ -312,8 +312,8 @@ dotnet build src/BardsTale.Desktop
 - **Enter / Return** — enter the building you're standing before, or use the stairway
   you're on. **Esc** backs out of a building, panel or quest offer. **Q** assembles a
   Quick Party in the Adventurers Guild.
-- **Quest journal (J)**, **Bestiary (B)** and the **accessory-set codex (K)** — open from
-  anywhere (also top-bar buttons). **Settings (⚙)** holds reduced-motion, interface size,
+- **Quest journal (J)**, **Bestiary (B)**, the **accessory-set codex (K)** and the
+  **character sheet (C)** — open from anywhere (also top-bar buttons). **Settings (⚙)** holds reduced-motion, interface size,
   autosave, audio, difficulty, Ironman, run modifiers and the accessibility options.
 - **Run history (📊 Runs)** — a dashboard of your completed runs (wins and Ironman deaths):
   each shows the outcome, deepest floor and score, with tags (Ironman / New Game+ / difficulty /
@@ -573,6 +573,13 @@ Tyrant on floor 19 drops the full three-piece Elementalist's Regalia). Recoverin
 set is **called out by name** in the log (*"✦ You've recovered the Twin Bulwark set…"*). An
 **accessory-set codex** (the *🔗 Sets* button or **K**) lists every set — its pieces, bonus,
 where to find it (which boss guards it, on which floor), and whether the party has it assembled.
+
+A **character sheet** (the *📋 Party* button or **C**) lays a hero's full numbers bare in one
+place: level and experience-to-next, **HP/SP, armour class and attacks per round**, all five
+**attributes** (the class's prime — which rises every third level — picked out in gold), the
+**derived bonuses** they feed (melee damage, armour class, luck, gear to-hit/damage, regen),
+**elemental wards**, **active set bonuses**, equipped gear, known spells and songs, and the
+party's current **shrine boon** — so every system the game models is actually legible at a glance.
 
 Accessory effects are surfaced in the **combat log** as they fire: regeneration ticks
 (*"Brynn regenerates 2 HP."*), elemental wards and luck softening a blast (*"… — luck softens

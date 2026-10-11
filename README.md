@@ -53,6 +53,32 @@ the credits. Town services, a fillable **bestiary**, a **quest journal**, proced
 > PNG via Avalonia's `RenderTargetBitmap` (real fonts, theme and layout; no window-grabbing).
 > A desktop session is required. (PNG is used rather than PCX, as GitHub renders PNG inline.)
 
+## Download and run
+
+Ready-to-run builds for Windows, macOS and Linux, on both Intel/AMD and ARM, are on the
+[Releases page](https://github.com/Harlock123/AVABardsTale/releases). **Latest build** is rebuilt on
+every push to `main`. Each download is one self-contained executable: no .NET install is
+needed.
+
+```bash
+tar -xzf AVABardsTale-linux-arm64.tar.gz      # or linux-x64, linux-arm, osx-arm64, osx-x64
+./AVABardsTale
+```
+
+On Windows, unzip `AVABardsTale-win-x64.zip` (or `-win-arm64`) and run `AVABardsTale.exe`. On macOS, if
+Gatekeeper refuses to open it, run `xattr -d com.apple.quarantine AVABardsTale` once.
+
+### Linux: sound and gamepads
+
+- **Sound and music** play through the first command-line player found: `ffplay`, `mpv`,
+  `paplay` or `aplay`. Without any of them the game runs but is silent. If none is
+  installed, `aplay` is the smallest to add:
+
+  ```bash
+  sudo apt install alsa-utils             # Debian / Ubuntu / Raspberry Pi OS
+  sudo pacman -S --needed alsa-utils      # Arch / Omarchy
+  ```
+
 ## Solution layout
 
 | Project | Purpose |

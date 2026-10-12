@@ -17,7 +17,7 @@
        file-backed SaveService works against the app's private storage. -->
 
   <ItemGroup>
-    <PackageReference Include="Avalonia.Android" Version="11.2.1" />
+    <PackageReference Include="Avalonia.Android" Version="11.3.22" />
   </ItemGroup>
 
   <ItemGroup>

@@ -12,7 +12,7 @@
        All UI lives in BardsTale.UI. -->
 
   <ItemGroup>
-    <PackageReference Include="Avalonia.Desktop" Version="11.2.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
   </ItemGroup>
 
   <ItemGroup>
